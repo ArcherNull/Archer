@@ -1,0 +1,33 @@
+<!--
+ * @Author: Null
+ * @Date: 2022-06-08 10:03:20
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>发送邮件</title>
+  </head>
+  <body>
+    <button onclick="sendMail()">发送邮件</button>
+    <script>
+      async function sendMail() {
+        console.log("发送邮件");
+        const res = await fetch("/api/email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "991584844@qq.com",
+          }),
+        });
+        const data = await res.json();
+        console.log(data);
+      }
+    </script>
+  </body>
+</html>
