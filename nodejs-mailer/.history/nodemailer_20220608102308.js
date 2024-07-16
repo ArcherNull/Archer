@@ -11,7 +11,7 @@ let nodeMail = nodemailer.createTransport({
   secure: true, //上文获取的secure
   auth: {
     user: "779217162@qq.com", // 发送方的邮箱，可以选择你自己的qq邮箱
-    pass: "上文获取的stmp授权码", // 上文获取的stmp授权码
+    pass: "loeerzetkfdabfhi", // 上文获取的stmp授权码
   },
 });
 
