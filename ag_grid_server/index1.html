@@ -1,0 +1,488 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2023-09-02 11:08:19
+ * @LastEditTime: 2024-07-16 19:18:57
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>递归分页循环</title>
+  <style>
+    .scrollbox {
+      border: solid 1px #f00;
+      height: 600px;
+      width: 100%;
+      overflow-y: scroll;
+      overflow-x: hidden;
+
+    }
+
+    #response {
+      height: 600px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    li {
+      list-style-type: none;
+    }
+
+    a {
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .nav {
+      margin: 4px;
+    }
+
+    .nav li {
+      position: relative;
+      float: left;
+      width: 80px;
+      height: 40px;
+      text-align: center;
+      background-color: rgb(250, 250, 250);
+    }
+
+    .nav>li {
+      border: 1px solid #348868;
+    }
+
+    .nav li a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      line-height: 41px;
+      color: #333;
+    }
+
+    .nav li a:hover {
+      background-color: rgb(109, 108, 108);
+    }
+
+    .nav ul {
+      display: none;
+      position: absolute;
+      top: 41px;
+      z-index: 1;
+      left: -1px;
+      width: 100%;
+      border-left: 1px solid #348868;
+      border-right: 1px solid #348868;
+    }
+
+    .nav ul li {
+      border-bottom: 1px solid #348868;
+    }
+
+    .nav ul li a:hover {
+      background-color: #348868;
+    }
+
+    .pagesize-container {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>递归分页循环</h2>
+  <p style="margin-top: 10px;">
+    分页请求，一般应用于后台服务查询数据库，当数据库字段量大，查询数据众多，牵涉表数众多，这不可避免地导致分页请求缓慢。此种情景主要是在于服务器响应缓慢，而用户需要大量数据的情况下，前端做了一种折中处理</p>
+
+  <p style="margin-top: 10px;">递归请求的本质上，是把批量任务拆分成众多的小任务，每个任务都可以异步进行，每个任务都相互独立，互不影响</p>
+
+  <ul>
+    <ol>未知请求数量总数，但是又预期请求总数</ol>
+    <ol></ol>
+  </ul>
+
+  <div style="margin: 10px 0; border: dashed 1px #ff0000;">
+    <div style="margin: 10px;">
+      <p style="margin-bottom: 5px;">
+        预期请求100次，可以使用最大并发数10，异步发起10次请求，共10次。将这100次的请求放置于数组中。我们可以给予次任务请求列表，针对于每个请求失败的接口重发。如果用户对大批量的数据操作了，那么必定会导致数据重新分页
+
+        <span style="color: #f00;">如果不考虑请求数据总量的情况下，并发数处在一个很尴尬的地方就是，如果上一批并发请求刚好是最后一页，那么下一批请求就全部请求空数据，导致了无效请求。</span>
+      </p>
+      <button onclick="request1()">递归分页请求-拿到所有数据后展示</button>
+    </div>
+
+    <div style="margin: 10px;">
+      <p style="margin-bottom: 5px;">不使用总页数来请求数据，数据会一直请求。如果数据量很大，一直请求下去【除非手动中断/接口报错终端】，用户并不能感知何时请求完成</p>
+      <button onclick="request2()">递归分页请求-只要拿到数据就展示</button>
+    </div>
+
+    <div style="margin: 10px;">
+      <p style="margin-bottom: 5px;">用户仅仅只需要请求一部分数据，并不想一直请求下去。中断的方式有多种，网络波动，用户中断，满足特定条件中断等</p>
+      <button onclick="abrotRequest(false)">【开启】递归中断 + 请求中断</button>
+
+      <button onclick="abrotRequest(true)">【关闭】递归中断 + 请求中断</button>
+    </div>
+  </div>
+
+  <div class="scrollbox">
+    <div id="resData"></div>
+  </div>
+
+  <div class="pagesize-container" id="pagesize">
+    共<span id="total"></span>条，
+
+    共<span id="totalPage"></span>页，
+
+
+    <ul class="nav" id="currentPageSelect">
+      <li>
+        <a id="currentPage">1</a>
+        <ul>
+          <li>
+            <a onclick="console.log('点击')">100</a>
+          </li>
+          <li>
+            <a onclick="console.log('点击')">1000</a>
+          </li>
+          <li>
+            <a onclick="console.log('点击')">10000</a>
+          </li>
+          <li>
+            <a onclick="console.log('点击')">20000</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <span>页</span>
+
+    <ul class="nav" id="currentPageSizeSelect">
+      <li>
+        <a id="currentPageSize">100</a>
+        <ul>
+          <li>
+            <a onclick="console.log('点击')">100</a>
+          </li>
+          <li>
+            <a onclick="console.log('点击')">1000</a>
+          </li>
+          <li>
+            <a onclick="console.log('点击')">10000</a>
+          </li>
+          <li>
+            <a onclick="console.log('点击')">20000</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <span>页/条</span>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    let currentPageSize = 10;
+    // 预先请求条数
+    const preRequestNum = 200;
+    // 后台总页数
+    let totalPage = 1
+    // 触底阈值
+    let threshold = 200
+
+    // 中断递归请求
+    const switchObj = {
+      isRecursive: true
+    }
+
+    // 请求1
+    async function request1() {
+      resetResponseToDom()
+      abrotRequest(true)
+      const rLists = generateRLists(currentPage, Math.ceil(preRequestNum / currentPageSize))
+      console.log('rLists=====>', rLists)
+      if (rLists?.length) {
+        const result = await concurRequest(rLists, 3)
+        console.log('result123123', result)
+      }
+    }
+
+    // 请求2
+    function request2() {
+      resetResponseToDom()
+      abrotRequest(true)
+      recursiveCallRequest2()
+    }
+
+    // 中断请求
+    function abrotRequest(bool){
+      console.log('中断请求')
+      switchObj.isRecursive = bool
+    }
+
+    // 递归调用请求
+    async function recursiveCallRequest2() {
+      // 预先请求条数
+      const preRequestNum = 200;
+      const prePage = Math.ceil(preRequestNum / currentPageSize)
+      if (prePage >= currentPage) {
+        const response = await fetchFun(currentPage);
+          if (response?.data?.length) {
+            echoResponseToDom(response)
+            switchObj.isRecursive && recursiveCallRequest2()
+          } else {
+            console.error('请求终止')
+          }
+      } else {
+        console.error('请求终止')
+      }
+    }
+
+    // 异步请求方法模拟
+    function fetchFun(page = currentPage, pageSize = currentPageSize) {
+      const baseUrl = `http://localhost:9000/order/page?page=${page}&pageSize=${pageSize}`;
+      currentPage += 1;
+      return fetch(baseUrl, {
+          method: "post",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .then((res) => {
+          if (res.ok) {
+            return res.json();
+          } else {
+            throw new Error("请求出错");
+          }
+        })
+        .then((response) => {
+          console.log('response', response)
+          return Promise.resolve(response);
+        });
+    }
+
+
+    const rLists = {
+      params: {
+        page: 1,
+        pageSize: 10
+      },
+      response: {
+
+      }
+    }
+
+    /**
+     * @description: 生成rLists
+     * @param {*} currentPage 当前页数
+     * @param {*} prePage 预期页数
+     * @return {*}
+     * 
+     * 如果后台有总条数，这里我们可以将第一次的请求的总页数，来算【预期页数】
+     * 
+     */
+    function generateRLists(currentPage, prePage) {
+      const diffPage = prePage - currentPage
+      const rLists = []
+      if (diffPage > 0) {
+        for (let i = 0; i < diffPage; i++) {
+          rLists.push({
+            params: {
+              page: i + currentPage,
+              pageSize: 10
+            },
+            response: null
+          })
+        }
+      }
+      return rLists
+
+    }
+
+    /**
+     * @description: 异步方法请求，含最大并发数
+     * @param {array} rLists 请求列表
+     * @param {number} maxNum 最大并发数
+     * @return {*}
+     * 
+     * 在递归调用请求中，这里只考虑针对统一接口请求
+     * 
+     */
+    function concurRequest(rLists, maxNum) {
+      return new Promise((resolve) => {
+        // 如果rLists长度为空
+        if (rLists.length === 0) {
+          resolve([]);
+          return;
+        }
+
+        let index = 0; // 下一个发送请求的下标
+        let count = 0; // 当前请求完成数量
+        async function request() {
+          // 如果当前请求下标超出rLists的长度则返回
+          if (index === rLists.length) {
+            return;
+          }
+          // 记录本次请求的下标
+          const i = index;
+          // 更新index
+          index++;
+
+          try {
+            // 当前请求的url
+            const currentRequest = rLists[i];
+            const resp = await fetchFun(i + 1);
+            currentRequest.response = resp;
+            console.log("currentRequest==>", currentRequest);
+          } catch (err) {
+            console.error("throw error", err);
+          } finally {
+            count++;
+            const cItem = rLists[count - 1]
+            const cResData = cItem.response?.data
+            const cPageSize = cItem.params.pageSize
+            if (count === rLists.length || (cResData?.length < cPageSize)) {
+              console.log("抛出结果", rLists);
+              const fResult = rLists.filter(ele=> ele.response)
+              console.log("过滤掉空数据，抛出最终结果", fResult);
+              resolve(fResult);
+              return
+            }else{
+              switchObj.isRecursive && request();
+            }
+          }
+        }
+
+        const times = Math.min(maxNum, rLists.length);
+        for (let i = 0; i < times; i++) {
+          request();
+        }
+      });
+    }
+
+    /**
+     * @description: 监听滚动事件
+     * @return {*}
+     */
+    function handleScroll(type = 'add') {
+      const dom = document.querySelector(".scrollbox");
+      // 下拉防抖
+      const d_scroll = debounce(function (e) {
+        console.log(`触底阈值为${threshold}`, dom.scrollHeight - (dom.clientHeight + dom.scrollTop))
+        if (dom.scrollHeight - (dom.clientHeight + dom.scrollTop) <= threshold) {
+          console.log("触底事件");
+          getList(currentPage);
+        }
+      }, 500);
+      if (type === 'add') {
+        dom.addEventListener("scroll", d_scroll);
+      } else {
+        dom.removeEventListener("scroll", d_scroll);
+      }
+
+    }
+
+    /**
+     * @description: 防抖函数
+     * @param {*} func 函数
+     * @param {*} duration 防抖时间
+     * @return {*}
+     */
+    function debounce(func, duration = 500) {
+      let timerId;
+      return function (...args) {
+        clearTimeout(timerId);
+        timerId = setTimeout(() => {
+          func.apply(this, args);
+        }, duration);
+      };
+    }
+
+    /**
+     * @description: 初始化下拉选择器
+     * @return {*}
+     */
+    function initSelector(id) {
+      // 1. 获取元素
+      var nav = document.getElementById(id)
+      var lis = nav.children; // 得到4个小li
+      // 2.循环注册事件
+      for (var i = 0; i < lis.length; i++) {
+        lis[i].onmouseover = function () {
+          this.children[1].style.display = "block"; // 节点获取第二个子孩子，将ul显示出来
+        };
+        lis[i].onmouseout = function () {
+          this.children[1].style.display = "none";
+        };
+      }
+    }
+
+    // 页面初始化函数
+    async function init() {
+      initSelector('currentPageSelect');
+      initSelector('currentPageSizeSelect');
+      handleScroll();
+      getList()
+    }
+
+    async function getList(page = 1) {
+      if (page <= totalPage) {
+        const response = await fetchFun(page);
+        echoResponseToDom(response)
+      }
+    }
+
+    // 清空数据
+    function resetResponseToDom() {
+      currentPage = 1
+      currentPageSize = 10
+      totalPage = 1
+      echoResponseToDom({
+        currentPage: 1,
+        currentPageSize: 10,
+        data: '',
+        total: 0
+      }, 'remove')
+    }
+
+    // 回显数据到dom上
+    function echoResponseToDom(response, type = 'add') {
+      const {
+        currentPage: cPage,
+        currentPageSize: cPageSize,
+        data,
+        total
+      } = response
+
+      const totalEle = document.getElementById('total')
+      totalEle.innerHTML = total
+
+      const totalPageEle = document.getElementById('totalPage')
+      totalPage = Math.ceil(total / cPageSize)
+      totalPageEle.innerHTML = totalPage
+
+      const resDataEle = document.getElementById('resData')
+      if (type === 'add') {
+        resDataEle.innerHTML += data ? JSON.stringify(data) : ''
+      } else {
+        resDataEle.innerHTML = ''
+      }
+
+      const currentPageEle = document.getElementById('currentPage')
+      currentPageEle.innerHTML = cPage
+
+      const currentPageSizeEle = document.getElementById('currentPageSize')
+      currentPageSizeEle.innerHTML = cPageSize
+    }
+
+    window.onload = function () {
+      init();
+    };
+  </script>
+</body>
+
+</html>

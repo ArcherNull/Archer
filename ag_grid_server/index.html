@@ -1,0 +1,78 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2023-08-31 17:42:03
+ * @LastEditTime: 2024-07-16 19:42:53
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <h2>数据流式请求</h2>
+  <p>数据流式请求，是针对于服务器响应很快，但是文件下载很大。例如像音频/视频类的边消耗边请求这类的。一般用于文件类的请求， 或者chatGPT文案展示</p>
+  <p>当然也可以用于数据请求，当用户就是需要很多dom节点的数据渲染, 当然，视图之外的虚拟列表也是可以的，当然使用requestIdleCallback分时函数也可以，现在使用的是后端解决方案</p>
+  <div style="margin: 10px;">
+    <button onclick='getRequest("/order/list?type=1", "once")'>一次性请求</button>
+    <button onclick='getRequest("/order/step","segmentation")'>分段请求</button>
+  </div>
+
+  <div id="result"></div>
+  <script>
+    // 请求
+    async function getRequest(url, type = 'once') {
+      const baseUrl = `http://localhost:9000${url}`;
+      // 响应分为响应头和响应体，await 等待的是响应体，而不是响应头，响应体如果数据量很大，会导致用户等很久，所以采用
+      // 流式读取，用户读取一部分，请求一部分
+      const resp = await fetch(baseUrl, {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: "测试",
+        }),
+      });
+
+      // 对于类型化数组， unit8Array， 需要使用解码器来解码
+      const textDecoder = new TextDecoder();
+      // 数据流式读取, 创建一个读取器并将流锁定于其上。一旦流被锁定，其他读取器将不能读取它，直到它被释放。
+      const reader = resp.body.getReader();
+      // 后台数据
+      let result = "";
+      // 循环
+      while (1) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        const str = textDecoder.decode(value);
+        console.log('%c获取得到数据=====>', 'color:#f00;')
+        console.log('获取得到数据=====>', str)
+
+        if (type === 'once') {
+          result += str;
+        } else {
+          renderDom(str)
+        }
+      }
+      console.log("result", result);
+      if (type === 'once') {
+        renderDom(result)
+      }
+    }
+
+    function renderDom(result) {
+      const dom = document.getElementById('result')
+      dom.innerHTML = result
+    }
+
+  </script>
+</body>
+
+</html>
