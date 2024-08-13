@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大文件切片上传示例</title>
+</head>
+
+<body>
+  <p>请选取需要上传的文件：</p>
+  <div>
+    <input type="file" id="inputFile" onChange="getFileChange" />
+  </div>
+
+  <script>
+    const BaseUrl = ''
+    // 检校验是否是图片
+    function validateIsPng(headers) {
+      return (buffers, options = {
+          offset: 0
+        }) =>
+        headers.every(
+          (header, index) => header === buffers[options.offset + index]
+        );
+    }
+    // 获取文件监听方法
+    async function getFileChange(event) {
+      const file = event.target.files[0];
+
+      // 以PNG为例，只需要获取前8个字节，即可识别其类型
+      const buffers = await readBuffer(file, 0, 8);
+      const uint8Array = new Uint8Array(buffers);
+      // 校验文件是否是图片，不根据文件后缀名校验，因为这种方式能够保证百分百校验是png类型
+      const isPNG = validateIsPng([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      // 上传test.png后，打印结果为true
+      console.log(isPNG(uint8Array))
+
+      if (isPNG(uint8Array)) {
+        // 创建一个worker对象
+        const worker = new worker('./worker.js')
+        // 向子线程发送消息，并传入文件对象和切片大小，开始计算分割切片
+        worker.postMessage(file, DefualtChunkSize)
+
+        // 子线程计算完成后，会将切片返回主线程
+        worker.onmessage = (chunks) => {
+          console.log('chunks', chunks)
+        }
+      }else{
+        alert('请选择png图片')
+      }
+    }
+
+    // 读取文件流二进制数据
+    function readBuffer(file, start = 0, end = 2) {
+      // 获取文件的二进制数据，因为我们只需要校验前几个字节即可，所以并不需要获取整个文件的数据
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          resolve(reader.result);
+        };
+
+        reader.onerror = reject;
+
+        reader.readAsArrayBuffer(file.slice(start, end));
+      });
+    }
+
+
+    // 检查是否已存在相同文件
+    async function checkAndUploadChunk(chunkList, fileMd5Value) {
+      const requestList = []
+      // 如果不存在，则上传
+      for (let i = 0; i < chunkList; i++) {
+        requestList.push(upload({
+          chunkList,
+          fileMd5Value,
+          i
+        }))
+      }
+
+      // 并发上传
+      if (requestList?.length) {
+        await Promise.all(requestList)
+      }
+    }
+
+    // 上传chunk
+    function upload({
+      chunkList,
+      chunk,
+      fileMd5Value,
+      i
+    }) {
+      current = 0
+      let form = new FormData()
+      form.append("data", chunk) //切片流
+      form.append("total", chunkList.length) //总片数
+      form.append("index", i) //当前是第几片     
+      form.append("fileMd5Value", fileMd5Value)
+      return axios({
+        method: 'post',
+        url: BaseUrl + "/upload",
+        data: form
+      }).then(({
+        data
+      }) => {
+        if (data.stat) {
+          current = current + 1
+          // 获取到上传的进度
+          const uploadPercent = Math.ceil((current / chunkList.length) * 100)
+        }
+      })
+    }
+
+    function axios() {
+
+    }
+  </script>
+</body>
+
+</html>

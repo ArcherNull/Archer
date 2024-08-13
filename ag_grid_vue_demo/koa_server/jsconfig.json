@@ -1,0 +1,41 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": ".",
+        "paths": {
+            "@routes/*": [
+                "routes/*"
+            ],
+            "@db/*": [
+                "db/*"
+            ],
+            "@config": [
+                "config"
+            ],
+            "@exceptions/*": [
+                "exceptions/*"
+            ],
+            "@middlewares/*": [
+                "middlewares/*"
+            ],
+            "@swagger/*": [
+                "swagger/*"
+            ],
+            "@public/*": [
+                "public/*"
+            ],
+            "@lib/*": [
+                "lib/*"
+            ],
+            "@views/*": [
+                "views/*"
+            ],
+        }
+    },
+    "exclude": [
+        "node_modules",
+        "**/node_modules/*"
+    ]
+}

@@ -1,0 +1,85 @@
+{
+  "name": "AG",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.15.0"
+  },
+  "scripts": {
+    "dev": "vue-cli-service serve --mode development",
+    "pro": "vue-cli-service serve --mode production",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "postinstall": "node install-xlsx-style-xlsx.js"
+  },
+  "dependencies": {
+    "ant-design-vue": "^1.7.8",
+    "axios": "^1.6.8",
+    "core-js": "^3.8.3",
+    "dexie": "^4.0.7",
+    "file-saver": "^2.0.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "jszip": "^3.10.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.30.1",
+    "node-polyfill-webpack-plugin": "^3.0.0",
+    "script-loader": "0.7.2",
+    "sortablejs": "^1.8.4",
+    "vue": "^2.6.14",
+    "vue-baidu-map": "^0.21.22",
+    "vue-json-editor": "^1.4.3",
+    "vue-property-decorator": "^9.1.2",
+    "vue-router": "^3.5.3",
+    "vuex": "^3.1.0",
+    "webpack": "^5.91.0",
+    "xlsx": "0.14.1",
+    "xlsx-style": "^0.8.13"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.16",
+    "@babel/eslint-parser": "^7.12.16",
+    "@babel/plugin-transform-modules-commonjs": "^7.24.1",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "ag-grid-community": "29.3.5",
+    "ag-grid-vue": "29.3.5",
+    "babel-plugin-transform-es2015-modules-amd": "^6.24.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.32.0",
+    "eslint-plugin-vue": "^8.0.3",
+    "less": "^2.7.3",
+    "less-loader": "^4.1.0",
+    "source-map-loader": "^5.0.0",
+    "terser-webpack-plugin": "^5.3.10",
+    "vue-class-component": "^7.2.6",
+    "vue-property-decorator": "^9.1.2",
+    "vue-template-compiler": "^2.6.14",
+    "worker-loader": "^3.0.8"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "@babel/eslint-parser",
+      "requireConfigFile": false
+    },
+    "rules": {
+      "vue/no-mutating-props": 0,
+      "no-unsafe-finally": 0
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

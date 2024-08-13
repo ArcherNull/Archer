@@ -1,0 +1,68 @@
+{
+  "name": "koa_server",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=16.14.2",
+    "npm": ">=8.1.0"
+  },
+  "scripts": {
+    "dev": "nodemon bin/www",
+    "prd": "pm2 start bin/www",
+    "db:script": "node ./db/script/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "debug": "^4.1.1",
+    "dotenv": "^16.3.1",
+    "ejs": "~2.3.3",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.0",
+    "koa": "^2.7.0",
+    "koa-body": "^6.0.1",
+    "koa-bodyparser": "^4.2.1",
+    "koa-convert": "^1.2.0",
+    "koa-json": "^2.0.2",
+    "koa-jwt": "^4.0.4",
+    "koa-mount": "^4.0.0",
+    "koa-onerror": "^4.1.0",
+    "koa-router": "^7.4.0",
+    "koa-static": "^5.0.0",
+    "koa-views": "^6.2.0",
+    "koa2-cors": "^2.0.6",
+    "koa2-proxy-middleware": "^0.0.4",
+    "koa2-swagger-ui": "^5.8.0",
+    "lodash": "^4.17.21",
+    "log4js": "^6.9.1",
+    "mockjs": "^1.1.0",
+    "module-alias": "^2.2.3",
+    "moment": "^2.29.4",
+    "mysql2": "^3.3.3",
+    "node-schedule": "^2.1.1",
+    "node-xlsx": "^0.23.0",
+    "nodemailer": "^6.9.3",
+    "querystring": "^0.2.1",
+    "sequelize": "^6.31.1",
+    "snowflake-id": "^1.1.0",
+    "svg-captcha": "^1.4.0",
+    "swagger-jsdoc": "^6.2.8",
+    "tencentcloud-sdk-nodejs": "^4.0.693",
+    "uuid": "^10.0.0",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1",
+    "sequelize-cli": "^6.6.0"
+  },
+  "_moduleAliases": {
+    "@routes": "routes",
+    "@db": "db",
+    "@config": "config",
+    "@exceptions": "exceptions",
+    "@swagger": "swagger",
+    "@public": "public",
+    "@lib": "lib",
+    "@middlewares": "middlewares",
+    "@views": "views"
+  }
+}

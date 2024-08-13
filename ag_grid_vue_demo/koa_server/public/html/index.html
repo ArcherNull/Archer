@@ -1,0 +1,73 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2023-07-24 16:56:09
+ * @LastEditTime: 2023-08-04 14:58:56
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 网页渲染核心声明 -->
+  <meta name="renderer" content="webkit" />
+  <!-- 过期时间设置 -->
+  <meta name="expires" content="0" />
+  <title>koa_server系统</title>
+  <style></style>
+</head>
+
+<body>
+  <h3>表单测试</h3>
+  <form action="/v1/admin/login" method="post">
+    <p>账号：<input type="text" name="userName" /></p>
+    <p>密码：<input type="text" name="password" /></p>
+    <p>
+      <input type="submit" value="提交" />
+      <input type="reset" value="重填" />
+    </p>
+  </form>
+
+  <hr />
+
+  <h3>wsServer测试连接</h3>
+  <div>
+    <button onclick="wsConnect()">连接</button>
+    1231
+  </div>
+
+  <script>
+    function wsConnect() {
+      console.log('wsServer测试连接')
+      const ws = new WebSocket("ws://127.0.0.1:3002");
+
+      // 获取连接状态
+      console.log("ws连接状态：" + ws.readyState);
+      //监听是否连接成功
+      ws.onopen = function () {
+        console.log("ws连接状态：" + ws.readyState);
+        //连接成功则发送一个数据
+        ws.send("test1");
+      };
+      // 接听服务器发回的信息并处理展示
+      ws.onmessage = function (data) {
+        console.log("接收到来自服务器的消息：");
+        console.log(data);
+        //完成通信后关闭WebSocket连接
+        // ws.close();
+      };
+      // 监听连接关闭事件
+      ws.onclose = function () {
+        // 监听整个过程中websocket的状态
+        console.log("ws连接状态：" + ws.readyState);
+      };
+      // 监听并处理error事件
+      ws.onerror = function (error) {
+        console.log(error);
+      };
+    }
+  </script>
+</body>
+
+</html>
