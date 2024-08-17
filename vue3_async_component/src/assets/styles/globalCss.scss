@@ -1,0 +1,39 @@
+ // admin 系统主要样式
+ @import './variables.scss';
+
+ * {
+   box-sizing: border-box;
+ }
+
+ .borderRed {
+   border: solid 1px #f00;
+ }
+
+ .dk-icon-btn {
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+
+   &:hover {
+     background: rgb(246, 246, 246);
+   }
+ }
+
+ .dk-icon-sqr-btn {
+   @extend .dk-icon-btn;
+   height: inherit;
+   aspect-ratio: 1/1;
+ }
+
+ .dk-text-btn {
+   &:hover {
+     cursor: pointer;
+   }
+   &:active{
+    color: #409eff;
+   }
+   user-select: none;
+   font-size: 14px;
+   color: #606266;
+ }

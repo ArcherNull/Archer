@@ -1,0 +1,23 @@
+.changeBig {
+    background: url("./images/zoom-in.png") no-repeat center;
+}
+
+.changeSmall {
+    background: url("./images/zoom-out.png") no-repeat center;
+    display: none;
+}
+
+
+.zoomInOut-css {
+    width: 18px;
+    height: 18px;
+    background-size: 100% 100%;
+    cursor: pointer;
+    position: absolute;
+    top: 18px;
+    right: 60px;
+}
+
+.zoomInOutBox:hover {
+    background-color: #f6f6f6;
+}

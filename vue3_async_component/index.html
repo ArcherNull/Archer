@@ -1,0 +1,87 @@
+<!--
+ * @Author: Null
+ * @Date: 2022-08-24 10:56:19
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vue-vite-app</title>
+  <style>
+    html,
+    body,
+    #app {
+      height: 100%;
+      margin: 0px;
+      padding: 0px;
+      width: 100%;
+    }
+
+    .app-home {
+      background-color: #f4f4f4;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-home__main {
+      user-select: none;
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-size: 24px;
+    }
+
+    .app-home__loading {
+      height: 108px;
+      width: 108px;
+      margin-bottom: 20px;
+    }
+
+    /* 滚动条优化 start */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f6f6f6;
+      border-radius: 2px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cdcdcd;
+      border-radius: 2px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #747474;
+    }
+
+    ::-webkit-scrollbar-corner {
+      background: #f6f6f6;
+    }
+    /* 滚动条优化 end */
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="app-home">
+      <div class="app-home__main">
+        <img class="app-home__loading" src="/vite.svg" alt="loading" />
+        vite+vue3项目加载中....
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
