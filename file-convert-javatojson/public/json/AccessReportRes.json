@@ -1,0 +1,21 @@
+{
+  "data": {
+    "time": "统计日期",
+    "duration": "访问时长",
+    "customerCount": "访客数",
+    "scanCount": "浏览量",
+    "newCustomerCount": "新访客数",
+    "orderCusCount": "下单人数",
+    "durationAvg": "平均停留时长",
+    "churnRate": "流失率",
+    "payCustomerCount": "支付人数",
+    "payOrderCount": "支付订单数",
+    "payMoney": "支付金额",
+    "pricePerCus": "客单价",
+    "pricePerOrder": "笔单价",
+    "orderAccConverRate": "访问-下单转化率",
+    "payAccConverRate": "访问-支付转化率",
+    "orderPayConverRate": "下单-支付转化率",
+    "orderAmount": "下单金额"
+  }
+}
