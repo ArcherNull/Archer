@@ -382,7 +382,6 @@ function convertJavaFileToJsonFile(filename = "", isCoverFileExisted = false) {
  * @return {*}
  */
 function makeDir(dirname) {
-  console.log("__dirname", dirname);
   if (dirname) {
     fs.mkdir(dirname, function (err) {
       if (err) {

@@ -1,7 +1,7 @@
 /*
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2024-07-08 14:19:29
- * @LastEditTime: 2024-07-22 23:14:40
+ * @LastEditTime: 2024-08-29 11:44:16
  * @Description: 电子围栏
  */
 
@@ -109,7 +109,6 @@ class ElectronicFenceController {
         return new Promise((resolve, reject) => {
             const { name, type, category, radius, size, address, longitude, latitude, province, provinceId, city, cityId, area, areaId, dispatchAreaCoordinates } = params;
             const codeStr = generateOrderNumber('EF')
-            console.log('codeStr=====>', codeStr)
             const validateRulesObj = {
                 code: '围栏编码',
                 name: '围栏名称',
@@ -157,7 +156,6 @@ class ElectronicFenceController {
             ctx.body = new ErrorModel(err || "参数错误");
             return;
         });
-        console.log('createEfData123123', createEfData)
         const jwtData = addCreateCommonField(ctx)
         if (createEfData) {
             try {
