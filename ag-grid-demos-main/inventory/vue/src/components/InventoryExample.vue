@@ -16,12 +16,12 @@ import {
   ModuleRegistry,
 } from "ag-grid-community";
 import {
-  ExcelExportModule,
-  MasterDetailModule,
-  MultiFilterModule,
-  SetFilterModule,
-  LicenseManager
+  LicenseManager,
+  IntegratedChartsModule,
+  AllEnterpriseModule,
 } from "ag-grid-enterprise";
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+
 
 import { getData } from "./data";
 
@@ -49,11 +49,10 @@ const { gridTheme, isDarkMode } = defineProps({
 
 ModuleRegistry.registerModules([
   AllCommunityModule,
+  AllEnterpriseModule,
   ClientSideRowModelModule,
-  ExcelExportModule,
-  SetFilterModule,
-  MultiFilterModule,
-  MasterDetailModule,
+  IntegratedChartsModule.with(AgChartsEnterpriseModule),
+
 ]);
 
 const gridApi = shallowRef();
@@ -81,7 +80,7 @@ const columnDefs: ColDef[] = ref([
     },
     minWidth: 300,
   },
-  { field: "artist" },
+  { field: "artist",},
   { field: "year", width: 150, headerClass: "header-sku" },
   {
     field: "status",
@@ -91,6 +90,7 @@ const columnDefs: ColDef[] = ref([
     filterParams: {
       valueFormatter: statusFormatter,
     },
+    headerStyle: { 'color': 'red', 'background-color': 'green' },
     headerClass: "header-status",
   },
 
@@ -107,6 +107,7 @@ const columnDefs: ColDef[] = ref([
       step: 1,
       showStepperButtons: true,
     },
+    headerStyle: { 'color': 'red' },
     editable: true,
   },
   {
@@ -133,25 +134,152 @@ const columnDefs: ColDef[] = ref([
   },
 ]);
 const defaultColDef = {
-  resizable: false,
+  autoHeaderHeight: true, // 自适应表头高度
+    // autoHeight: true, // 表格列自适应高度
+    cellStyle: {
+      color: '#333',
+      textAlign: 'left',
+    },
+    editable: false, // 是否可编辑
+    filter: 'agMultiColumnFilter', // 开启数据刷选器，就是在列头上增加数据搜索过滤功能
+    filterParams: {
+      buttons: ['apply', 'reset'], // 过滤器按钮
+      closeOnApply: true, // 按住apply reset按钮关闭
+      excelMode: 'windows', // 转换为widows模式
+      showTooltips: true, // 设置过滤器工具提示
+    },
+    headerCheckboxSelectionFilteredOnly: true, // 全选仅仅勾选筛选的全部
+    maxWidth: 600, // 最大宽度
+    // 默认的列配置 , AgGridVue标签属性上设置  columnMenu = 'legacy' 有效
+    menuTabs: ['filterMenuTab', 'generalMenuTab', 'columnsMenuTab'], // 表头menuTabs，默认第一个为筛选器
+    // lockPosition: true,  //列位置为true代表不能拖动列
+    minWidth: 100, // 列最小宽度
+    resizable: true, // 允许调整列大小，就是拖动改变列大小
+    // rowDragManaged: true, // 拖拽
+    sortable: true, // 可以排序
+    wrapHeaderText: true, // 表头自动换行
 };
+
+// 合并表格导出样式
+const tableExcelStyles = [
+  
+{
+    // 边框
+    borders: {
+      color: '#cccccc',
+      lineStyle: 'Continuous',
+      weight: 1,
+    },
+    id: 'oddBackcolor',
+    interior: {
+      color: '#ddebf7',
+      pattern: 'Solid',
+    },
+  },
+  {
+    alignment: {
+      horizontal: 'Left', // 水平
+      vertical: 'Center', // 垂直
+    },
+    // 边框
+    borders: {
+      borderBottom: {
+        color: '#C0C0C0',
+        lineStyle: 'Continuous',
+        weight: 1,
+      },
+      borderLeft: {
+        color: '#C0C0C0',
+        lineStyle: 'Continuous',
+        weight: 1,
+      },
+      borderRight: {
+        color: '#C0C0C0',
+        lineStyle: 'Continuous',
+        weight: 1,
+      },
+      borderTop: {
+        color: '#C0C0C0',
+        lineStyle: 'Continuous',
+        weight: 1,
+      },
+    },
+    // 字体设置
+    font: {
+      bold: true,
+      color: 'block',
+      size: 11,
+    },
+    // 必填 样式的ID，该id是唯一的字符串
+    id: 'header',
+    // 背景颜色和图案
+    interior: {
+      color: '#cdebf9',
+      pattern: 'Solid',
+      patternColor: '#C0C0C0',
+    },
+  },
+  {
+    alignment: {
+      horizontal: 'Left', // 水平
+      vertical: 'Top', // 垂直
+      wrapText: true, // 文字超出换行
+    },
+    id: 'cell',
+  },
+  {
+    alignment: {
+      horizontal: 'Center', // 水平
+      vertical: 'Center', // 垂直
+      wrapText: true, // 文字超出换行
+    },
+    id: 'headerGroup',
+  },
+  {
+    font: {
+      color: '#358ccb',
+      underline: 'Single',
+    },
+    id: 'hyperlinks', // 链接样式
+  },
+]
+
+const mergedOptions = ref({
+  suppressContextMenu: true, // 关闭右键菜单列表
+  suppressRowClickSelection: true, // 点击及选择复选框
+  suppressScrollOnNewData: true, // 网格在页面更改时不要滚动到顶部。
+})
+
+const statusBar = {
+  statusPanels: [
+    { statusPanel: "agTotalAndFilteredRowCountComponent" },
+    { statusPanel: "agTotalRowCountComponent" },
+    { statusPanel: "agFilteredRowCountComponent" },
+    { statusPanel: "agSelectedRowCountComponent" },
+    { statusPanel: "agAggregationComponent" },
+  ],
+};
+
 const detailCellRendererParams = {
   detailGridOptions: {
     columnDefs: [
-      { field: "title", flex: 1.5 },
+      { field: "title", flex: 1.5, spanRows: true, headerName:'标题' },
       { field: "available", maxWidth: 120 },
       { field: "format", flex: 2 },
-      { field: "label", flex: 1 },
-      { field: "country", flex: 0.66 },
+      { field: "label", flex: 1, spanRows: true },
+    
+      { field: "country", flex: 0.66, headerStyle: { 'color': 'red', 'background-color': 'green' }  },
       {
         field: "cat",
         headerName: "Cat#",
         type: "rightAligned",
         flex: 0.66,
+        colSpan: params => params.data.cat === 'RPD1 3010' ? 2 : 1,
       },
       { field: "year", type: "rightAligned", maxWidth: 80 },
     ],
-    headerHeight: 38,
+    headerHeight: 48,
+    enableCellSpan: true,
   },
   getDetailRowData: ({
     successCallback,
@@ -236,7 +364,10 @@ const themeClass = `${gridTheme}${isDarkMode ? "-dark" : ""}`;
           @grid-ready="onGridReady"
           :theme="theme"
           :rowData="rowData"
+           :excelStyles="tableExcelStyles"
+           :gridOptions="mergedOptions"
           :columnDefs="columnDefs"
+          :enableCharts="true"
           :defaultColDef="defaultColDef"
           :rowHeight="rowHeight"
           :paginationPageSizeSelector="paginationPageSizeSelector"
@@ -244,9 +375,12 @@ const themeClass = `${gridTheme}${isDarkMode ? "-dark" : ""}`;
           :paginationPageSize="paginationPageSize"
           :masterDetail="masterDetail"
           :detailRowAutoHeight="detailRowAutoHeight"
+          :enableCellSpan="true"
           :autoSizeStrategy="autoSizeStrategy"
           :detailCellRendererParams="detailCellRendererParams"
           :quickFilterText="quickFilterText"
+          :statusBar="statusBar"
+
         >
         </ag-grid-vue>
       </div>
@@ -524,6 +658,10 @@ body {
   content: url("/example/inventory/icons/product.svg");
   padding-right: 8px;
   opacity: 0.3;
+}
+
+.header-product .aag-header-cell-text {
+  color: red;
 }
 
 .header-status .ag-header-cell-text:before {

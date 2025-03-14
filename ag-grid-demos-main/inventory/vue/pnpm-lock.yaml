@@ -8,15 +8,18 @@ importers:
 
   .:
     dependencies:
+      ag-charts-enterprise:
+        specifier: ^11.0.0
+        version: 11.1.1
       ag-grid-community:
-        specifier: ^33.0.2
-        version: 33.0.2
+        specifier: 33.1.1
+        version: 33.1.1
       ag-grid-enterprise:
-        specifier: 33.0.2
-        version: 33.0.2
+        specifier: 33.1.1
+        version: 33.1.1
       ag-grid-vue3:
-        specifier: 33.0.2
-        version: 33.0.2(vue@3.5.13(typescript@5.8.2))
+        specifier: 33.1.1
+        version: 33.1.1(vue@3.5.13(typescript@5.8.2))
       vue:
         specifier: ^3.4.21
         version: 3.5.13(typescript@5.8.2)
@@ -358,26 +361,29 @@ packages:
   '@vue/shared@3.5.13':
     resolution: {integrity: sha512-/hnE/qP5ZoGpol0a5mDi45bOd7t3tjYJBjsgCsivow7D48cJeV5l05RD82lPqi7gRiphZM37rnhW1l6ZoCNNnQ==, tarball: https://registry.npmmirror.com/@vue/shared/-/shared-3.5.13.tgz}
 
-  ag-charts-community@11.0.0:
-    resolution: {integrity: sha512-UhEnVN+lP9mIyTmRAAAc9bgkOE4Nzg4uo3rRNxxIjxXK7daz4Tdb4s/xrATlUvdTB8jEd68s7qu6xSKocZ6TiQ==, tarball: https://registry.npmmirror.com/ag-charts-community/-/ag-charts-community-11.0.0.tgz}
+  ag-charts-community@11.1.1:
+    resolution: {integrity: sha512-ja+JyTICjo2Ic3dG90f3ylD7EqF6Vet7JtiPZa6b9Ffov7VP1DnHUmZsJKfzlQVrWMR6H8Yw/Ij2izLy3hxGZA==, tarball: https://registry.npmmirror.com/ag-charts-community/-/ag-charts-community-11.1.1.tgz}
 
-  ag-charts-enterprise@11.0.0:
-    resolution: {integrity: sha512-BBHetx+leSPNzCV6zw38ZOna8UmtnmernNCzA59TPDpZXoce6bGUOG2LXLL2prLE1BEmw8rTOzMoWDBOfIa6ZA==, tarball: https://registry.npmmirror.com/ag-charts-enterprise/-/ag-charts-enterprise-11.0.0.tgz}
+  ag-charts-core@11.1.1:
+    resolution: {integrity: sha512-18VuqqzA2uC/flzz/Ry/ByYVWbbJA9/IlO5qLokdpXqLzWfO8FVWcCJ7IOu9+L+LRhREyqSCnVaa+THCVCe14w==, tarball: https://registry.npmmirror.com/ag-charts-core/-/ag-charts-core-11.1.1.tgz}
 
-  ag-charts-locale@11.0.0:
-    resolution: {integrity: sha512-A4pSvPDmUW3nkuYkyH9DAbh28GxH0SCzaoLDR+UsorQrH+5Y8aAE/8XaBhxi6KZiG3kVp3w3bnawQEfTrbW85Q==, tarball: https://registry.npmmirror.com/ag-charts-locale/-/ag-charts-locale-11.0.0.tgz}
+  ag-charts-enterprise@11.1.1:
+    resolution: {integrity: sha512-J4vtfxfvJlynuV5jYkdF97dUjZLoMvhoy3Df6StXKOvGionpaBnx6cKcxA3U7sLw6z6LO1loFM/1ftredW/4Aw==, tarball: https://registry.npmmirror.com/ag-charts-enterprise/-/ag-charts-enterprise-11.1.1.tgz}
 
-  ag-charts-types@11.0.0:
-    resolution: {integrity: sha512-8KUCZtKaUNjxqvo5E71sP7nBpRHMSv81anK93UCMMWYZC3iBSEF1pxfYS2/GEM9oo5VP65mevDJsq10dp0vooQ==, tarball: https://registry.npmmirror.com/ag-charts-types/-/ag-charts-types-11.0.0.tgz}
+  ag-charts-locale@11.1.1:
+    resolution: {integrity: sha512-yEsC83zUTQ29GG8absKfiVNmDV0NkeoUx1uYy9Qyor/r5zU0B9Ve8/pHSB9jK0OYGH7/ayu1BNBzrXacPr2QPA==, tarball: https://registry.npmmirror.com/ag-charts-locale/-/ag-charts-locale-11.1.1.tgz}
 
-  ag-grid-community@33.0.2:
-    resolution: {integrity: sha512-ymD2ADPVfsAMNoKRB9BvKYPWo+MSJ2L9gOwiwyBS1TykNwf0bL7kfQParZXcY+h+b8JpfeVbx4oGDLZBEe3Gag==, tarball: https://registry.npmmirror.com/ag-grid-community/-/ag-grid-community-33.0.2.tgz}
+  ag-charts-types@11.1.1:
+    resolution: {integrity: sha512-bRmUcf5VVhEEekhX8Vk0NSwa8Te8YM/zchjyYKR2CX4vDYiwoohM1Jg9RFvbIhVbLC1S6QrPEbx5v2C6RDfpSA==, tarball: https://registry.npmmirror.com/ag-charts-types/-/ag-charts-types-11.1.1.tgz}
 
-  ag-grid-enterprise@33.0.2:
-    resolution: {integrity: sha512-q/RVwcCuC14hsJb79MLbxHnladFt33BorEwvcVJjToK6j+8BgduXg5OKFkzfgoVbE8BxMtULXiZljOu8cw2XWw==, tarball: https://registry.npmmirror.com/ag-grid-enterprise/-/ag-grid-enterprise-33.0.2.tgz}
+  ag-grid-community@33.1.1:
+    resolution: {integrity: sha512-CNubIro0ipj4nfQ5WJPG9Isp7UI6MMDvNzrPdHNf3W+IoM8Uv3RUhjEn7xQqpQHuu6o/tMjrqpacipMUkhzqnw==, tarball: https://registry.npmmirror.com/ag-grid-community/-/ag-grid-community-33.1.1.tgz}
 
-  ag-grid-vue3@33.0.2:
-    resolution: {integrity: sha512-JUj2Mwq1YGVf3nyjYZIqeTSB7z4zFDUCO2qLvK4PbR4tZ/PG13of9ilMQLkbXQBkBMdQsRq9SVcckv0TDZKWiQ==, tarball: https://registry.npmmirror.com/ag-grid-vue3/-/ag-grid-vue3-33.0.2.tgz}
+  ag-grid-enterprise@33.1.1:
+    resolution: {integrity: sha512-oo3/mhL6X9EG5gKEPKn8r4c/SH0+rXQ99Ug60AXgUpPXL7VfbUhGVNQFsP8ESpTcHeWAyff2hCe0F0aHh29p5Q==, tarball: https://registry.npmmirror.com/ag-grid-enterprise/-/ag-grid-enterprise-33.1.1.tgz}
+
+  ag-grid-vue3@33.1.1:
+    resolution: {integrity: sha512-H8X7OBsTPwKOuofqPwnbzLAHaTjHbT6E168wOCMkn2MKGe90jbSP5dnSjE+EhCOhv/qixrFFR+d/gbywBltE/w==, tarball: https://registry.npmmirror.com/ag-grid-vue3/-/ag-grid-vue3-33.1.1.tgz}
     peerDependencies:
       vue: ^3.5.0
 
@@ -738,36 +744,37 @@ snapshots:
 
   '@vue/shared@3.5.13': {}
 
-  ag-charts-community@11.0.0:
+  ag-charts-community@11.1.1:
     dependencies:
-      ag-charts-locale: 11.0.0
-      ag-charts-types: 11.0.0
-    optional: true
+      ag-charts-core: 11.1.1
+      ag-charts-locale: 11.1.1
+      ag-charts-types: 11.1.1
 
-  ag-charts-enterprise@11.0.0:
+  ag-charts-core@11.1.1: {}
+
+  ag-charts-enterprise@11.1.1:
     dependencies:
-      ag-charts-community: 11.0.0
-    optional: true
+      ag-charts-community: 11.1.1
+      ag-charts-core: 11.1.1
 
-  ag-charts-locale@11.0.0:
-    optional: true
+  ag-charts-locale@11.1.1: {}
 
-  ag-charts-types@11.0.0: {}
+  ag-charts-types@11.1.1: {}
 
-  ag-grid-community@33.0.2:
+  ag-grid-community@33.1.1:
     dependencies:
-      ag-charts-types: 11.0.0
+      ag-charts-types: 11.1.1
 
-  ag-grid-enterprise@33.0.2:
+  ag-grid-enterprise@33.1.1:
     dependencies:
-      ag-grid-community: 33.0.2
+      ag-grid-community: 33.1.1
     optionalDependencies:
-      ag-charts-community: 11.0.0
-      ag-charts-enterprise: 11.0.0
+      ag-charts-community: 11.1.1
+      ag-charts-enterprise: 11.1.1
 
-  ag-grid-vue3@33.0.2(vue@3.5.13(typescript@5.8.2)):
+  ag-grid-vue3@33.1.1(vue@3.5.13(typescript@5.8.2)):
     dependencies:
-      ag-grid-community: 33.0.2
+      ag-grid-community: 33.1.1
       vue: 3.5.13(typescript@5.8.2)
 
   alien-signals@1.0.4: {}
