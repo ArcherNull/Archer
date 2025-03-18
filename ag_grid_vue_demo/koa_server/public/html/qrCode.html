@@ -1,0 +1,100 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2022-10-13 15:38:45
+ * @LastEditTime: 2023-08-22 17:08:21
+ * @Description: 扫码登录
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.js"></script>
+
+  <style>
+    .box {
+      display: flex;
+      justify-content: center;
+    }
+
+    .scanQrCode-box {
+      width: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: solid 1px #f00;
+      padding: 10px;
+      position: relative;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div class="box">
+    <div class="scanQrCode-box">
+      <p>扫码登录</p>
+      <div id="qrcode" onclick="downLoad('300*300')"></div>
+    </div>
+  </div>
+
+  <script>
+    var qrCodeContent = '二维码' // 'https://www.baidu.com/'
+    var qrCodeDomId = 'qrcode' // 'https://www.baidu.com/'
+    let timer = null 
+
+    window.onload = function () {
+      createQrCode(qrCodeContent, qrCodeDomId, '128*128')
+    }
+
+    // 设置定时器
+    function setIntervalFun(){
+
+    }
+
+    // 刷新二维码
+    function refreshQrCode(){
+
+    }
+
+
+    /**
+     * @description: 创建新的二维码
+     * @param {*} text 二维码内容
+     * @param {*} el 承载二维码的节点元素
+     * @param {*} size 二维码的尺寸，例如 '128*128'
+     * @return {*}
+     */    
+    function createQrCode(text, el, size) {
+      const [width, height] = size.split('*')
+      return new QRCode(el, {
+        text: text,
+        width: Number(width),
+        height: Number(height),
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      })
+    }
+
+    /**
+     * @description: 下载二维码
+     * @param {*} size 下载二维码的尺寸，例如 '128*128'
+     * @return {*}
+     */    
+    function downLoad(size) {
+      const div = document.createElement('div')
+      createQrCode(qrCodeContent, div, size)
+      const canvas = div.querySelector('canvas')
+      const imgurl = canvas.toDataURL('image/jpeg')
+      const a = document.createElement('a')
+      a.href = imgurl
+      a.download = '二维码' // 图片名称
+      a.click()
+    }
+  </script>
+</body>
+
+</html>

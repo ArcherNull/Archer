@@ -1,0 +1,42 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2025-03-10 11:07:25
+ * @LastEditTime: 2025-03-10 14:40:24
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <button id="myBtn">跳转</button>
+
+</body>
+
+<script type="module">
+    const myBtn = document.getElementById('myBtn')
+
+    // 监听当前路由
+    window.addEventListener('DOMContentLoaded', () => {
+        console.log('path', location.pathname)
+    })
+
+    myBtn.addEventListener('click', () => {
+        console.log('点击跳转')
+        const state = { name: 'history-user' }
+        history.pushState(state, '', 'user')
+        console.log('路由切换到user')
+    })
+
+    window.onpopstate = function (ele) {
+        console.log('监听浏览器前进/后退路由', ele.state, location.pathname)
+    }
+
+</script>
+
+</html>

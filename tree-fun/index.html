@@ -1,0 +1,93 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2025-03-11 10:40:24
+ * @LastEditTime: 2025-03-12 10:34:31
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>树形操作</title>
+    <!-- https://viewer.textea.io/apis -->
+    <script src="./json-viewer@3.js"></script>
+
+    <style>
+        .jsonBox {
+            margin-top: 16px;
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .jsonBox-data,
+        .jsonBox-result {
+            flex: 1;
+        }
+
+        #json-viewer,
+        #json-result-viewer {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h3>
+            树形结构数据
+        </h3>
+        <div>
+            <button>生成二维数组</button>
+        </div>
+        <div class="jsonBox">
+            <div class="jsonBox-data">
+                <div>原始数据</div>
+                <div id="json-viewer"></div>
+            </div>
+            <div class="jsonBox-result">
+                <div>结果输出</div>
+                <div id="json-result-viewer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { mockTreeData } from './mockData.js'
+        function main() {
+            const jsonInstancce = new JsonViewer({
+                value: mockTreeData,
+                theme: 'dark'
+            })
+            jsonInstancce.render('#json-viewer')
+            console.log('123123123123')
+
+            const jsonResultInstancce = new JsonViewer({
+                value: {},
+                theme: 'dark'
+            })
+            jsonResultInstancce.render('#json-result-viewer')
+        }
+
+        window.onload = function () {
+            main()
+        }
+
+        // 写一个防抖函数
+        function debounce(func, delay) {
+            let timer = null;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    func.apply(context, args);
+                }, delay);
+            };
+        }
+    </script>
+</body>
+
+</html>

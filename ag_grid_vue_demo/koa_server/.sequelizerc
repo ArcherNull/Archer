@@ -1,0 +1,9 @@
+ const path = require('path');
+ module.exports = {
+   'env': 'development',
+   'config': path.resolve('db', 'config.json'), //数据库连接配置文件
+   'models-path': path.resolve('db', 'models'), //模型文件
+   'seeders-path': path.resolve('db', 'seeders'), //种子文件
+   'migrations-path': path.resolve('db', 'migrations'), //迁移文件
+   "debug": true
+ }

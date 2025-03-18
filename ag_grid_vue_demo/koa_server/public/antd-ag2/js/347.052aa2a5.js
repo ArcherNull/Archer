@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkAG"]=self["webpackChunkAG"]||[]).push([[347],{43347:function(e,t,a){a.r(t),t["default"]={beforeRouteEnter(e,t,a){t.meta[`__stamp-${t.path}`]=Date.now(),a((e=>e.$router.replace({path:t.fullPath,meta:t.meta})))},render:e=>e()}}}]);
+//# sourceMappingURL=347.052aa2a5.js.map

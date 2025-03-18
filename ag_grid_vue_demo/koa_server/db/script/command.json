@@ -1,0 +1,14 @@
+{
+    "database": {
+        "comment": "数据库创建",
+        "create": "npx sequelize-cli db:create --env=development",
+        "drop": "npx sequelize-cli db:drop --env=development"
+    },
+    "tables": {
+        "electronicFenceTable": {
+            "comment": "电子围栏表",
+            "create": "npx sequelize-cli model:generate --name electronic_fence --attributes code:string,name:string,type:string,category:string,radius:decimal,size:decimal,address:string,remark:string,state:integer,dispatchAreaCoordinates:json,longitude:decimal,latitude:decimal,updateBy:string,updateById:integer,createBy:string,createById:integer --force --env=development",
+            "drop": null
+        }
+    }
+}

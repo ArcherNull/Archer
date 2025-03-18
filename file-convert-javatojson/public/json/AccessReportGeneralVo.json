@@ -1,0 +1,22 @@
+{
+  "data": {
+    "customerCount": "访客数",
+    "customerCountRatio": "访客数环比",
+    "scanCount": "浏览量",
+    "scanCountRatio": "浏览量环比",
+    "newCustomerCount": "新访客数",
+    "newCustomerCountRatio": "新访客数环比",
+    "churnRate": "流失率",
+    "churnRateRatio": "流失率环比",
+    "durationAvg": "平均停留时长",
+    "durationAvgRatio": "平均停留时长环比",
+    "payCustomerCountRatio": "支付人数环比",
+    "payOrderCount": "支付订单数",
+    "payOrderCountRatio": "支付订单数环比",
+    "payMoney": "支付金额",
+    "payMoneyRatio": "支付金额环比",
+    "pricePerCusRatio": "客单价环比",
+    "pricePerOrder": "笔单价",
+    "pricePerOrderRatio": "笔单价环比"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "data": {
+    "id": "id",
+    "customerId": "客户id",
+    "clientIp": "访问IP",
+    "source": "访问来源",
+    "intoTime": "进入时间(访问时间)",
+    "leaveTime": "离开时间",
+    "duration": "时长（秒）",
+    "beLogin": "是否登录",
+    "beRegister": "是否注册用户",
+    "userName": "登录账号",
+    "customerName": "客户名称",
+    "homePageDuration": "首页访问时长",
+    "homePageCount": "首页访问次数",
+    "workbenchDuration": "工作台访问时长",
+    "queryOrderCount": "查单功能点击次数",
+    "completeDuration": "发整车页访问时长",
+    "lessDuration": "发零担页访问时长",
+    "railwayDuration": "发铁路页访问时长",
+    "orderListDuration": "订单页访问时长",
+    "mineDuration": "我的页面访问时长",
+    "createBy": "创建人",
+    "createTime": "创建时间",
+    "firstTime": "第一次访问时间"
+  }
+}
