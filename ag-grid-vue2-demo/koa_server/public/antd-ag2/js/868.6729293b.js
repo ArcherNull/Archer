@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkAG"]=self["webpackChunkAG"]||[]).push([[868],{11868:function(e,r,u){u.r(r),r["default"]={beforeRouteEnter(e,r,u){u((e=>e.$router.replace(JSON.parse(r.params.route))))},render:e=>e()}}}]);
+//# sourceMappingURL=868.6729293b.js.map
