@@ -1,7 +1,7 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2025-03-10 11:06:42
- * @LastEditTime: 2025-03-11 10:39:45
+ * @LastEditTime: 2025-03-21 15:05:31
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -16,29 +16,49 @@
         .router {
             display: none;
         }
+
+        #myImage {
+            width: 100px;
+            height: 100px;
+        }
     </style>
 </head>
 
 <body>
+    <div>切换下方界面，触发监听上报参数</div>
     <div>
         <a href="#/index">首页</a>
         <a href="#/detail">详情</a>
         <a href="#/my">我的</a>
+        <a href="#/notListen">不监听的界面</a>
     </div>
     <div class="router" id='index'>
         <h1>首页界面</h1>
         <button id="index1">操作1</button>
         <button id="index2">操作2</button>
-        <button id="index3">操作3</button>
+        <button id="index3">操作3【触发错误】</button>
+        <button id="index4">操作4【发起错误http请求】</button>
+
+        <div>
+            <img id="myImage" src="https://baidu.com/v-3/project/twi/2025/02/27/1895042628174745600.JPG" alt="My Image">
+        </div>
+
     </div>
     <div class="router" id='detail'>
         <h1>详情界面</h1>
         <button id="detail1">操作1</button>
         <button id="detail2">操作2</button>
-        <button id="detail3">操作3</button>
+        <button id="detail3">操作3【触发错误】</button>
     </div>
     <div class="router" id='my'>
         <h1>我的界面</h1>
+        <button id="my1">操作1</button>
+        <button id="my2">操作2</button>
+        <button id="my3">操作3【触发错误】</button>
+    </div>
+
+    <div class="router" id='notListen'>
+        <h1>不监听的界面</h1>
         <button id="my1">操作1</button>
         <button id="my2">操作2</button>
         <button id="my3">操作3</button>
@@ -82,17 +102,40 @@
             }
         }
 
+        // 发起错误请求
+        async function fetchError() {
+            try {
+                let url = "https://www.fastmock.site/mock/aa2c7b9f56132428e092e197e8bfd394/dekun/api/getAgGridData";
+                const res = await fetch(url).then((res) => {
+                    if (res.ok) {
+                        return res.json();
+                    } else {
+                        throw new Error("请求出错");
+                    }
+                })
+            } catch (err) {
+                psInstance?.recordHttpErrorEvent(`点击index4,错误：${err.message}`)
+            }
+        }
 
+        // 注册点击事件
         function registerClickFun() {
             const regFun = (domId) => {
                 const btnEle = document.getElementById(domId)
                 btnEle.addEventListener('click', () => {
                     console.log('点击事件', domId)
                     psInstance.recordPageClickEvent(`点击${domId}`)
+                    if (domId.indexOf('3') !== -1) {
+                        throw new Error(`点击${domId}触发错误`)
+                    }
+
+                    if (domId.indexOf('4') !== -1) {
+                        fetchError()
+                    }
                 })
             }
 
-            const domIdArr = ['index1', 'index2', 'index3', 'detail1', 'detail2', 'detail3', 'my1', 'my2', 'my3']
+            const domIdArr = ['index1', 'index2', 'index3', 'index4', 'detail1', 'detail2', 'detail3', 'my1', 'my2', 'my3']
             domIdArr.forEach(id => {
                 regFun(id)
             })
@@ -101,7 +144,6 @@
         // 上报接口
         function reportAddAccessFun(params) {
             console.log('上报接口参数', params)
-
         }
 
         // 初始化用户信息
@@ -128,7 +170,6 @@
             const getUserData = () => {
                 const userInfoStr = window.localStorage.getItem('gUserInfo')
                 const userInfo = JSON.parse(userInfoStr)
-                console.log('userInfo', userInfo)
                 const commData = {
                     userId: userInfo?.id,
                     userName: userInfo?.userName,
@@ -167,7 +208,7 @@
         }
 
         // 加入页面进入/离开监听
-        function listenPage() {
+        function listenPageInAndLeave() {
             document.title = '页面可见';
             document.addEventListener('visibilitychange', function () {
                 // 用户离开了当前页面
@@ -185,10 +226,33 @@
             });
         }
 
-        window.onload = function () {
-            initPage()
-            listenPage()
+
+
+        // 监听图片资源加载信息
+        function listenImgLoadInfo() {
+            const img = document.getElementById('myImage');
+            img.addEventListener('error', function (err) {
+                psInstance?.recordResourceLoadErrorEvent(`${img.src}资源加载失败`)
+            })
         }
+
+        // 监听页面代码异常信息
+        function listenPageErrorInfo() {
+            window.addEventListener('error', e => {
+                console.log('error====》 ', e);
+                psInstance?.recordPageErrorEvent(e.message)
+            })
+        }
+
+        // 监听页面
+        function listenPage() {
+            listenPageInAndLeave()
+            listenImgLoadInfo()
+            listenPageErrorInfo()
+        }
+
+        initPage()
+        listenPage()
     </script>
 </body>
 

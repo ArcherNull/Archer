@@ -1,7 +1,7 @@
 /*
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2023-04-13 17:27:53
- * @LastEditTime: 2025-03-10 15:44:00
+ * @LastEditTime: 2025-03-21 14:41:05
  * @Description:
  */
 
@@ -51,12 +51,13 @@ export class BaseStatisticsClass {
   }
 
   // 添加事件标记点
-  addTimePoint(reamrk) {
-    this.timePointList.push({
-      flag: 3,
-      time: formatDate(new Date()),
-      reamrk,
-    });
+  addTimePoint({ flag, reamrk }) {
+    flag &&
+      this.timePointList.push({
+        flag,
+        time: formatDate(new Date()),
+        reamrk,
+      });
   }
 }
 
@@ -143,7 +144,7 @@ export class ParentStatisticsClass extends BaseStatisticsClass {
         const urlName = ParentStatisticsClass.TYPE_LIST[firstItem._type];
         commData.details = [
           {
-            flag: 1, // 1 表示进入页面时间，2表示离开页面时间，3表示界面点击操作时间
+            flag: 1, // 1 表示进入页面时间，2表示离开页面时间，3表示界面点击操作时间, 4表示代码逻辑异常，5表示资源加载异常，6表示http请求异常，
             time: formatDate(firstItem._startTime),
             reamrk: `进入${urlName}`,
           },
@@ -193,8 +194,35 @@ export class ParentStatisticsClass extends BaseStatisticsClass {
   }
 
   // 界面点击事件记录
-  recordPageClickEvent(eventName) {
-    this.getCurrentChildProcess.addTimePoint(eventName);
+  recordPageClickEvent(message) {
+    this.getCurrentChildProcess.addTimePoint({
+      flag: 3,
+      reamrk: message,
+    });
+  }
+
+  // 界面代码异常事件记录
+  recordPageErrorEvent(message) {
+    this.getCurrentChildProcess.addTimePoint({
+      flag: 4,
+      reamrk: message,
+    });
+  }
+
+  // 界面资源异常加载事件记录
+  recordResourceLoadErrorEvent(message) {
+    this.getCurrentChildProcess.addTimePoint({
+      flag: 5,
+      reamrk: message,
+    });
+  }
+
+  // http请求异常事件记录
+  recordHttpErrorEvent(message) {
+    this.getCurrentChildProcess.addTimePoint({
+      flag: 6,
+      reamrk: message,
+    });
   }
 
   // 结束所有进程
