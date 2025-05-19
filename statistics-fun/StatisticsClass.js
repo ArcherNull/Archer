@@ -1,7 +1,7 @@
 /*
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2023-04-13 17:27:53
- * @LastEditTime: 2025-03-21 14:41:05
+ * @LastEditTime: 2025-03-22 16:09:07
  * @Description:
  */
 
@@ -27,7 +27,7 @@ export class BaseStatisticsClass {
   _startTime;
   // 结束时间
   _endTime;
-  // 类型1首页访问,2工作台,3查单,4整车,5零担,6铁路,7订单列表页,8我的
+  // 类型1首页,2详情,3我的
   _type;
 
   constructor(type) {
@@ -192,6 +192,8 @@ export class ParentStatisticsClass extends BaseStatisticsClass {
       throw new Error(`参数[type]不满足【${typeList.join("/")}】`);
     }
   }
+
+  // 子进程
 
   // 界面点击事件记录
   recordPageClickEvent(message) {

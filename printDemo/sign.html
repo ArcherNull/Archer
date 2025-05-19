@@ -1,0 +1,42 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2025-03-22 09:36:06
+ * @LastEditTime: 2025-03-22 09:39:54
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>签名戳</title>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="800" height="600"></canvas>
+
+    <script>
+        function main() {
+            var canvas = document.getElementById('myCanvas');
+            if (canvas.getContext) {
+                // 浏览器支持canvas
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(10, 10, 300, 100);
+
+                ctx.font = '30px Arial';
+                ctx.fillStyle = 'blue';
+                ctx.fillText('张三李四', 50, 70);
+
+            } else {
+                // 浏览器不支持canvas
+                alert("您的浏览器不支持canvas元素。");
+            }
+        }
+
+        main()
+    </script>
+</body>
+
+</html>

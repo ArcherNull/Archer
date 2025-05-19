@@ -1,0 +1,48 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2025-03-14 16:09:49
+ * @LastEditTime: 2025-03-14 16:17:13
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <title>hinnn-hiprint</title>
+    <link href="hiprint/css/hiprint.css" rel="stylesheet">
+    <link href="hiprint/css/print-lock.css" rel="stylesheet">
+    <link href="hiprint/css/print-lock.css" media="print" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+</head>
+
+<body>
+    <h1>hiprint 是一款用于web打印的js组件</h1>
+    <div id="templateDesignDiv"></div>
+    <script>
+        function main() {
+            hiprint.init();
+            var hiprintTemplate = new hiprint.PrintTemplate();
+            var panel = hiprintTemplate.addPrintPanel({ width: 100, height: 130, paperFooter: 340, paperHeader: 10 });
+            panel.addPrintText({ options: { width: 140, height: 15, top: 20, left: 20, title: 'hiprint插件手动添加text', textAlign: 'center' } });
+            panel.addPrintText({ options: { width: 140, height: 35, top: 40, left: 20, title: '123456', textType: 'barcode' } });
+            panel.addPrintText({ options: { width: 35, height: 35, top: 40, left: 165, title: '二维码', textType: 'qrcode' } });
+            panel.addPrintLongText({ options: { width: 180, height: 35, top: 90, left: 20, title: '长文本：' } });
+            panel.addPrintTable({ options: { width: 252, height: 35, top: 130, left: 20, content: $('#testTable').html() } });
+            panel.addPrintHtml({ options: { width: 140, height: 35, top: 180, left: 20, content: '' } });
+            panel.addPrintVline({ options: { height: 35, top: 230, left: 20 } });
+            panel.addPrintHline({ options: { width: 140, top: 245, left: 120 } });
+            panel.addPrintRect({ options: { width: 35, height: 35, top: 230, left: 60 } });
+            hiprintTemplate.design('#templateDesignDiv');
+        }
+    </script>
+    <script src="hiprint/polyfill.min.js"></script>
+    <script src="hiprint/hiprint.bundle.js"></script>
+    <script src="hiprint/plugins/JsBarcode.all.min.js"></script>
+    <script src="hiprint/plugins/qrcode.js"></script>
+    <script src="hiprint/plugins/jquery.hiwprint.js"></script>
+</body>
+
+</html>

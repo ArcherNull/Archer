@@ -1,0 +1,1 @@
+.upload{margin-bottom:32rpx;font-size:28rpx;&_title{margin-bottom:20rpx;color:#999}&_box{margin-bottom:12rpx}&_alert{font-size:24rpx;color:#f9b03d}&_text{display:flex;align-items:center;gap:12rpx;.location{width:38rpx}.reLocation{color:$active-bg-color;word-break:keep-all}}}.requiredCss{&::after{content:"*";color:red;margin-left:6rpx}}.messgeCss{margin-top:10rpx}

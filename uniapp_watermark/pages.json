@@ -1,0 +1,21 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "uni-app"
+			}
+		}
+	],
+	"easycom": {
+		// 下载安装方式
+		"^u-(.*)": "@/uni_modules/uview-ui/components/u-$1/u-$1.vue"
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uniapp_watermark",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}
