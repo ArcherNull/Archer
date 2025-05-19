@@ -1,6 +1,6 @@
 <template>
 	<view class="uploadBox">
-
+		请去注册百度AK
 		<view class="upload">
 			<view class="upload_title">
 				当前位置
@@ -17,7 +17,7 @@
 
 		<view class="upload">
 			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
-				货物上传
+				上传添加水印
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="1"
@@ -29,6 +29,55 @@
 				支持JPG、PNG格式，限制单张文件大小10M内
 			</view>
 		</view>
+
+
+		<view class="upload">
+			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
+				上传自动压缩图片
+			</view>
+			<view class="upload_box">
+				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="2"
+					:maxSize="maxSize" :fileList="imageSrc2" @afterRead="upload2()" @delete="deletePic()"
+					@oversize="oversize()">
+				</u-upload>
+			</view>
+			<view class="upload_alert">
+				支持JPG、PNG格式，限制单张文件大小10M内
+			</view>
+		</view>
+
+
+		<view class="upload">
+			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
+				上传自动剪裁图片
+			</view>
+			<view class="upload_box">
+				<view class="clipBox">
+					剪裁尺寸：
+					<view class="inputBox">
+						宽<input type="number" v-model="clipWidth" class="inputCss" />px
+						<view class="inputBox_1">
+							*
+						</view>
+						高<input type="number" v-model="clipHeight" class="inputCss" />px
+
+						<view class="inputBox_2">剪裁区域：中央</view>
+					</view>
+				</view>
+
+
+			</view>
+			<view class="upload_box">
+				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="2"
+					:maxSize="maxSize" :fileList="imageSrc3" @afterRead="upload3()" @delete="deletePic()"
+					@oversize="oversize()">
+				</u-upload>
+			</view>
+			<view class="upload_alert">
+				支持JPG、PNG格式，限制单张文件大小10M内
+			</view>
+		</view>
+
 
 		<!-- 给图片添加的标签 -->
 		<canvas :style="{ width: watermarkCanvasOption.width + 'px', height: watermarkCanvasOption.height + 'px' }"
@@ -47,7 +96,10 @@
 		saveImageToPA,
 		getCurrentDate,
 		showModal,
-		isNotEmptyArr
+		isNotEmptyArr,
+
+		compressImg,
+		getFileInfoFun
 	} from './index.js'
 
 	export default {
@@ -60,10 +112,17 @@
 				maxCount: 2,
 				//图片下标
 				imageName: '',
-				// 货物图片数组
+
+				// 水印图片数组
 				imageSrc1: [],
 				// 当前定位字符串
 				locationAddrStr: '',
+
+				// 压缩图片数组
+				imageSrc2: [],
+
+				// 剪裁图片
+				imageSrc3: [],
 
 				// 定位对象，
 				location: {
@@ -75,6 +134,9 @@
 					height: 0,
 					canvasContext: null
 				},
+
+				clipWidth: 1000,
+				clipHeight: 500
 			}
 		},
 		onLoad() {
@@ -218,20 +280,19 @@
 									color: 'red', // '#333333',
 									margin: 32,
 									position: 'bottomRight',
-									text: [cTime, '帅啊，兄弟', null , '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
+									text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
 								},
 							]
 						}, that).then(res => {
 							// 下载图片
 							return saveImageToPA(res)
 
-							// 
+							// u-upload组件用于展示
 							// this[`imageSrc${event.name}`].push({
 							// 	url: res
 							// });
 						})
 						.catch(err => {
-							console.log('err123123123', err)
 							uni.hideLoading()
 						})
 						.finally(() => {
@@ -243,6 +304,84 @@
 					});
 				}
 
+			},
+
+			//新增图片
+			upload2(event) {
+				const that = this
+				that.imageName = event.name;
+				const tPath = event.file.url
+				getFileInfoFun({
+						imagePath: tPath
+					}).then(res => {
+						console.log('res=====>', res)
+						if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
+							return compressImg({
+								canvasId: 'watermarkCanvas',
+								imagePath: tPath,
+								fileSize: res.size
+							}, that)
+						} else {
+							return Promise.reject('获取文件信息失败')
+						}
+					})
+					.then(res => {
+						console.log('下载图片====>', res)
+						// 下载图片
+						return saveImageToPA(res)
+
+						// u-upload组件用于展示
+						// this[`imageSrc${event.name}`].push({
+						// 	url: res
+						// });
+					})
+					.catch(err => {
+						console.log('地址解析失败', err)
+						uni.hideLoading()
+						showMsg(err || '获取当前定位位置失败，无法添加图片定位水印')
+					})
+					.finally(() => {
+						uni.hideLoading()
+					})
+			},
+
+			//新增图片
+			upload3(event) {
+				const that = this
+				that.imageName = event.name;
+				const tPath = event.file.url
+				getFileInfoFun({
+						imagePath: tPath
+					}).then(res => {
+						console.log('res=====>', res)
+						if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
+							return compressImg({
+								canvasId: 'watermarkCanvas',
+								imagePath: tPath,
+								fileSize: res.size
+							}, that)
+						} else {
+							return Promise.reject('获取文件信息失败')
+						}
+					})
+					.then(res => {
+						console.log('下载图片====>', res)
+						// 下载图片
+						return saveImageToPA(res)
+
+						// u-upload组件用于展示
+						// this[`imageSrc${event.name}`].push({
+						// 	url: res
+						// });
+					})
+					.catch(err => {
+						console.log('地址解析失败', err)
+						uni.hideLoading()
+						showMsg(err || '获取当前定位位置失败，无法添加图片定位水印')
+					})
+					.finally(() => {
+						uni.hideLoading()
+					})
 			},
 
 			//删除图片
@@ -304,5 +443,37 @@
 	.uploadBox {
 		padding: 20rpx 32rpx;
 		box-sizing: border-box;
+	}
+
+	.clipBox {
+		margin-bottom: 20rpx;
+	}
+
+	.inputBox {
+		display: flex;
+		align-items: center;
+	}
+
+	.inputBox {
+		&_1 {
+			font-size: 48rpx;
+			height: 48rpx;
+			color: #F9B03D;
+			margin: 0 12rpx;
+		}
+
+		&_2 {
+			margin-left: 20rpx;
+		}
+	}
+
+
+
+	.inputCss {
+		width: 100rpx;
+		padding: 6rpx;
+		margin: 0 6rpx;
+		background-color: #e3e3e3;
+		border-radius: 10rpx;
 	}
 </style>

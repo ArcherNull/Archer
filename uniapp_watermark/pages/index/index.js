@@ -1,5 +1,5 @@
 // 百度AK
-export const BAIDU_AK = '百度AK'
+export const BAIDU_AK = 'YMrC0KTdWJmLZCQM5CzW5V1DPOfVvBDV'
 // 百度客户端id
 export const BAIDU_CLIENT_ID = '百度客户端id'
 // 百度客户端密钥
@@ -396,10 +396,18 @@ export function addWatermark(options, that) {
 					watermarkList.forEach(ele => {
 						drawWMItem(ctx, ele)
 					})
+
 					// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
 					ctx.draw(false, () => {
+						// #ifdef MP-WEIXIN
 						uni.canvasToTempFilePath({ // 将画布内容导出为图片
 							canvasId,
+							x: 0,
+							y: 0,
+							width: width,
+							height: height,
+							destWidth: width,
+							destHeight: height,
 							success: (res) => {
 								console.log('res.tempFilePath', res)
 								resolve(res.tempFilePath)
@@ -408,6 +416,27 @@ export function addWatermark(options, that) {
 								reject(false)
 							}
 						}, that);
+						// #endif
+
+						// #ifdef MP-ALIPAY
+						ctx.toTempFilePath({ // 将画布内容导出为图片
+							canvasId,
+							x: 0,
+							y: 0,
+							width: width,
+							height: height,
+							destWidth: width,
+							destHeight: height,
+							// fileType: 'png',
+							success: (res) => {
+								console.log('res.tempFilePath', res)
+								resolve(res.tempFilePath)
+							},
+							fail() {
+								reject(false)
+							}
+						}, that);
+						// #endif 
 					});
 
 				}
@@ -510,9 +539,9 @@ export function getBaiduAPIAccessToken() {
 	let that = this
 	return new Promise((resolve, reject) => {
 		const paramsObj = {
-			client_id: 'CVQUtS7PIhBnH2QJhsuxb2Yr',
-			client_secret: BAIDU_CLIENT_ID,
-			grant_type: BAIDU_CLIENT_SECRET
+			client_id: BAIDU_CLIENT_ID,
+			client_secret: BAIDU_CLIENT_SECRET,
+			grant_type: 'client_credentials'
 		}
 		const paramsStr = getUrlParamsStr(paramsObj)
 		uni.request({
@@ -702,6 +731,232 @@ export function getBaiduAddressInfoByLocation(config) {
 			}
 		} else {
 			reject('参数[config]为非空对象')
+		}
+	})
+}
+
+
+/**
+ * @description: 根据文件尺寸获取压缩比
+ * @param { number } fileSize 文件尺寸
+ */
+function getCompressionRatio(fileSize) {
+	var compressionRatio = 1
+	if (fileSize > 7 * 1024 * 1024) {
+		compressionRatio = 0.1
+	} else if (fileSize > 4 * 1024 * 1024) {
+		compressionRatio = 0.3
+	} else if (fileSize > 2 * 1024 * 1024) {
+		compressionRatio = 0.5
+	} else if (fileSize > 1 * 1024 * 1024) {
+		compressionRatio = 0.7
+	}
+
+	return compressionRatio
+}
+
+// 校验参数
+function dealCompressImgConfig(options) {
+	const valdiateRulesObj = {
+		canvasId: '画布id',
+		imagePath: '本地图片路径',
+		fileSize: '文件尺寸'
+	}
+	const errLog = validateObj(options, valdiateRulesObj)
+
+	return {
+		errLog,
+		config: options
+	}
+}
+
+/**
+ * @description: 获取文件信息
+ * @param { { imagePath :  string  } } config 本地图片路径
+ * 
+ *  ios 微信小程序支持 wx.compressImage(Object object) 压缩图片接口，可选压缩质量。iOS 仅支持压缩 JPG 格式图片
+ */
+export function getFileInfoFun(options) {
+	return new Promise((resolve, reject) => {
+		const {
+			imagePath
+		} = options
+		if (imagePath) {
+			const fileManager = uni.getFileSystemManager()
+			fileManager.getFileInfo({
+				filePath: imagePath,
+				success: (res) => resolve(res),
+				fail: () => reject(false)
+			})
+		} else {
+			reject(false)
+		}
+	})
+}
+
+// 压缩图片
+export function compressImg(options, that) {
+	return new Promise((resolve, reject) => {
+		const {
+			errLog,
+			config
+		} = dealCompressImgConfig(options)
+		if (!errLog.length) {
+			const {
+				canvasId,
+				imagePath,
+				// 文件尺寸
+				fileSize,
+			} = config
+
+			// 获取图片信息，以便获取图片的真实宽高信息
+			uni.getImageInfo({
+				src: imagePath,
+				success: (info) => {
+					const {
+						width,
+						height
+					} = info; // 获取图片的原始宽高
+
+					const ratio = getCompressionRatio(fileSize)
+					if (ratio < 1) {
+						// 按对折比例缩小
+						const imageW = Math.floor(width * ratio)
+						const imageH = Math.floor(height * ratio)
+
+						// 获取canvas绘图上下文
+						const ctx = uni.createCanvasContext(canvasId, that);
+
+						that.watermarkCanvasOption.width = imageW
+						that.watermarkCanvasOption.height = imageH
+
+						// 绘制原始图片到canvas上
+						ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+
+						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+						ctx.draw(false, () => {
+							uni.canvasToTempFilePath({ // 将画布内容导出为图片
+								canvasId,
+								x: 0,
+								y: 0,
+								width: imageW,
+								height: imageH,
+								destWidth: imageW,
+								destHeight: imageH,
+								success: (res) => {
+									console.log('res.tempFilePath', res)
+									resolve(res.tempFilePath)
+								},
+								fail() {
+									reject(false)
+								}
+							}, that);
+						});
+
+					} else {
+						return imagePath
+					}
+				}
+			})
+
+		} else {
+			const errStr = errLog.join(';')
+			showMsg(errStr)
+			reject(errStr)
+		}
+	})
+}
+
+
+// 校验参数
+function dealClipImgConfig(options) {
+	const valdiateRulesObj = {
+		canvasId: '画布id',
+		imagePath: '本地图片路径',
+	}
+	const errLog = validateObj(options, valdiateRulesObj)
+
+	return {
+		errLog,
+		config: options
+	}
+}
+
+// 计算剪切位置
+function calcClipPosition(options){
+	const {  } = options
+	
+}
+
+
+// 剪切图片
+export function clipImg(options, that) {
+	return new Promise((resolve, reject) => {
+		const {
+			errLog,
+			config
+		} = dealClipImgConfig(options)
+
+		if (!errLog.length) {
+			const {
+				canvasId,
+				imagePath,
+			} = config
+
+			// 获取图片信息，以便获取图片的真实宽高信息
+			uni.getImageInfo({
+				src: imagePath,
+				success: (info) => {
+					const {
+						width,
+						height
+					} = info; // 获取图片的原始宽高
+
+					const ratio = getCompressionRatio(fileSize)
+					if (ratio < 1) {
+						// 按对折比例缩小
+						const imageW = Math.floor(width * ratio)
+						const imageH = Math.floor(height * ratio)
+
+						// 获取canvas绘图上下文
+						const ctx = uni.createCanvasContext(canvasId, that);
+
+						that.watermarkCanvasOption.width = imageW
+						that.watermarkCanvasOption.height = imageH
+
+						// 绘制原始图片到canvas上
+						ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+
+						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+						ctx.draw(false, () => {
+							uni.canvasToTempFilePath({ // 将画布内容导出为图片
+								canvasId,
+								x: 0,
+								y: 0,
+								width: imageW,
+								height: imageH,
+								destWidth: imageW,
+								destHeight: imageH,
+								success: (res) => {
+									console.log('res.tempFilePath', res)
+									resolve(res.tempFilePath)
+								},
+								fail() {
+									reject(false)
+								}
+							}, that);
+						});
+
+					} else {
+						return imagePath
+					}
+				}
+			})
+
+		} else {
+			const errStr = errLog.join(';')
+			showMsg(errStr)
+			reject(errStr)
 		}
 	})
 }

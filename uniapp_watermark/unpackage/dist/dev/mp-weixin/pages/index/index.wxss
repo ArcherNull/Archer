@@ -64,3 +64,26 @@
   padding: 20rpx 32rpx;
   box-sizing: border-box;
 }
+.clipBox.data-v-57280228 {
+  margin-bottom: 20rpx;
+}
+.inputBox.data-v-57280228 {
+  display: flex;
+  align-items: center;
+}
+.inputBox_1.data-v-57280228 {
+  font-size: 48rpx;
+  height: 48rpx;
+  color: #F9B03D;
+  margin: 0 12rpx;
+}
+.inputBox_2.data-v-57280228 {
+  margin-left: 20rpx;
+}
+.inputCss.data-v-57280228 {
+  width: 100rpx;
+  padding: 6rpx;
+  margin: 0 6rpx;
+  background-color: #e3e3e3;
+  border-radius: 10rpx;
+}

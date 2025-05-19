@@ -9660,1542 +9660,6 @@ function normalizeComponent (
 
 /***/ }),
 /* 33 */
-/*!************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni.promisify.adaptor.js ***!
-  \************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(uni) {var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ 13);
-uni.addInterceptor({
-  returnValue: function returnValue(res) {
-    if (!(!!res && (_typeof(res) === "object" || typeof res === "function") && typeof res.then === "function")) {
-      return res;
-    }
-    return new Promise(function (resolve, reject) {
-      res.then(function (res) {
-        if (!res) return resolve(res);
-        return res[0] ? reject(res[0]) : resolve(res[1]);
-      });
-    });
-  }
-});
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-/* 34 */,
-/* 35 */,
-/* 36 */,
-/* 37 */,
-/* 38 */,
-/* 39 */,
-/* 40 */
-/*!********************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/pages/index/index.js ***!
-  \********************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni, wx) {
-
-var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.BAIDU_CLIENT_SECRET = exports.BAIDU_CLIENT_ID = exports.BAIDU_AK = void 0;
-exports.addWatermark = addWatermark;
-exports.chooseLocation = chooseLocation;
-exports.convertNumber = convertNumber;
-exports.getBaiduAPIAccessToken = getBaiduAPIAccessToken;
-exports.getBaiduAddressInfoByLocation = getBaiduAddressInfoByLocation;
-exports.getBaiduAddressListByKeywords = getBaiduAddressListByKeywords;
-exports.getCurrentDate = getCurrentDate;
-exports.getLocation = getLocation;
-exports.getSetting = getSetting;
-exports.getUrlParamsStr = getUrlParamsStr;
-exports.isNotEmptyArr = isNotEmptyArr;
-exports.isNotEmptyObj = isNotEmptyObj;
-exports.parseAddressByBaiduAPI = parseAddressByBaiduAPI;
-exports.saveImageToPA = saveImageToPA;
-exports.showModal = showModal;
-exports.showMsg = showMsg;
-exports.showNextMsg = showNextMsg;
-var _slicedToArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ 5));
-var _typeof2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/typeof */ 13));
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _objectWithoutProperties2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/objectWithoutProperties */ 41));
-var _excluded = ["canvasId", "watermarkList"];
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-// 百度AK
-var BAIDU_AK = '百度AK';
-// 百度客户端id
-exports.BAIDU_AK = BAIDU_AK;
-var BAIDU_CLIENT_ID = '百度客户端id';
-// 百度客户端密钥
-exports.BAIDU_CLIENT_ID = BAIDU_CLIENT_ID;
-var BAIDU_CLIENT_SECRET = '百度客户端密钥';
-
-// 空字符特征
-exports.BAIDU_CLIENT_SECRET = BAIDU_CLIENT_SECRET;
-var EMPTY_STR_ARR = [undefined, '', null];
-
-// 格式化
-function formatDateStr(n) {
-  return n > 9 ? n : '0' + n;
-}
-
-/**
- * @description: 获取当前日期 , 负数表示以前,正数标示未来
- * @param {number} offset 偏移量
- * @return {*}
- */
-function getCurrentDate() {
-  var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-  var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-  var dayTimeStr = offset * (60 * 1000 * 60 * 24);
-  var dateTimeStr = new Date().getTime() + dayTimeStr;
-  var date = new Date(dateTimeStr);
-  var year = date.getFullYear();
-  var month = date.getMonth() + 1;
-  var day = date.getDate();
-  var hour = date.getHours();
-  var minute = date.getMinutes();
-  var second = date.getSeconds();
-  var dataStr = "".concat(year, "-").concat(formatDateStr(month), "-").concat(formatDateStr(day));
-  if (type === 1) {
-    dataStr += " ".concat(formatDateStr(hour), ":").concat(formatDateStr(minute), ":").concat(formatDateStr(second));
-  }
-  return dataStr;
-}
-
-/**
- * @description: 消息模板提示
- * @param {string} content、提示文案内容
- * @param {string} title、提示标题
- * @param {string} confirmText 确认文案
- * @param {string} cancelText 取消文案
- */
-function showModal(props) {
-  var defaultProps = {
-    title: '提示',
-    confirmText: '确定',
-    cancelText: '取消'
-  };
-  if (props) {
-    if (typeof props === 'string') {
-      defaultProps.content = props;
-    } else {
-      defaultProps = Object.assign(defaultProps, props);
-    }
-  }
-  uni.showModal(defaultProps);
-}
-
-// 信息提示
-function showMsg(text) {
-  var icon = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'none';
-  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 2500;
-  uni.showToast({
-    title: text,
-    icon: icon,
-    duration: duration
-  });
-}
-
-// 信息提示
-function showNextMsg(text) {
-  var icon = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'none';
-  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 2500;
-  setTimeout(function () {
-    uni.showToast({
-      title: text,
-      icon: icon,
-      duration: duration
-    });
-  });
-}
-
-/**
- * @description: 如果用户取消授权，再次调用起授权; getSetting只有微信小程序支持， H5在微信环境下需要JSSDK鉴权实现
- */
-function getSetting() {
-  return new Promise(function (resolve, reject) {
-    wx.getSetting({
-      success: function success(res) {
-        if (res.authSetting['scope.userLocation'] != undefined && res.authSetting['scope.userLocation'] != true) {
-          //非初始化进入该页面,且未授权
-          wx.showModal({
-            title: '是否授权当前位置',
-            content: '需要获取您的地理位置，请确认授权，否则无法获取您所需数据',
-            success: function success(res) {
-              if (res.cancel) {
-                reject('取消授权，地理定位失败');
-              }
-              if (res.confirm) {
-                wx.openSetting({
-                  success: function success(res) {
-                    if (res.authSetting["scope.userLocation"] == true) {
-                      showMsg('授权成功', 'success');
-                      resolve(true);
-                    } else {
-                      reject('授权失败，地理定位失败');
-                    }
-                  }
-                });
-              }
-            },
-            fail: function fail() {
-              reject('地理定位失败');
-            }
-          });
-        } else if (res.authSetting['scope.userLocation'] == undefined) {
-          //初始化进入
-          resolve(true);
-        } else {
-          //授权后默认加载
-          resolve(true);
-        }
-      }
-    });
-  });
-}
-
-/**
- * @description: 地理定位
- */
-function getLocation() {
-  return new Promise(function (resolve, reject) {
-    uni.getLocation({
-      type: 'gcj02',
-      isHighAccuracy: true,
-      success: function success(res) {
-        resolve(res);
-      },
-      fail: function fail(err) {
-        showMsg('定位失败，请检查网络,GPS定位是否开启以及微信地理位置授权等情况');
-        reject(false);
-      }
-    });
-  });
-}
-
-/**
- * @description: 微信小程序的选择附近的地址
- */
-function chooseLocation() {
-  return new Promise(function (resolve, reject) {
-    uni.chooseLocation({
-      success: function success(res) {
-        resolve(res);
-      },
-      fail: function fail(res) {
-        showMsg('获取附近地址失败！请检查网络,GPS定位是否开启以及微信地理位置授权等情况！');
-      }
-    });
-  });
-}
-
-// 处理及校验传参
-function dealWatermarkConfig(options) {
-  var valdiateRulesObj = {
-    canvasId: '画布id',
-    imagePath: '本地图片路径'
-  };
-  var defaultWatermarkItem = {
-    fontSize: 20,
-    color: 'red',
-    margin: 25,
-    position: 'bottomLeft' // topLeft / topRight / bottomLeft / bottomRight
-  };
-
-  var errLog = validateObj(options, valdiateRulesObj);
-  var canvasId = options.canvasId,
-    watermarkList = options.watermarkList,
-    restObj = (0, _objectWithoutProperties2.default)(options, _excluded);
-  var nList = [];
-  console.log('watermarkListsdf', watermarkList);
-  if (isNotEmptyArr(watermarkList)) {
-    var nErrLog = [];
-    watermarkList.forEach(function (ele) {
-      var nEle = _objectSpread(_objectSpread({}, defaultWatermarkItem), ele);
-      if (convertNumber(nEle.fontSize) <= 16) {
-        nErrLog.push('水印项字体大小需大于16');
-      }
-      if (convertNumber(nEle.margin) <= 10) {
-        nErrLog.push('水印项边距大小需大于10');
-      }
-      if (typeof nEle.text === 'string') {
-        EMPTY_STR_ARR.includes(nEle.text) && nErrLog.push('水印项文案不能为空');
-      } else {
-        !isNotEmptyArr(nEle.text) && nErrLog.push('水印项文案数组不能为空');
-      }
-      var positionArr = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
-      if (!positionArr.includes(nEle.position)) {
-        nErrLog.push("\u6C34\u5370\u9879\u4F4D\u7F6E\u4E0D\u6EE1\u8DB3\u3010".concat(positionArr.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
-      }
-      if (!nErrLog.length) {
-        nList.push(nEle);
-      }
-    });
-    errLog.push.apply(errLog, nErrLog);
-  } else {
-    errLog.push('水印项是必填的且为数组');
-  }
-  return {
-    errLog: errLog,
-    config: _objectSpread(_objectSpread({}, restObj), {}, {
-      canvasId: canvasId,
-      watermarkList: nList
-    })
-  };
-}
-
-// 计算x,y位置
-function calcPosition(options) {
-  var height = options.height,
-    width = options.width,
-    position = options.position,
-    marginVal = options.margin,
-    ind = options.ind,
-    fontSize = options.fontSize,
-    textMetrics = options.textMetrics;
-  var calcX = marginVal;
-  var calcY = height - marginVal;
-  switch (position) {
-    case 'topLeft':
-      {
-        calcX = marginVal;
-        calcY = marginVal + fontSize * (ind + 1);
-        break;
-      }
-    case 'topRight':
-      {
-        calcX = width - marginVal - textMetrics.width;
-        calcY = marginVal + fontSize * (ind + 1);
-        break;
-      }
-    case 'bottomLeft':
-      {
-        calcX = marginVal;
-        calcY = height - marginVal - fontSize * ind;
-        break;
-      }
-    case 'bottomRight':
-      {
-        calcX = width - marginVal - textMetrics.width;
-        calcY = height - marginVal - fontSize * ind;
-        break;
-      }
-  }
-  return {
-    calcX: calcX,
-    calcY: calcY
-  };
-}
-
-/**
- * @description: 给图片添加水印
- * @param {string} options
- * @param {string} that 组件的this实例
- * @return {*}
- * ···
- * // 在template 中加入：
- * 			<canvas :style="{ width: watermarkCanvasOption.width + 'px', height: watermarkCanvasOption.height + 'px' }"
- *				canvas-id="watermarkCanvas" id="watermarkCanvas" style="position: absolute; top: -10000000rpx;" />
- * 
- * // 在 script 的 data中加入
- *   			watermarkCanvasOption: {
- *					width: 0,
- *					height: 0,
- *					canvasContext: void(0)
- *				}
- * 
- * // 在对应地方使用
- * addWatermark({
-					canvasId: 'watermarkCanvas',
-					imagePath: tPath,
-					watermarkList: [{
-						fontSize: 12,
-						text: '测试',
-						// text: ['测试', '测试12'],
-					}]
-				}, this).then(res => {
-					return saveImageToPA(res)
-				})
- * ···
- */
-function addWatermark(options, that) {
-  return new Promise(function (resolve, reject) {
-    var _dealWatermarkConfig = dealWatermarkConfig(options),
-      errLog = _dealWatermarkConfig.errLog,
-      config = _dealWatermarkConfig.config;
-    if (!errLog.length) {
-      var canvasId = config.canvasId,
-        imagePath = config.imagePath,
-        watermarkList = config.watermarkList;
-      var ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
-      uni.getImageInfo({
-        // 获取图片信息，以便获取图片的真实宽高信息
-        src: imagePath,
-        success: function success(info) {
-          var width = info.width,
-            height = info.height; // 获取图片的原始宽高
-          that.watermarkCanvasOption.width = width;
-          that.watermarkCanvasOption.height = height;
-          ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
-          // 绘制水印项
-          var drawWMItem = function drawWMItem(ctx, options) {
-            var fontSize = options.fontSize,
-              color = options.color,
-              cText = options.text,
-              position = options.position,
-              margin = options.margin;
-            // 添加水印
-            ctx.setFontSize(fontSize); // 设置字体大小
-            ctx.setFillStyle(color); // 设置字体颜色为红色
-
-            if (isNotEmptyArr(cText)) {
-              var _text = cText.filter(Boolean);
-              if (position.startsWith('bottom')) {
-                _text.reverse();
-              }
-              _text.forEach(function (str, ind) {
-                var textMetrics = ctx.measureText(str);
-                var _calcPosition = calcPosition({
-                    height: height,
-                    width: width,
-                    position: position,
-                    margin: margin,
-                    ind: ind,
-                    fontSize: fontSize,
-                    textMetrics: textMetrics
-                  }),
-                  calcX = _calcPosition.calcX,
-                  calcY = _calcPosition.calcY;
-                ctx.fillText(str, calcX, calcY, width);
-              });
-            } else {
-              var textMetrics = ctx.measureText(cText);
-              var _calcPosition2 = calcPosition({
-                  height: height,
-                  width: width,
-                  position: position,
-                  margin: margin,
-                  ind: 0,
-                  fontSize: fontSize,
-                  textMetrics: textMetrics
-                }),
-                calcX = _calcPosition2.calcX,
-                calcY = _calcPosition2.calcY;
-              // 在图片底部添加水印文字
-              ctx.fillText(text, calcX, calcY, width);
-            }
-          };
-          watermarkList.forEach(function (ele) {
-            drawWMItem(ctx, ele);
-          });
-          // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-          ctx.draw(false, function () {
-            uni.canvasToTempFilePath({
-              // 将画布内容导出为图片
-              canvasId: canvasId,
-              success: function success(res) {
-                console.log('res.tempFilePath', res);
-                resolve(res.tempFilePath);
-              },
-              fail: function fail() {
-                reject(false);
-              }
-            }, that);
-          });
-        }
-      });
-    } else {
-      var errStr = errLog.join(';');
-      showMsg(errStr);
-      reject(errStr);
-    }
-  });
-}
-
-// 保存图片到相册
-function saveImageToPA(tPath) {
-  return new Promise(function (resolve, reject) {
-    if (tPath) {
-      uni.saveImageToPhotosAlbum({
-        filePath: tPath,
-        success: function success() {
-          showMsg('保存成功');
-          resolve(true);
-        },
-        fail: function fail() {
-          reject(false);
-        }
-      });
-    } else {
-      showMsg('未获取到图片本地路径');
-      reject(false);
-    }
-  });
-}
-
-// 获取url params 字符串
-function getUrlParamsStr(paramsObj) {
-  if ((0, _typeof2.default)(paramsObj) === 'object') {
-    return Object.entries(paramsObj).map(function (ele) {
-      return "".concat(ele[0], "=").concat(ele[1]);
-    }).join('&');
-  } else {
-    return '';
-  }
-}
-
-/**
- * @description: 转换为数字
- * @param {unknown} str
- * @return {*}
- */
-function convertNumber(str) {
-  var val = Number(str);
-  return isNaN(val) ? 0 : val;
-}
-
-// 判断是否是空对象
-function isNotEmptyObj(obj) {
-  var _Object$keys;
-  return (0, _typeof2.default)(obj) === 'object' && ((_Object$keys = Object.keys(obj)) === null || _Object$keys === void 0 ? void 0 : _Object$keys.length);
-}
-
-// 判断是否是空数组
-function isNotEmptyArr(arr) {
-  return Array.isArray(arr) && arr.length;
-}
-
-// 校验对象属性值不能为空
-function validateObj(valdiateData) {
-  var validateRules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var text = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-  if (isNotEmptyObj(validateRules)) {
-    if (isNotEmptyObj(valdiateData)) {
-      var errLog = [];
-      Object.entries(validateRules).forEach(function (item) {
-        var _item = (0, _slicedToArray2.default)(item, 2),
-          key = _item[0],
-          value = _item[1];
-        var val = valdiateData[key];
-        if (typeof value === 'string') {
-          if (EMPTY_STR_ARR.includes(val)) {
-            errLog.push("".concat(text ? text + '-' : '').concat(validateRules[key], "\u4E0D\u80FD\u4E3A\u7A7A"));
-          }
-        } else if (isNotEmptyObj(value)) {
-          var name = value.name,
-            rules = value.rules;
-          if (isNotEmptyArr(rules) && !rules.includes(val)) {
-            errLog.push("".concat(text ? text + '-' : '').concat(name, "\u4E0D\u80FD\u6EE1\u8DB3\u3010").concat(rules.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
-          }
-        } else if (typeof value === 'function') {
-          var fRes = value(val);
-          fRes && errLog.push(fRes === null || fRes === void 0 ? void 0 : fRes.toString());
-        }
-      });
-      return errLog;
-    } else {
-      return [];
-    }
-  } else {
-    return [];
-  }
-}
-
-// 获取百度accessToken
-function getBaiduAPIAccessToken() {
-  var that = this;
-  return new Promise(function (resolve, reject) {
-    var paramsObj = {
-      client_id: 'CVQUtS7PIhBnH2QJhsuxb2Yr',
-      client_secret: BAIDU_CLIENT_ID,
-      grant_type: BAIDU_CLIENT_SECRET
-    };
-    var paramsStr = getUrlParamsStr(paramsObj);
-    uni.request({
-      url: 'https://aip.baidubce.com/oauth/2.0/token?' + paramsStr,
-      method: "POST",
-      dataType: "json",
-      header: {
-        'Content-Type': 'application/json'
-      },
-      success: function success(res) {
-        var _res$data;
-        console.log('获取百度accessToken======>', res);
-        var token = (res === null || res === void 0 ? void 0 : (_res$data = res.data) === null || _res$data === void 0 ? void 0 : _res$data.access_token) || '';
-        if (token) {
-          resolve(token);
-        } else {
-          reject(false);
-        }
-      },
-      fail: function fail(res) {
-        reject(false);
-      }
-    });
-  });
-}
-
-/**
- * @description: 通过百度AI 开放接口解析地址
- * @param { { access_token:string , addressStr:string } } config  access_token 百度token , addressStr 地址文案
- */
-function parseAddressByBaiduAPI(config) {
-  return new Promise(function (resolve, reject) {
-    var access_token = config.access_token,
-      addressStr = config.addressStr;
-    if (access_token) {
-      if (addressStr) {
-        uni.request({
-          url: 'https://aip.baidubce.com/rpc/2.0/nlp/v1/address?access_token=' + access_token,
-          method: "POST",
-          dataType: "json",
-          header: {
-            'Content-Type': 'application/json'
-          },
-          data: {
-            "text": addressStr,
-            "confidence": 100
-          },
-          success: function success(res) {
-            console.log('通过百度AI 开放接口解析地址=====>', res);
-            resolve(res);
-          },
-          fail: function fail(res) {
-            reject(false);
-          }
-        });
-      } else {
-        reject('解析地址字符串不能为空');
-      }
-    } else {
-      reject('缺少百度accessToken,无法调用此API');
-    }
-  });
-}
-
-/**
- * @description: 通过关键词获取百度地址
- * @param { { provice:string , city:string, area:string, address:string } } config 关键词
- */
-function getBaiduAddressListByKeywords(config) {
-  return new Promise(function (resolve, reject) {
-    if (config && (0, _typeof2.default)(config) === 'object') {
-      var valdiateRulesObj = {
-        province: '省份',
-        city: '城市',
-        area: '区/县',
-        address: '详细地址'
-      };
-      var errLog = validateObj(config, valdiateRulesObj);
-      if (!errLog.length) {
-        var province = config.province,
-          city = config.city,
-          area = config.area,
-          address = config.address;
-        var region = province + city + area;
-        var paramsObj = {
-          ak: BAIDU_AK,
-          query: region + address,
-          region: region,
-          output: 'json'
-        };
-        var paramsStr = getUrlParamsStr(paramsObj);
-        uni.request({
-          url: 'https://api.map.baidu.com/place/v2/search?' + paramsStr,
-          method: "get",
-          dataType: "json",
-          header: {
-            'Content-Type': 'application/json'
-          },
-          success: function success(res) {
-            var _res$data2;
-            var addressList = (res === null || res === void 0 ? void 0 : (_res$data2 = res.data) === null || _res$data2 === void 0 ? void 0 : _res$data2.results) || [];
-            resolve(addressList);
-          },
-          fail: function fail(res) {
-            reject('搜索详细地址列表失败');
-          }
-        });
-      } else {
-        showMsg(errLog[0]);
-        reject(errLog[0]);
-      }
-    } else {
-      showMsg('参数[config]为非空对象');
-      reject('参数[config]为非空对象');
-    }
-  });
-}
-
-/**
- * @description: 通过经纬度解析百度地址
- * @param { { location:string | number, latitude:string | number  } } config 经纬度对象
- * 
- * 示例请求： https://api.map.baidu.com/reverse_geocoding/v3/?ak=您的ak&output=json&coordtype=wgs84ll&location=31.225696563611,121.49884033194
- * 官方文档： https://lbsyun.baidu.com/faq/api?title=webapi/guide/webservice-geocoding-abroad-base
- */
-function getBaiduAddressInfoByLocation(config) {
-  return new Promise(function (resolve, reject) {
-    if (config && (0, _typeof2.default)(config) === 'object') {
-      var longitude = config.longitude,
-        latitude = config.latitude;
-      var longitudeVal = convertNumber(longitude);
-      var latitudeVal = convertNumber(latitude);
-      var errLog = [];
-      if (longitudeVal >= 180 && longitudeVal <= 90) {
-        errLog.push('经度[longitude]参数需大90度并小于180度');
-      }
-      if (latitudeVal >= 90 && latitudeVal <= 0) {
-        errLog.push('经度[longitude]参数需大0度并小于90度');
-      }
-      if (!errLog.length) {
-        var paramsObj = {
-          ak: BAIDU_AK,
-          location: "".concat(latitudeVal, ",").concat(longitudeVal),
-          output: 'json'
-        };
-        var paramsStr = getUrlParamsStr(paramsObj);
-        uni.request({
-          url: 'https://api.map.baidu.com/reverse_geocoding/v3/?' + paramsStr,
-          method: "get",
-          dataType: "json",
-          header: {
-            'Content-Type': 'application/json'
-          },
-          success: function success(res) {
-            var _res$data3;
-            var addressInfo = res === null || res === void 0 ? void 0 : (_res$data3 = res.data) === null || _res$data3 === void 0 ? void 0 : _res$data3.result;
-            console.log('经纬度解析百度地址', addressInfo);
-            if (addressInfo) {
-              resolve(addressInfo);
-            } else {
-              reject('经纬度解析地址失败');
-            }
-          },
-          fail: function fail(res) {
-            reject('经纬度解析地址失败');
-          }
-        });
-      } else {
-        reject(errLog[0]);
-      }
-    } else {
-      reject('参数[config]为非空对象');
-    }
-  });
-}
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/wx.js */ 1)["default"]))
-
-/***/ }),
-/* 41 */
-/*!************************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/objectWithoutProperties.js ***!
-  \************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var objectWithoutPropertiesLoose = __webpack_require__(/*! ./objectWithoutPropertiesLoose.js */ 42);
-function _objectWithoutProperties(source, excluded) {
-  if (source == null) return {};
-  var target = objectWithoutPropertiesLoose(source, excluded);
-  var key, i;
-  if (Object.getOwnPropertySymbols) {
-    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
-    for (i = 0; i < sourceSymbolKeys.length; i++) {
-      key = sourceSymbolKeys[i];
-      if (excluded.indexOf(key) >= 0) continue;
-      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
-      target[key] = source[key];
-    }
-  }
-  return target;
-}
-module.exports = _objectWithoutProperties, module.exports.__esModule = true, module.exports["default"] = module.exports;
-
-/***/ }),
-/* 42 */
-/*!*****************************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/objectWithoutPropertiesLoose.js ***!
-  \*****************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-  return target;
-}
-module.exports = _objectWithoutPropertiesLoose, module.exports.__esModule = true, module.exports["default"] = module.exports;
-
-/***/ }),
-/* 43 */,
-/* 44 */,
-/* 45 */,
-/* 46 */,
-/* 47 */,
-/* 48 */,
-/* 49 */,
-/* 50 */
-/*!*************************************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-upload/utils.js ***!
-  \*************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni, wx) {
-
-var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.chooseFile = chooseFile;
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-function pickExclude(obj, keys) {
-  // 某些情况下，type可能会为
-  if (!['[object Object]', '[object File]'].includes(Object.prototype.toString.call(obj))) {
-    return {};
-  }
-  return Object.keys(obj).reduce(function (prev, key) {
-    if (!keys.includes(key)) {
-      prev[key] = obj[key];
-    }
-    return prev;
-  }, {});
-}
-function formatImage(res) {
-  return res.tempFiles.map(function (item) {
-    return _objectSpread(_objectSpread({}, pickExclude(item, ['path'])), {}, {
-      type: 'image',
-      url: item.path,
-      thumb: item.path,
-      size: item.size
-    });
-  });
-}
-function formatVideo(res) {
-  return [_objectSpread(_objectSpread({}, pickExclude(res, ['tempFilePath', 'thumbTempFilePath', 'errMsg'])), {}, {
-    type: 'video',
-    url: res.tempFilePath,
-    thumb: res.thumbTempFilePath,
-    size: res.size
-  })];
-}
-function formatMedia(res) {
-  return res.tempFiles.map(function (item) {
-    return _objectSpread(_objectSpread({}, pickExclude(item, ['fileType', 'thumbTempFilePath', 'tempFilePath'])), {}, {
-      type: res.type,
-      url: item.tempFilePath,
-      thumb: res.type === 'video' ? item.thumbTempFilePath : item.tempFilePath,
-      size: item.size
-    });
-  });
-}
-function formatFile(res) {
-  return res.tempFiles.map(function (item) {
-    return _objectSpread(_objectSpread({}, pickExclude(item, ['path'])), {}, {
-      url: item.path,
-      size: item.size
-    });
-  });
-}
-function chooseFile(_ref) {
-  var accept = _ref.accept,
-    multiple = _ref.multiple,
-    capture = _ref.capture,
-    compressed = _ref.compressed,
-    maxDuration = _ref.maxDuration,
-    sizeType = _ref.sizeType,
-    camera = _ref.camera,
-    maxCount = _ref.maxCount;
-  return new Promise(function (resolve, reject) {
-    switch (accept) {
-      case 'image':
-        uni.chooseImage({
-          count: multiple ? Math.min(maxCount, 9) : 1,
-          sourceType: capture,
-          sizeType: sizeType,
-          success: function success(res) {
-            return resolve(formatImage(res));
-          },
-          fail: reject
-        });
-        break;
-
-      // 只有微信小程序才支持chooseMedia接口
-      case 'media':
-        wx.chooseMedia({
-          count: multiple ? Math.min(maxCount, 9) : 1,
-          sourceType: capture,
-          maxDuration: maxDuration,
-          sizeType: sizeType,
-          camera: camera,
-          success: function success(res) {
-            return resolve(formatMedia(res));
-          },
-          fail: reject
-        });
-        break;
-      case 'video':
-        uni.chooseVideo({
-          sourceType: capture,
-          compressed: compressed,
-          maxDuration: maxDuration,
-          camera: camera,
-          success: function success(res) {
-            return resolve(formatVideo(res));
-          },
-          fail: reject
-        });
-        break;
-
-      // 只有微信小程序才支持chooseMessageFile接口
-      case 'file':
-        wx.chooseMessageFile({
-          count: multiple ? maxCount : 1,
-          type: accept,
-          success: function success(res) {
-            return resolve(formatFile(res));
-          },
-          fail: reject
-        });
-        break;
-      default:
-        // 此为保底选项，在accept不为上面任意一项的时候选取全部文件
-
-        wx.chooseMessageFile({
-          count: multiple ? maxCount : 1,
-          type: 'all',
-          success: function success(res) {
-            return resolve(formatFile(res));
-          },
-          fail: reject
-        });
-    }
-  });
-}
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/wx.js */ 1)["default"]))
-
-/***/ }),
-/* 51 */
-/*!*************************************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-upload/mixin.js ***!
-  \*************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  watch: {
-    // 监听accept的变化，判断是否符合个平台要求
-    // 只有微信小程序才支持选择媒体，文件类型，所以这里做一个判断提示
-    accept: {
-      immediate: true,
-      handler: function handler(val) {}
-    }
-  }
-};
-exports.default = _default;
-
-/***/ }),
-/* 52 */
-/*!*************************************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-upload/props.js ***!
-  \*************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  props: {
-    // 接受的文件类型, 可选值为all media image file video
-    accept: {
-      type: String,
-      default: uni.$u.props.upload.accept
-    },
-    // 	图片或视频拾取模式，当accept为image类型时设置capture可选额外camera可以直接调起摄像头
-    capture: {
-      type: [String, Array],
-      default: uni.$u.props.upload.capture
-    },
-    // 当accept为video时生效，是否压缩视频，默认为true
-    compressed: {
-      type: Boolean,
-      default: uni.$u.props.upload.compressed
-    },
-    // 当accept为video时生效，可选值为back或front
-    camera: {
-      type: String,
-      default: uni.$u.props.upload.camera
-    },
-    // 当accept为video时生效，拍摄视频最长拍摄时间，单位秒
-    maxDuration: {
-      type: Number,
-      default: uni.$u.props.upload.maxDuration
-    },
-    // 上传区域的图标，只能内置图标
-    uploadIcon: {
-      type: String,
-      default: uni.$u.props.upload.uploadIcon
-    },
-    // 上传区域的图标的颜色，默认
-    uploadIconColor: {
-      type: String,
-      default: uni.$u.props.upload.uploadIconColor
-    },
-    // 是否开启文件读取前事件
-    useBeforeRead: {
-      type: Boolean,
-      default: uni.$u.props.upload.useBeforeRead
-    },
-    // 读取后的处理函数
-    afterRead: {
-      type: Function,
-      default: null
-    },
-    // 读取前的处理函数
-    beforeRead: {
-      type: Function,
-      default: null
-    },
-    // 是否显示组件自带的图片预览功能
-    previewFullImage: {
-      type: Boolean,
-      default: uni.$u.props.upload.previewFullImage
-    },
-    // 最大上传数量
-    maxCount: {
-      type: [String, Number],
-      default: uni.$u.props.upload.maxCount
-    },
-    // 是否启用
-    disabled: {
-      type: Boolean,
-      default: uni.$u.props.upload.disabled
-    },
-    // 预览上传的图片时的裁剪模式，和image组件mode属性一致
-    imageMode: {
-      type: String,
-      default: uni.$u.props.upload.imageMode
-    },
-    // 标识符，可以在回调函数的第二项参数中获取
-    name: {
-      type: String,
-      default: uni.$u.props.upload.name
-    },
-    // 所选的图片的尺寸, 可选值为original compressed
-    sizeType: {
-      type: Array,
-      default: uni.$u.props.upload.sizeType
-    },
-    // 是否开启图片多选，部分安卓机型不支持
-    multiple: {
-      type: Boolean,
-      default: uni.$u.props.upload.multiple
-    },
-    // 是否展示删除按钮
-    deletable: {
-      type: Boolean,
-      default: uni.$u.props.upload.deletable
-    },
-    // 文件大小限制，单位为byte
-    maxSize: {
-      type: [String, Number],
-      default: uni.$u.props.upload.maxSize
-    },
-    // 显示已上传的文件列表
-    fileList: {
-      type: Array,
-      default: uni.$u.props.upload.fileList
-    },
-    // 上传区域的提示文字
-    uploadText: {
-      type: String,
-      default: uni.$u.props.upload.uploadText
-    },
-    // 内部预览图片区域和选择图片按钮的区域宽度
-    width: {
-      type: [String, Number],
-      default: uni.$u.props.upload.width
-    },
-    // 内部预览图片区域和选择图片按钮的区域高度
-    height: {
-      type: [String, Number],
-      default: uni.$u.props.upload.height
-    },
-    // 是否在上传完成后展示预览图
-    previewImage: {
-      type: Boolean,
-      default: uni.$u.props.upload.previewImage
-    }
-  }
-};
-exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-/* 53 */,
-/* 54 */,
-/* 55 */,
-/* 56 */,
-/* 57 */,
-/* 58 */,
-/* 59 */,
-/* 60 */
-/*!***********************************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-icon/icons.js ***!
-  \***********************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  'uicon-level': "\uE693",
-  'uicon-column-line': "\uE68E",
-  'uicon-checkbox-mark': "\uE807",
-  'uicon-folder': "\uE7F5",
-  'uicon-movie': "\uE7F6",
-  'uicon-star-fill': "\uE669",
-  'uicon-star': "\uE65F",
-  'uicon-phone-fill': "\uE64F",
-  'uicon-phone': "\uE622",
-  'uicon-apple-fill': "\uE881",
-  'uicon-chrome-circle-fill': "\uE885",
-  'uicon-backspace': "\uE67B",
-  'uicon-attach': "\uE632",
-  'uicon-cut': "\uE948",
-  'uicon-empty-car': "\uE602",
-  'uicon-empty-coupon': "\uE682",
-  'uicon-empty-address': "\uE646",
-  'uicon-empty-favor': "\uE67C",
-  'uicon-empty-permission': "\uE686",
-  'uicon-empty-news': "\uE687",
-  'uicon-empty-search': "\uE664",
-  'uicon-github-circle-fill': "\uE887",
-  'uicon-rmb': "\uE608",
-  'uicon-person-delete-fill': "\uE66A",
-  'uicon-reload': "\uE788",
-  'uicon-order': "\uE68F",
-  'uicon-server-man': "\uE6BC",
-  'uicon-search': "\uE62A",
-  'uicon-fingerprint': "\uE955",
-  'uicon-more-dot-fill': "\uE630",
-  'uicon-scan': "\uE662",
-  'uicon-share-square': "\uE60B",
-  'uicon-map': "\uE61D",
-  'uicon-map-fill': "\uE64E",
-  'uicon-tags': "\uE629",
-  'uicon-tags-fill': "\uE651",
-  'uicon-bookmark-fill': "\uE63B",
-  'uicon-bookmark': "\uE60A",
-  'uicon-eye': "\uE613",
-  'uicon-eye-fill': "\uE641",
-  'uicon-mic': "\uE64A",
-  'uicon-mic-off': "\uE649",
-  'uicon-calendar': "\uE66E",
-  'uicon-calendar-fill': "\uE634",
-  'uicon-trash': "\uE623",
-  'uicon-trash-fill': "\uE658",
-  'uicon-play-left': "\uE66D",
-  'uicon-play-right': "\uE610",
-  'uicon-minus': "\uE618",
-  'uicon-plus': "\uE62D",
-  'uicon-info': "\uE653",
-  'uicon-info-circle': "\uE7D2",
-  'uicon-info-circle-fill': "\uE64B",
-  'uicon-question': "\uE715",
-  'uicon-error': "\uE6D3",
-  'uicon-close': "\uE685",
-  'uicon-checkmark': "\uE6A8",
-  'uicon-android-circle-fill': "\uE67E",
-  'uicon-android-fill': "\uE67D",
-  'uicon-ie': "\uE87B",
-  'uicon-IE-circle-fill': "\uE889",
-  'uicon-google': "\uE87A",
-  'uicon-google-circle-fill': "\uE88A",
-  'uicon-setting-fill': "\uE872",
-  'uicon-setting': "\uE61F",
-  'uicon-minus-square-fill': "\uE855",
-  'uicon-plus-square-fill': "\uE856",
-  'uicon-heart': "\uE7DF",
-  'uicon-heart-fill': "\uE851",
-  'uicon-camera': "\uE7D7",
-  'uicon-camera-fill': "\uE870",
-  'uicon-more-circle': "\uE63E",
-  'uicon-more-circle-fill': "\uE645",
-  'uicon-chat': "\uE620",
-  'uicon-chat-fill': "\uE61E",
-  'uicon-bag-fill': "\uE617",
-  'uicon-bag': "\uE619",
-  'uicon-error-circle-fill': "\uE62C",
-  'uicon-error-circle': "\uE624",
-  'uicon-close-circle': "\uE63F",
-  'uicon-close-circle-fill': "\uE637",
-  'uicon-checkmark-circle': "\uE63D",
-  'uicon-checkmark-circle-fill': "\uE635",
-  'uicon-question-circle-fill': "\uE666",
-  'uicon-question-circle': "\uE625",
-  'uicon-share': "\uE631",
-  'uicon-share-fill': "\uE65E",
-  'uicon-shopping-cart': "\uE621",
-  'uicon-shopping-cart-fill': "\uE65D",
-  'uicon-bell': "\uE609",
-  'uicon-bell-fill': "\uE640",
-  'uicon-list': "\uE650",
-  'uicon-list-dot': "\uE616",
-  'uicon-zhihu': "\uE6BA",
-  'uicon-zhihu-circle-fill': "\uE709",
-  'uicon-zhifubao': "\uE6B9",
-  'uicon-zhifubao-circle-fill': "\uE6B8",
-  'uicon-weixin-circle-fill': "\uE6B1",
-  'uicon-weixin-fill': "\uE6B2",
-  'uicon-twitter-circle-fill': "\uE6AB",
-  'uicon-twitter': "\uE6AA",
-  'uicon-taobao-circle-fill': "\uE6A7",
-  'uicon-taobao': "\uE6A6",
-  'uicon-weibo-circle-fill': "\uE6A5",
-  'uicon-weibo': "\uE6A4",
-  'uicon-qq-fill': "\uE6A1",
-  'uicon-qq-circle-fill': "\uE6A0",
-  'uicon-moments-circel-fill': "\uE69A",
-  'uicon-moments': "\uE69B",
-  'uicon-qzone': "\uE695",
-  'uicon-qzone-circle-fill': "\uE696",
-  'uicon-baidu-circle-fill': "\uE680",
-  'uicon-baidu': "\uE681",
-  'uicon-facebook-circle-fill': "\uE68A",
-  'uicon-facebook': "\uE689",
-  'uicon-car': "\uE60C",
-  'uicon-car-fill': "\uE636",
-  'uicon-warning-fill': "\uE64D",
-  'uicon-warning': "\uE694",
-  'uicon-clock-fill': "\uE638",
-  'uicon-clock': "\uE60F",
-  'uicon-edit-pen': "\uE612",
-  'uicon-edit-pen-fill': "\uE66B",
-  'uicon-email': "\uE611",
-  'uicon-email-fill': "\uE642",
-  'uicon-minus-circle': "\uE61B",
-  'uicon-minus-circle-fill': "\uE652",
-  'uicon-plus-circle': "\uE62E",
-  'uicon-plus-circle-fill': "\uE661",
-  'uicon-file-text': "\uE663",
-  'uicon-file-text-fill': "\uE665",
-  'uicon-pushpin': "\uE7E3",
-  'uicon-pushpin-fill': "\uE86E",
-  'uicon-grid': "\uE673",
-  'uicon-grid-fill': "\uE678",
-  'uicon-play-circle': "\uE647",
-  'uicon-play-circle-fill': "\uE655",
-  'uicon-pause-circle-fill': "\uE654",
-  'uicon-pause': "\uE8FA",
-  'uicon-pause-circle': "\uE643",
-  'uicon-eye-off': "\uE648",
-  'uicon-eye-off-outline': "\uE62B",
-  'uicon-gift-fill': "\uE65C",
-  'uicon-gift': "\uE65B",
-  'uicon-rmb-circle-fill': "\uE657",
-  'uicon-rmb-circle': "\uE677",
-  'uicon-kefu-ermai': "\uE656",
-  'uicon-server-fill': "\uE751",
-  'uicon-coupon-fill': "\uE8C4",
-  'uicon-coupon': "\uE8AE",
-  'uicon-integral': "\uE704",
-  'uicon-integral-fill': "\uE703",
-  'uicon-home-fill': "\uE964",
-  'uicon-home': "\uE965",
-  'uicon-hourglass-half-fill': "\uE966",
-  'uicon-hourglass': "\uE967",
-  'uicon-account': "\uE628",
-  'uicon-plus-people-fill': "\uE626",
-  'uicon-minus-people-fill': "\uE615",
-  'uicon-account-fill': "\uE614",
-  'uicon-thumb-down-fill': "\uE726",
-  'uicon-thumb-down': "\uE727",
-  'uicon-thumb-up': "\uE733",
-  'uicon-thumb-up-fill': "\uE72F",
-  'uicon-lock-fill': "\uE979",
-  'uicon-lock-open': "\uE973",
-  'uicon-lock-opened-fill': "\uE974",
-  'uicon-lock': "\uE97A",
-  'uicon-red-packet-fill': "\uE690",
-  'uicon-photo-fill': "\uE98B",
-  'uicon-photo': "\uE98D",
-  'uicon-volume-off-fill': "\uE659",
-  'uicon-volume-off': "\uE644",
-  'uicon-volume-fill': "\uE670",
-  'uicon-volume': "\uE633",
-  'uicon-red-packet': "\uE691",
-  'uicon-download': "\uE63C",
-  'uicon-arrow-up-fill': "\uE6B0",
-  'uicon-arrow-down-fill': "\uE600",
-  'uicon-play-left-fill': "\uE675",
-  'uicon-play-right-fill': "\uE676",
-  'uicon-rewind-left-fill': "\uE679",
-  'uicon-rewind-right-fill': "\uE67A",
-  'uicon-arrow-downward': "\uE604",
-  'uicon-arrow-leftward': "\uE601",
-  'uicon-arrow-rightward': "\uE603",
-  'uicon-arrow-upward': "\uE607",
-  'uicon-arrow-down': "\uE60D",
-  'uicon-arrow-right': "\uE605",
-  'uicon-arrow-left': "\uE60E",
-  'uicon-arrow-up': "\uE606",
-  'uicon-skip-back-left': "\uE674",
-  'uicon-skip-forward-right': "\uE672",
-  'uicon-rewind-right': "\uE66F",
-  'uicon-rewind-left': "\uE671",
-  'uicon-arrow-right-double': "\uE68D",
-  'uicon-arrow-left-double': "\uE68C",
-  'uicon-wifi-off': "\uE668",
-  'uicon-wifi': "\uE667",
-  'uicon-empty-data': "\uE62F",
-  'uicon-empty-history': "\uE684",
-  'uicon-empty-list': "\uE68B",
-  'uicon-empty-page': "\uE627",
-  'uicon-empty-order': "\uE639",
-  'uicon-man': "\uE697",
-  'uicon-woman': "\uE69C",
-  'uicon-man-add': "\uE61C",
-  'uicon-man-add-fill': "\uE64C",
-  'uicon-man-delete': "\uE61A",
-  'uicon-man-delete-fill': "\uE66A",
-  'uicon-zh': "\uE70A",
-  'uicon-en': "\uE692"
-};
-exports.default = _default;
-
-/***/ }),
-/* 61 */
-/*!***********************************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-icon/props.js ***!
-  \***********************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  props: {
-    // 图标类名
-    name: {
-      type: String,
-      default: uni.$u.props.icon.name
-    },
-    // 图标颜色，可接受主题色
-    color: {
-      type: String,
-      default: uni.$u.props.icon.color
-    },
-    // 字体大小，单位px
-    size: {
-      type: [String, Number],
-      default: uni.$u.props.icon.size
-    },
-    // 是否显示粗体
-    bold: {
-      type: Boolean,
-      default: uni.$u.props.icon.bold
-    },
-    // 点击图标的时候传递事件出去的index（用于区分点击了哪一个）
-    index: {
-      type: [String, Number],
-      default: uni.$u.props.icon.index
-    },
-    // 触摸图标时的类名
-    hoverClass: {
-      type: String,
-      default: uni.$u.props.icon.hoverClass
-    },
-    // 自定义扩展前缀，方便用户扩展自己的图标库
-    customPrefix: {
-      type: String,
-      default: uni.$u.props.icon.customPrefix
-    },
-    // 图标右边或者下面的文字
-    label: {
-      type: [String, Number],
-      default: uni.$u.props.icon.label
-    },
-    // label的位置，只能右边或者下边
-    labelPos: {
-      type: String,
-      default: uni.$u.props.icon.labelPos
-    },
-    // label的大小
-    labelSize: {
-      type: [String, Number],
-      default: uni.$u.props.icon.labelSize
-    },
-    // label的颜色
-    labelColor: {
-      type: String,
-      default: uni.$u.props.icon.labelColor
-    },
-    // label与图标的距离
-    space: {
-      type: [String, Number],
-      default: uni.$u.props.icon.space
-    },
-    // 图片的mode
-    imgMode: {
-      type: String,
-      default: uni.$u.props.icon.imgMode
-    },
-    // 用于显示图片小图标时，图片的宽度
-    width: {
-      type: [String, Number],
-      default: uni.$u.props.icon.width
-    },
-    // 用于显示图片小图标时，图片的高度
-    height: {
-      type: [String, Number],
-      default: uni.$u.props.icon.height
-    },
-    // 用于解决某些情况下，让图标垂直居中的用途
-    top: {
-      type: [String, Number],
-      default: uni.$u.props.icon.top
-    },
-    // 是否阻止事件传播
-    stop: {
-      type: Boolean,
-      default: uni.$u.props.icon.stop
-    }
-  }
-};
-exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-/* 62 */,
-/* 63 */,
-/* 64 */,
-/* 65 */,
-/* 66 */,
-/* 67 */,
-/* 68 */,
-/* 69 */
-/*!*******************************************************************************************************!*\
-  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-loading-icon/props.js ***!
-  \*******************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  props: {
-    // 是否显示组件
-    show: {
-      type: Boolean,
-      default: uni.$u.props.loadingIcon.show
-    },
-    // 颜色
-    color: {
-      type: String,
-      default: uni.$u.props.loadingIcon.color
-    },
-    // 提示文字颜色
-    textColor: {
-      type: String,
-      default: uni.$u.props.loadingIcon.textColor
-    },
-    // 文字和图标是否垂直排列
-    vertical: {
-      type: Boolean,
-      default: uni.$u.props.loadingIcon.vertical
-    },
-    // 模式选择，circle-圆形，spinner-花朵形，semicircle-半圆形
-    mode: {
-      type: String,
-      default: uni.$u.props.loadingIcon.mode
-    },
-    // 图标大小，单位默认px
-    size: {
-      type: [String, Number],
-      default: uni.$u.props.loadingIcon.size
-    },
-    // 文字大小
-    textSize: {
-      type: [String, Number],
-      default: uni.$u.props.loadingIcon.textSize
-    },
-    // 文字内容
-    text: {
-      type: [String, Number],
-      default: uni.$u.props.loadingIcon.text
-    },
-    // 动画模式
-    timingFunction: {
-      type: String,
-      default: uni.$u.props.loadingIcon.timingFunction
-    },
-    // 动画执行周期时间
-    duration: {
-      type: [String, Number],
-      default: uni.$u.props.loadingIcon.duration
-    },
-    // mode=circle时的暗边颜色
-    inactiveColor: {
-      type: String,
-      default: uni.$u.props.loadingIcon.inactiveColor
-    }
-  }
-};
-exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-/* 70 */,
-/* 71 */,
-/* 72 */,
-/* 73 */
 /*!*****************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/index.js ***!
   \*****************************************************************************/
@@ -11211,20 +9675,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _mixin = _interopRequireDefault(__webpack_require__(/*! ./libs/mixin/mixin.js */ 74));
-var _mpMixin = _interopRequireDefault(__webpack_require__(/*! ./libs/mixin/mpMixin.js */ 75));
-var _luchRequest = _interopRequireDefault(__webpack_require__(/*! ./libs/luch-request */ 76));
-var _route = _interopRequireDefault(__webpack_require__(/*! ./libs/util/route.js */ 94));
-var _colorGradient = _interopRequireDefault(__webpack_require__(/*! ./libs/function/colorGradient.js */ 98));
-var _test = _interopRequireDefault(__webpack_require__(/*! ./libs/function/test.js */ 99));
-var _debounce = _interopRequireDefault(__webpack_require__(/*! ./libs/function/debounce.js */ 100));
-var _throttle = _interopRequireDefault(__webpack_require__(/*! ./libs/function/throttle.js */ 101));
-var _index = _interopRequireDefault(__webpack_require__(/*! ./libs/function/index.js */ 102));
-var _config = _interopRequireDefault(__webpack_require__(/*! ./libs/config/config.js */ 105));
-var _props = _interopRequireDefault(__webpack_require__(/*! ./libs/config/props.js */ 106));
-var _zIndex = _interopRequireDefault(__webpack_require__(/*! ./libs/config/zIndex.js */ 196));
-var _color = _interopRequireDefault(__webpack_require__(/*! ./libs/config/color.js */ 154));
-var _platform = _interopRequireDefault(__webpack_require__(/*! ./libs/function/platform */ 197));
+var _mixin = _interopRequireDefault(__webpack_require__(/*! ./libs/mixin/mixin.js */ 34));
+var _mpMixin = _interopRequireDefault(__webpack_require__(/*! ./libs/mixin/mpMixin.js */ 35));
+var _luchRequest = _interopRequireDefault(__webpack_require__(/*! ./libs/luch-request */ 36));
+var _route = _interopRequireDefault(__webpack_require__(/*! ./libs/util/route.js */ 54));
+var _colorGradient = _interopRequireDefault(__webpack_require__(/*! ./libs/function/colorGradient.js */ 58));
+var _test = _interopRequireDefault(__webpack_require__(/*! ./libs/function/test.js */ 59));
+var _debounce = _interopRequireDefault(__webpack_require__(/*! ./libs/function/debounce.js */ 60));
+var _throttle = _interopRequireDefault(__webpack_require__(/*! ./libs/function/throttle.js */ 61));
+var _index = _interopRequireDefault(__webpack_require__(/*! ./libs/function/index.js */ 62));
+var _config = _interopRequireDefault(__webpack_require__(/*! ./libs/config/config.js */ 65));
+var _props = _interopRequireDefault(__webpack_require__(/*! ./libs/config/props.js */ 66));
+var _zIndex = _interopRequireDefault(__webpack_require__(/*! ./libs/config/zIndex.js */ 156));
+var _color = _interopRequireDefault(__webpack_require__(/*! ./libs/config/color.js */ 114));
+var _platform = _interopRequireDefault(__webpack_require__(/*! ./libs/function/platform */ 157));
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 // 看到此报错，是因为没有配置vue.config.js的【transpileDependencies】，详见：https://www.uviewui.com/components/npmSetting.html#_5-cli模式额外配置
@@ -11284,7 +9748,7 @@ exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ }),
-/* 74 */
+/* 34 */
 /*!****************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/mixin/mixin.js ***!
   \****************************************************************************************/
@@ -11452,7 +9916,7 @@ exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ }),
-/* 75 */
+/* 35 */
 /*!******************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/mixin/mpMixin.js ***!
   \******************************************************************************************/
@@ -11475,7 +9939,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 76 */
+/* 36 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/index.js ***!
   \***********************************************************************************************/
@@ -11490,12 +9954,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _Request = _interopRequireDefault(__webpack_require__(/*! ./core/Request */ 77));
+var _Request = _interopRequireDefault(__webpack_require__(/*! ./core/Request */ 37));
 var _default = _Request.default;
 exports.default = _default;
 
 /***/ }),
-/* 77 */
+/* 37 */
 /*!******************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/Request.js ***!
   \******************************************************************************************************/
@@ -11513,12 +9977,12 @@ exports.default = void 0;
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
 var _classCallCheck2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ 23));
 var _createClass2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/createClass */ 24));
-var _dispatchRequest = _interopRequireDefault(__webpack_require__(/*! ./dispatchRequest */ 78));
-var _InterceptorManager = _interopRequireDefault(__webpack_require__(/*! ./InterceptorManager */ 86));
-var _mergeConfig = _interopRequireDefault(__webpack_require__(/*! ./mergeConfig */ 87));
-var _defaults = _interopRequireDefault(__webpack_require__(/*! ./defaults */ 88));
-var _utils = __webpack_require__(/*! ../utils */ 81);
-var _clone = _interopRequireDefault(__webpack_require__(/*! ../utils/clone */ 89));
+var _dispatchRequest = _interopRequireDefault(__webpack_require__(/*! ./dispatchRequest */ 38));
+var _InterceptorManager = _interopRequireDefault(__webpack_require__(/*! ./InterceptorManager */ 46));
+var _mergeConfig = _interopRequireDefault(__webpack_require__(/*! ./mergeConfig */ 47));
+var _defaults = _interopRequireDefault(__webpack_require__(/*! ./defaults */ 48));
+var _utils = __webpack_require__(/*! ../utils */ 41);
+var _clone = _interopRequireDefault(__webpack_require__(/*! ../utils/clone */ 49));
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 var Request = /*#__PURE__*/function () {
@@ -11701,7 +10165,7 @@ var Request = /*#__PURE__*/function () {
 exports.default = Request;
 
 /***/ }),
-/* 78 */
+/* 38 */
 /*!**************************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/dispatchRequest.js ***!
   \**************************************************************************************************************/
@@ -11716,14 +10180,14 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _index = _interopRequireDefault(__webpack_require__(/*! ../adapters/index */ 79));
+var _index = _interopRequireDefault(__webpack_require__(/*! ../adapters/index */ 39));
 var _default = function _default(config) {
   return (0, _index.default)(config);
 };
 exports.default = _default;
 
 /***/ }),
-/* 79 */
+/* 39 */
 /*!********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/adapters/index.js ***!
   \********************************************************************************************************/
@@ -11739,10 +10203,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _buildURL = _interopRequireDefault(__webpack_require__(/*! ../helpers/buildURL */ 80));
-var _buildFullPath = _interopRequireDefault(__webpack_require__(/*! ../core/buildFullPath */ 82));
-var _settle = _interopRequireDefault(__webpack_require__(/*! ../core/settle */ 85));
-var _utils = __webpack_require__(/*! ../utils */ 81);
+var _buildURL = _interopRequireDefault(__webpack_require__(/*! ../helpers/buildURL */ 40));
+var _buildFullPath = _interopRequireDefault(__webpack_require__(/*! ../core/buildFullPath */ 42));
+var _settle = _interopRequireDefault(__webpack_require__(/*! ../core/settle */ 45));
+var _utils = __webpack_require__(/*! ../utils */ 41);
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 /**
@@ -11804,7 +10268,7 @@ exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ }),
-/* 80 */
+/* 40 */
 /*!**********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/helpers/buildURL.js ***!
   \**********************************************************************************************************/
@@ -11819,7 +10283,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = buildURL;
-var utils = _interopRequireWildcard(__webpack_require__(/*! ../utils */ 81));
+var utils = _interopRequireWildcard(__webpack_require__(/*! ../utils */ 41));
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 function encode(val) {
@@ -11874,7 +10338,7 @@ function buildURL(url, params) {
 }
 
 /***/ }),
-/* 81 */
+/* 41 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/utils.js ***!
   \***********************************************************************************************/
@@ -12027,7 +10491,7 @@ function isUndefined(val) {
 }
 
 /***/ }),
-/* 82 */
+/* 42 */
 /*!************************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/buildFullPath.js ***!
   \************************************************************************************************************/
@@ -12042,8 +10506,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = buildFullPath;
-var _isAbsoluteURL = _interopRequireDefault(__webpack_require__(/*! ../helpers/isAbsoluteURL */ 83));
-var _combineURLs = _interopRequireDefault(__webpack_require__(/*! ../helpers/combineURLs */ 84));
+var _isAbsoluteURL = _interopRequireDefault(__webpack_require__(/*! ../helpers/isAbsoluteURL */ 43));
+var _combineURLs = _interopRequireDefault(__webpack_require__(/*! ../helpers/combineURLs */ 44));
 /**
  * Creates a new URL by combining the baseURL with the requestedURL,
  * only when the requestedURL is not already an absolute URL.
@@ -12061,7 +10525,7 @@ function buildFullPath(baseURL, requestedURL) {
 }
 
 /***/ }),
-/* 83 */
+/* 43 */
 /*!***************************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/helpers/isAbsoluteURL.js ***!
   \***************************************************************************************************************/
@@ -12089,7 +10553,7 @@ function isAbsoluteURL(url) {
 }
 
 /***/ }),
-/* 84 */
+/* 44 */
 /*!*************************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/helpers/combineURLs.js ***!
   \*************************************************************************************************************/
@@ -12115,7 +10579,7 @@ function combineURLs(baseURL, relativeURL) {
 }
 
 /***/ }),
-/* 85 */
+/* 45 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/settle.js ***!
   \*****************************************************************************************************/
@@ -12147,7 +10611,7 @@ function settle(resolve, reject, response) {
 }
 
 /***/ }),
-/* 86 */
+/* 46 */
 /*!*****************************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/InterceptorManager.js ***!
   \*****************************************************************************************************************/
@@ -12211,7 +10675,7 @@ var _default = InterceptorManager;
 exports.default = _default;
 
 /***/ }),
-/* 87 */
+/* 47 */
 /*!**********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/mergeConfig.js ***!
   \**********************************************************************************************************/
@@ -12227,7 +10691,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _utils = __webpack_require__(/*! ../utils */ 81);
+var _utils = __webpack_require__(/*! ../utils */ 41);
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 /**
@@ -12287,7 +10751,7 @@ var _default = function _default(globalsConfig) {
 exports.default = _default;
 
 /***/ }),
-/* 88 */
+/* 48 */
 /*!*******************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/core/defaults.js ***!
   \*******************************************************************************************************/
@@ -12319,7 +10783,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 89 */
+/* 49 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/luch-request/utils/clone.js ***!
   \*****************************************************************************************************/
@@ -12568,10 +11032,10 @@ var clone = function () {
 }();
 var _default = clone;
 exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/buffer/index.js */ 90).Buffer))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/buffer/index.js */ 50).Buffer))
 
 /***/ }),
-/* 90 */
+/* 50 */
 /*!**************************************!*\
   !*** ./node_modules/buffer/index.js ***!
   \**************************************/
@@ -12589,9 +11053,9 @@ exports.default = _default;
 
 
 
-var base64 = __webpack_require__(/*! base64-js */ 91)
-var ieee754 = __webpack_require__(/*! ieee754 */ 92)
-var isArray = __webpack_require__(/*! isarray */ 93)
+var base64 = __webpack_require__(/*! base64-js */ 51)
+var ieee754 = __webpack_require__(/*! ieee754 */ 52)
+var isArray = __webpack_require__(/*! isarray */ 53)
 
 exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
@@ -14372,7 +12836,7 @@ function isnan (val) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/global.js */ 3)))
 
 /***/ }),
-/* 91 */
+/* 51 */
 /*!*****************************************!*\
   !*** ./node_modules/base64-js/index.js ***!
   \*****************************************/
@@ -14533,7 +12997,7 @@ function fromByteArray (uint8) {
 
 
 /***/ }),
-/* 92 */
+/* 52 */
 /*!***************************************!*\
   !*** ./node_modules/ieee754/index.js ***!
   \***************************************/
@@ -14628,7 +13092,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 
 
 /***/ }),
-/* 93 */
+/* 53 */
 /*!***************************************!*\
   !*** ./node_modules/isarray/index.js ***!
   \***************************************/
@@ -14643,7 +13107,7 @@ module.exports = Array.isArray || function (arr) {
 
 
 /***/ }),
-/* 94 */
+/* 54 */
 /*!***************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/util/route.js ***!
   \***************************************************************************************/
@@ -14658,8 +13122,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 95));
-var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 97));
+var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 55));
+var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 57));
 var _classCallCheck2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ 23));
 var _createClass2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/createClass */ 24));
 /**
@@ -14831,7 +13295,7 @@ exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ }),
-/* 95 */
+/* 55 */
 /*!************************************************************************************************!*\
   !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/@babel/runtime/regenerator/index.js ***!
   \************************************************************************************************/
@@ -14840,11 +13304,11 @@ exports.default = _default;
 
 // TODO(Babel 8): Remove this file.
 
-var runtime = __webpack_require__(/*! @babel/runtime/helpers/regeneratorRuntime */ 96)();
+var runtime = __webpack_require__(/*! @babel/runtime/helpers/regeneratorRuntime */ 56)();
 module.exports = runtime;
 
 /***/ }),
-/* 96 */
+/* 56 */
 /*!*******************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/regeneratorRuntime.js ***!
   \*******************************************************************/
@@ -15165,7 +13629,7 @@ function _regeneratorRuntime() {
 module.exports = _regeneratorRuntime, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
-/* 97 */
+/* 57 */
 /*!*****************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/asyncToGenerator.js ***!
   \*****************************************************************/
@@ -15205,7 +13669,7 @@ function _asyncToGenerator(fn) {
 module.exports = _asyncToGenerator, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
-/* 98 */
+/* 58 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/colorGradient.js ***!
   \***************************************************************************************************/
@@ -15360,7 +13824,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 99 */
+/* 59 */
 /*!******************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/test.js ***!
   \******************************************************************************************/
@@ -15665,7 +14129,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 100 */
+/* 60 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/debounce.js ***!
   \**********************************************************************************************/
@@ -15712,7 +14176,7 @@ var _default = debounce;
 exports.default = _default;
 
 /***/ }),
-/* 101 */
+/* 61 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/throttle.js ***!
   \**********************************************************************************************/
@@ -15761,7 +14225,7 @@ var _default = throttle;
 exports.default = _default;
 
 /***/ }),
-/* 102 */
+/* 62 */
 /*!*******************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/index.js ***!
   \*******************************************************************************************/
@@ -15778,8 +14242,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 var _slicedToArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ 5));
 var _typeof2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/typeof */ 13));
-var _test = _interopRequireDefault(__webpack_require__(/*! ./test.js */ 99));
-var _digit = __webpack_require__(/*! ./digit.js */ 103);
+var _test = _interopRequireDefault(__webpack_require__(/*! ./test.js */ 59));
+var _digit = __webpack_require__(/*! ./digit.js */ 63);
 /**
  * @description 如果value小于min，取min；如果value大于max，取max
  * @param {number} min
@@ -16562,7 +15026,7 @@ exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ }),
-/* 103 */
+/* 63 */
 /*!*******************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/digit.js ***!
   \*******************************************************************************************/
@@ -16583,7 +15047,7 @@ exports.minus = minus;
 exports.plus = plus;
 exports.round = round;
 exports.times = times;
-var _toArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/toArray */ 104));
+var _toArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/toArray */ 64));
 var _boundaryCheckingState = true; // 是否进行越界检查的全局开关
 
 /**
@@ -16764,7 +15228,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 104 */
+/* 64 */
 /*!********************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/toArray.js ***!
   \********************************************************/
@@ -16781,7 +15245,7 @@ function _toArray(arr) {
 module.exports = _toArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
-/* 105 */
+/* 65 */
 /*!******************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/config.js ***!
   \******************************************************************************************/
@@ -16825,7 +15289,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 106 */
+/* 66 */
 /*!*****************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props.js ***!
   \*****************************************************************************************/
@@ -16841,95 +15305,95 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _config = _interopRequireDefault(__webpack_require__(/*! ./config */ 105));
-var _actionSheet = _interopRequireDefault(__webpack_require__(/*! ./props/actionSheet.js */ 107));
-var _album = _interopRequireDefault(__webpack_require__(/*! ./props/album.js */ 108));
-var _alert = _interopRequireDefault(__webpack_require__(/*! ./props/alert.js */ 109));
-var _avatar = _interopRequireDefault(__webpack_require__(/*! ./props/avatar */ 110));
-var _avatarGroup = _interopRequireDefault(__webpack_require__(/*! ./props/avatarGroup */ 111));
-var _backtop = _interopRequireDefault(__webpack_require__(/*! ./props/backtop */ 112));
-var _badge = _interopRequireDefault(__webpack_require__(/*! ./props/badge */ 113));
-var _button = _interopRequireDefault(__webpack_require__(/*! ./props/button */ 114));
-var _calendar = _interopRequireDefault(__webpack_require__(/*! ./props/calendar */ 115));
-var _carKeyboard = _interopRequireDefault(__webpack_require__(/*! ./props/carKeyboard */ 116));
-var _cell = _interopRequireDefault(__webpack_require__(/*! ./props/cell */ 117));
-var _cellGroup = _interopRequireDefault(__webpack_require__(/*! ./props/cellGroup */ 118));
-var _checkbox = _interopRequireDefault(__webpack_require__(/*! ./props/checkbox */ 119));
-var _checkboxGroup = _interopRequireDefault(__webpack_require__(/*! ./props/checkboxGroup */ 120));
-var _circleProgress = _interopRequireDefault(__webpack_require__(/*! ./props/circleProgress */ 121));
-var _code = _interopRequireDefault(__webpack_require__(/*! ./props/code */ 122));
-var _codeInput = _interopRequireDefault(__webpack_require__(/*! ./props/codeInput */ 123));
-var _col = _interopRequireDefault(__webpack_require__(/*! ./props/col */ 124));
-var _collapse = _interopRequireDefault(__webpack_require__(/*! ./props/collapse */ 125));
-var _collapseItem = _interopRequireDefault(__webpack_require__(/*! ./props/collapseItem */ 126));
-var _columnNotice = _interopRequireDefault(__webpack_require__(/*! ./props/columnNotice */ 127));
-var _countDown = _interopRequireDefault(__webpack_require__(/*! ./props/countDown */ 128));
-var _countTo = _interopRequireDefault(__webpack_require__(/*! ./props/countTo */ 129));
-var _datetimePicker = _interopRequireDefault(__webpack_require__(/*! ./props/datetimePicker */ 130));
-var _divider = _interopRequireDefault(__webpack_require__(/*! ./props/divider */ 131));
-var _empty = _interopRequireDefault(__webpack_require__(/*! ./props/empty */ 132));
-var _form = _interopRequireDefault(__webpack_require__(/*! ./props/form */ 133));
-var _formItem = _interopRequireDefault(__webpack_require__(/*! ./props/formItem */ 134));
-var _gap = _interopRequireDefault(__webpack_require__(/*! ./props/gap */ 135));
-var _grid = _interopRequireDefault(__webpack_require__(/*! ./props/grid */ 136));
-var _gridItem = _interopRequireDefault(__webpack_require__(/*! ./props/gridItem */ 137));
-var _icon = _interopRequireDefault(__webpack_require__(/*! ./props/icon */ 138));
-var _image = _interopRequireDefault(__webpack_require__(/*! ./props/image */ 139));
-var _indexAnchor = _interopRequireDefault(__webpack_require__(/*! ./props/indexAnchor */ 140));
-var _indexList = _interopRequireDefault(__webpack_require__(/*! ./props/indexList */ 141));
-var _input = _interopRequireDefault(__webpack_require__(/*! ./props/input */ 142));
-var _keyboard = _interopRequireDefault(__webpack_require__(/*! ./props/keyboard */ 143));
-var _line = _interopRequireDefault(__webpack_require__(/*! ./props/line */ 144));
-var _lineProgress = _interopRequireDefault(__webpack_require__(/*! ./props/lineProgress */ 145));
-var _link = _interopRequireDefault(__webpack_require__(/*! ./props/link */ 146));
-var _list = _interopRequireDefault(__webpack_require__(/*! ./props/list */ 147));
-var _listItem = _interopRequireDefault(__webpack_require__(/*! ./props/listItem */ 148));
-var _loadingIcon = _interopRequireDefault(__webpack_require__(/*! ./props/loadingIcon */ 149));
-var _loadingPage = _interopRequireDefault(__webpack_require__(/*! ./props/loadingPage */ 150));
-var _loadmore = _interopRequireDefault(__webpack_require__(/*! ./props/loadmore */ 151));
-var _modal = _interopRequireDefault(__webpack_require__(/*! ./props/modal */ 152));
-var _navbar = _interopRequireDefault(__webpack_require__(/*! ./props/navbar */ 153));
-var _noNetwork = _interopRequireDefault(__webpack_require__(/*! ./props/noNetwork */ 155));
-var _noticeBar = _interopRequireDefault(__webpack_require__(/*! ./props/noticeBar */ 156));
-var _notify = _interopRequireDefault(__webpack_require__(/*! ./props/notify */ 157));
-var _numberBox = _interopRequireDefault(__webpack_require__(/*! ./props/numberBox */ 158));
-var _numberKeyboard = _interopRequireDefault(__webpack_require__(/*! ./props/numberKeyboard */ 159));
-var _overlay = _interopRequireDefault(__webpack_require__(/*! ./props/overlay */ 160));
-var _parse = _interopRequireDefault(__webpack_require__(/*! ./props/parse */ 161));
-var _picker = _interopRequireDefault(__webpack_require__(/*! ./props/picker */ 162));
-var _popup = _interopRequireDefault(__webpack_require__(/*! ./props/popup */ 163));
-var _radio = _interopRequireDefault(__webpack_require__(/*! ./props/radio */ 164));
-var _radioGroup = _interopRequireDefault(__webpack_require__(/*! ./props/radioGroup */ 165));
-var _rate = _interopRequireDefault(__webpack_require__(/*! ./props/rate */ 166));
-var _readMore = _interopRequireDefault(__webpack_require__(/*! ./props/readMore */ 167));
-var _row = _interopRequireDefault(__webpack_require__(/*! ./props/row */ 168));
-var _rowNotice = _interopRequireDefault(__webpack_require__(/*! ./props/rowNotice */ 169));
-var _scrollList = _interopRequireDefault(__webpack_require__(/*! ./props/scrollList */ 170));
-var _search = _interopRequireDefault(__webpack_require__(/*! ./props/search */ 171));
-var _section = _interopRequireDefault(__webpack_require__(/*! ./props/section */ 172));
-var _skeleton = _interopRequireDefault(__webpack_require__(/*! ./props/skeleton */ 173));
-var _slider = _interopRequireDefault(__webpack_require__(/*! ./props/slider */ 174));
-var _statusBar = _interopRequireDefault(__webpack_require__(/*! ./props/statusBar */ 175));
-var _steps = _interopRequireDefault(__webpack_require__(/*! ./props/steps */ 176));
-var _stepsItem = _interopRequireDefault(__webpack_require__(/*! ./props/stepsItem */ 177));
-var _sticky = _interopRequireDefault(__webpack_require__(/*! ./props/sticky */ 178));
-var _subsection = _interopRequireDefault(__webpack_require__(/*! ./props/subsection */ 179));
-var _swipeAction = _interopRequireDefault(__webpack_require__(/*! ./props/swipeAction */ 180));
-var _swipeActionItem = _interopRequireDefault(__webpack_require__(/*! ./props/swipeActionItem */ 181));
-var _swiper = _interopRequireDefault(__webpack_require__(/*! ./props/swiper */ 182));
-var _swipterIndicator = _interopRequireDefault(__webpack_require__(/*! ./props/swipterIndicator */ 183));
-var _switch2 = _interopRequireDefault(__webpack_require__(/*! ./props/switch */ 184));
-var _tabbar = _interopRequireDefault(__webpack_require__(/*! ./props/tabbar */ 185));
-var _tabbarItem = _interopRequireDefault(__webpack_require__(/*! ./props/tabbarItem */ 186));
-var _tabs = _interopRequireDefault(__webpack_require__(/*! ./props/tabs */ 187));
-var _tag = _interopRequireDefault(__webpack_require__(/*! ./props/tag */ 188));
-var _text = _interopRequireDefault(__webpack_require__(/*! ./props/text */ 189));
-var _textarea = _interopRequireDefault(__webpack_require__(/*! ./props/textarea */ 190));
-var _toast = _interopRequireDefault(__webpack_require__(/*! ./props/toast */ 191));
-var _toolbar = _interopRequireDefault(__webpack_require__(/*! ./props/toolbar */ 192));
-var _tooltip = _interopRequireDefault(__webpack_require__(/*! ./props/tooltip */ 193));
-var _transition = _interopRequireDefault(__webpack_require__(/*! ./props/transition */ 194));
-var _upload = _interopRequireDefault(__webpack_require__(/*! ./props/upload */ 195));
+var _config = _interopRequireDefault(__webpack_require__(/*! ./config */ 65));
+var _actionSheet = _interopRequireDefault(__webpack_require__(/*! ./props/actionSheet.js */ 67));
+var _album = _interopRequireDefault(__webpack_require__(/*! ./props/album.js */ 68));
+var _alert = _interopRequireDefault(__webpack_require__(/*! ./props/alert.js */ 69));
+var _avatar = _interopRequireDefault(__webpack_require__(/*! ./props/avatar */ 70));
+var _avatarGroup = _interopRequireDefault(__webpack_require__(/*! ./props/avatarGroup */ 71));
+var _backtop = _interopRequireDefault(__webpack_require__(/*! ./props/backtop */ 72));
+var _badge = _interopRequireDefault(__webpack_require__(/*! ./props/badge */ 73));
+var _button = _interopRequireDefault(__webpack_require__(/*! ./props/button */ 74));
+var _calendar = _interopRequireDefault(__webpack_require__(/*! ./props/calendar */ 75));
+var _carKeyboard = _interopRequireDefault(__webpack_require__(/*! ./props/carKeyboard */ 76));
+var _cell = _interopRequireDefault(__webpack_require__(/*! ./props/cell */ 77));
+var _cellGroup = _interopRequireDefault(__webpack_require__(/*! ./props/cellGroup */ 78));
+var _checkbox = _interopRequireDefault(__webpack_require__(/*! ./props/checkbox */ 79));
+var _checkboxGroup = _interopRequireDefault(__webpack_require__(/*! ./props/checkboxGroup */ 80));
+var _circleProgress = _interopRequireDefault(__webpack_require__(/*! ./props/circleProgress */ 81));
+var _code = _interopRequireDefault(__webpack_require__(/*! ./props/code */ 82));
+var _codeInput = _interopRequireDefault(__webpack_require__(/*! ./props/codeInput */ 83));
+var _col = _interopRequireDefault(__webpack_require__(/*! ./props/col */ 84));
+var _collapse = _interopRequireDefault(__webpack_require__(/*! ./props/collapse */ 85));
+var _collapseItem = _interopRequireDefault(__webpack_require__(/*! ./props/collapseItem */ 86));
+var _columnNotice = _interopRequireDefault(__webpack_require__(/*! ./props/columnNotice */ 87));
+var _countDown = _interopRequireDefault(__webpack_require__(/*! ./props/countDown */ 88));
+var _countTo = _interopRequireDefault(__webpack_require__(/*! ./props/countTo */ 89));
+var _datetimePicker = _interopRequireDefault(__webpack_require__(/*! ./props/datetimePicker */ 90));
+var _divider = _interopRequireDefault(__webpack_require__(/*! ./props/divider */ 91));
+var _empty = _interopRequireDefault(__webpack_require__(/*! ./props/empty */ 92));
+var _form = _interopRequireDefault(__webpack_require__(/*! ./props/form */ 93));
+var _formItem = _interopRequireDefault(__webpack_require__(/*! ./props/formItem */ 94));
+var _gap = _interopRequireDefault(__webpack_require__(/*! ./props/gap */ 95));
+var _grid = _interopRequireDefault(__webpack_require__(/*! ./props/grid */ 96));
+var _gridItem = _interopRequireDefault(__webpack_require__(/*! ./props/gridItem */ 97));
+var _icon = _interopRequireDefault(__webpack_require__(/*! ./props/icon */ 98));
+var _image = _interopRequireDefault(__webpack_require__(/*! ./props/image */ 99));
+var _indexAnchor = _interopRequireDefault(__webpack_require__(/*! ./props/indexAnchor */ 100));
+var _indexList = _interopRequireDefault(__webpack_require__(/*! ./props/indexList */ 101));
+var _input = _interopRequireDefault(__webpack_require__(/*! ./props/input */ 102));
+var _keyboard = _interopRequireDefault(__webpack_require__(/*! ./props/keyboard */ 103));
+var _line = _interopRequireDefault(__webpack_require__(/*! ./props/line */ 104));
+var _lineProgress = _interopRequireDefault(__webpack_require__(/*! ./props/lineProgress */ 105));
+var _link = _interopRequireDefault(__webpack_require__(/*! ./props/link */ 106));
+var _list = _interopRequireDefault(__webpack_require__(/*! ./props/list */ 107));
+var _listItem = _interopRequireDefault(__webpack_require__(/*! ./props/listItem */ 108));
+var _loadingIcon = _interopRequireDefault(__webpack_require__(/*! ./props/loadingIcon */ 109));
+var _loadingPage = _interopRequireDefault(__webpack_require__(/*! ./props/loadingPage */ 110));
+var _loadmore = _interopRequireDefault(__webpack_require__(/*! ./props/loadmore */ 111));
+var _modal = _interopRequireDefault(__webpack_require__(/*! ./props/modal */ 112));
+var _navbar = _interopRequireDefault(__webpack_require__(/*! ./props/navbar */ 113));
+var _noNetwork = _interopRequireDefault(__webpack_require__(/*! ./props/noNetwork */ 115));
+var _noticeBar = _interopRequireDefault(__webpack_require__(/*! ./props/noticeBar */ 116));
+var _notify = _interopRequireDefault(__webpack_require__(/*! ./props/notify */ 117));
+var _numberBox = _interopRequireDefault(__webpack_require__(/*! ./props/numberBox */ 118));
+var _numberKeyboard = _interopRequireDefault(__webpack_require__(/*! ./props/numberKeyboard */ 119));
+var _overlay = _interopRequireDefault(__webpack_require__(/*! ./props/overlay */ 120));
+var _parse = _interopRequireDefault(__webpack_require__(/*! ./props/parse */ 121));
+var _picker = _interopRequireDefault(__webpack_require__(/*! ./props/picker */ 122));
+var _popup = _interopRequireDefault(__webpack_require__(/*! ./props/popup */ 123));
+var _radio = _interopRequireDefault(__webpack_require__(/*! ./props/radio */ 124));
+var _radioGroup = _interopRequireDefault(__webpack_require__(/*! ./props/radioGroup */ 125));
+var _rate = _interopRequireDefault(__webpack_require__(/*! ./props/rate */ 126));
+var _readMore = _interopRequireDefault(__webpack_require__(/*! ./props/readMore */ 127));
+var _row = _interopRequireDefault(__webpack_require__(/*! ./props/row */ 128));
+var _rowNotice = _interopRequireDefault(__webpack_require__(/*! ./props/rowNotice */ 129));
+var _scrollList = _interopRequireDefault(__webpack_require__(/*! ./props/scrollList */ 130));
+var _search = _interopRequireDefault(__webpack_require__(/*! ./props/search */ 131));
+var _section = _interopRequireDefault(__webpack_require__(/*! ./props/section */ 132));
+var _skeleton = _interopRequireDefault(__webpack_require__(/*! ./props/skeleton */ 133));
+var _slider = _interopRequireDefault(__webpack_require__(/*! ./props/slider */ 134));
+var _statusBar = _interopRequireDefault(__webpack_require__(/*! ./props/statusBar */ 135));
+var _steps = _interopRequireDefault(__webpack_require__(/*! ./props/steps */ 136));
+var _stepsItem = _interopRequireDefault(__webpack_require__(/*! ./props/stepsItem */ 137));
+var _sticky = _interopRequireDefault(__webpack_require__(/*! ./props/sticky */ 138));
+var _subsection = _interopRequireDefault(__webpack_require__(/*! ./props/subsection */ 139));
+var _swipeAction = _interopRequireDefault(__webpack_require__(/*! ./props/swipeAction */ 140));
+var _swipeActionItem = _interopRequireDefault(__webpack_require__(/*! ./props/swipeActionItem */ 141));
+var _swiper = _interopRequireDefault(__webpack_require__(/*! ./props/swiper */ 142));
+var _swipterIndicator = _interopRequireDefault(__webpack_require__(/*! ./props/swipterIndicator */ 143));
+var _switch2 = _interopRequireDefault(__webpack_require__(/*! ./props/switch */ 144));
+var _tabbar = _interopRequireDefault(__webpack_require__(/*! ./props/tabbar */ 145));
+var _tabbarItem = _interopRequireDefault(__webpack_require__(/*! ./props/tabbarItem */ 146));
+var _tabs = _interopRequireDefault(__webpack_require__(/*! ./props/tabs */ 147));
+var _tag = _interopRequireDefault(__webpack_require__(/*! ./props/tag */ 148));
+var _text = _interopRequireDefault(__webpack_require__(/*! ./props/text */ 149));
+var _textarea = _interopRequireDefault(__webpack_require__(/*! ./props/textarea */ 150));
+var _toast = _interopRequireDefault(__webpack_require__(/*! ./props/toast */ 151));
+var _toolbar = _interopRequireDefault(__webpack_require__(/*! ./props/toolbar */ 152));
+var _tooltip = _interopRequireDefault(__webpack_require__(/*! ./props/tooltip */ 153));
+var _transition = _interopRequireDefault(__webpack_require__(/*! ./props/transition */ 154));
+var _upload = _interopRequireDefault(__webpack_require__(/*! ./props/upload */ 155));
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 var color = _config.default.color;
@@ -16937,7 +15401,7 @@ var _default = _objectSpread(_objectSpread(_objectSpread(_objectSpread(_objectSp
 exports.default = _default;
 
 /***/ }),
-/* 107 */
+/* 67 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/actionSheet.js ***!
   \*****************************************************************************************************/
@@ -16981,7 +15445,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 108 */
+/* 68 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/album.js ***!
   \***********************************************************************************************/
@@ -17025,7 +15489,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 109 */
+/* 69 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/alert.js ***!
   \***********************************************************************************************/
@@ -17064,7 +15528,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 110 */
+/* 70 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/avatar.js ***!
   \************************************************************************************************/
@@ -17109,7 +15573,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 111 */
+/* 71 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/avatarGroup.js ***!
   \*****************************************************************************************************/
@@ -17151,7 +15615,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 112 */
+/* 72 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/backtop.js ***!
   \*************************************************************************************************/
@@ -17197,7 +15661,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 113 */
+/* 73 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/badge.js ***!
   \***********************************************************************************************/
@@ -17243,7 +15707,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 114 */
+/* 74 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/button.js ***!
   \************************************************************************************************/
@@ -17302,7 +15766,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 115 */
+/* 75 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/calendar.js ***!
   \**************************************************************************************************/
@@ -17365,7 +15829,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 116 */
+/* 76 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/carKeyboard.js ***!
   \*****************************************************************************************************/
@@ -17397,7 +15861,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 117 */
+/* 77 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/cell.js ***!
   \**********************************************************************************************/
@@ -17449,7 +15913,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 118 */
+/* 78 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/cellGroup.js ***!
   \***************************************************************************************************/
@@ -17483,7 +15947,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 119 */
+/* 79 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/checkbox.js ***!
   \**************************************************************************************************/
@@ -17527,7 +15991,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 120 */
+/* 80 */
 /*!*******************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/checkboxGroup.js ***!
   \*******************************************************************************************************/
@@ -17575,7 +16039,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 121 */
+/* 81 */
 /*!********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/circleProgress.js ***!
   \********************************************************************************************************/
@@ -17607,7 +16071,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 122 */
+/* 82 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/code.js ***!
   \**********************************************************************************************/
@@ -17644,7 +16108,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 123 */
+/* 83 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/codeInput.js ***!
   \***************************************************************************************************/
@@ -17690,7 +16154,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 124 */
+/* 84 */
 /*!*********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/col.js ***!
   \*********************************************************************************************/
@@ -17726,7 +16190,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 125 */
+/* 85 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/collapse.js ***!
   \**************************************************************************************************/
@@ -17760,7 +16224,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 126 */
+/* 86 */
 /*!******************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/collapseItem.js ***!
   \******************************************************************************************************/
@@ -17802,7 +16266,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 127 */
+/* 87 */
 /*!******************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/columnNotice.js ***!
   \******************************************************************************************************/
@@ -17843,7 +16307,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 128 */
+/* 88 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/countDown.js ***!
   \***************************************************************************************************/
@@ -17878,7 +16342,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 129 */
+/* 89 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/countTo.js ***!
   \*************************************************************************************************/
@@ -17920,7 +16384,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 130 */
+/* 90 */
 /*!********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/datetimePicker.js ***!
   \********************************************************************************************************/
@@ -17975,7 +16439,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 131 */
+/* 91 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/divider.js ***!
   \*************************************************************************************************/
@@ -18014,7 +16478,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 132 */
+/* 92 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/empty.js ***!
   \***********************************************************************************************/
@@ -18056,7 +16520,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 133 */
+/* 93 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/form.js ***!
   \**********************************************************************************************/
@@ -18101,7 +16565,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 134 */
+/* 94 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/formItem.js ***!
   \**************************************************************************************************/
@@ -18141,7 +16605,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 135 */
+/* 95 */
 /*!*********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/gap.js ***!
   \*********************************************************************************************/
@@ -18177,7 +16641,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 136 */
+/* 96 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/grid.js ***!
   \**********************************************************************************************/
@@ -18211,7 +16675,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 137 */
+/* 97 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/gridItem.js ***!
   \**************************************************************************************************/
@@ -18244,7 +16708,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 138 */
+/* 98 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/icon.js ***!
   \**********************************************************************************************/
@@ -18259,7 +16723,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _config = _interopRequireDefault(__webpack_require__(/*! ../config */ 105));
+var _config = _interopRequireDefault(__webpack_require__(/*! ../config */ 65));
 /*
  * @Author       : LQ
  * @Description  :
@@ -18296,7 +16760,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 139 */
+/* 99 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/image.js ***!
   \***********************************************************************************************/
@@ -18343,7 +16807,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 140 */
+/* 100 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/indexAnchor.js ***!
   \*****************************************************************************************************/
@@ -18379,7 +16843,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 141 */
+/* 101 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/indexList.js ***!
   \***************************************************************************************************/
@@ -18417,7 +16881,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 142 */
+/* 102 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/input.js ***!
   \***********************************************************************************************/
@@ -18482,7 +16946,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 143 */
+/* 103 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/keyboard.js ***!
   \**************************************************************************************************/
@@ -18529,7 +16993,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 144 */
+/* 104 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/line.js ***!
   \**********************************************************************************************/
@@ -18566,7 +17030,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 145 */
+/* 105 */
 /*!******************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/lineProgress.js ***!
   \******************************************************************************************************/
@@ -18602,7 +17066,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 146 */
+/* 106 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/link.js ***!
   \**********************************************************************************************/
@@ -18617,7 +17081,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _config = _interopRequireDefault(__webpack_require__(/*! ../config */ 105));
+var _config = _interopRequireDefault(__webpack_require__(/*! ../config */ 65));
 /*
  * @Author       : LQ
  * @Description  :
@@ -18644,7 +17108,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 147 */
+/* 107 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/list.js ***!
   \**********************************************************************************************/
@@ -18689,7 +17153,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 148 */
+/* 108 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/listItem.js ***!
   \**************************************************************************************************/
@@ -18721,7 +17185,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 149 */
+/* 109 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/loadingIcon.js ***!
   \*****************************************************************************************************/
@@ -18736,7 +17200,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _config = _interopRequireDefault(__webpack_require__(/*! ../config */ 105));
+var _config = _interopRequireDefault(__webpack_require__(/*! ../config */ 65));
 /*
  * @Author       : LQ
  * @Description  :
@@ -18767,7 +17231,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 150 */
+/* 110 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/loadingPage.js ***!
   \*****************************************************************************************************/
@@ -18807,7 +17271,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 151 */
+/* 111 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/loadmore.js ***!
   \**************************************************************************************************/
@@ -18856,7 +17320,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 152 */
+/* 112 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/modal.js ***!
   \***********************************************************************************************/
@@ -18904,7 +17368,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 153 */
+/* 113 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/navbar.js ***!
   \************************************************************************************************/
@@ -18919,7 +17383,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _color = _interopRequireDefault(__webpack_require__(/*! ../color */ 154));
+var _color = _interopRequireDefault(__webpack_require__(/*! ../color */ 114));
 /*
  * @Author       : LQ
  * @Description  :
@@ -18953,7 +17417,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 154 */
+/* 114 */
 /*!*****************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/color.js ***!
   \*****************************************************************************************/
@@ -18986,7 +17450,7 @@ var _default = color;
 exports.default = _default;
 
 /***/ }),
-/* 155 */
+/* 115 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/noNetwork.js ***!
   \***************************************************************************************************/
@@ -19020,7 +17484,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 156 */
+/* 116 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/noticeBar.js ***!
   \***************************************************************************************************/
@@ -19066,7 +17530,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 157 */
+/* 117 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/notify.js ***!
   \************************************************************************************************/
@@ -19105,7 +17569,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 158 */
+/* 118 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/numberBox.js ***!
   \***************************************************************************************************/
@@ -19157,7 +17621,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 159 */
+/* 119 */
 /*!********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/numberKeyboard.js ***!
   \********************************************************************************************************/
@@ -19191,7 +17655,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 160 */
+/* 120 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/overlay.js ***!
   \*************************************************************************************************/
@@ -19226,7 +17690,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 161 */
+/* 121 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/parse.js ***!
   \***********************************************************************************************/
@@ -19265,7 +17729,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 162 */
+/* 122 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/picker.js ***!
   \************************************************************************************************/
@@ -19315,7 +17779,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 163 */
+/* 123 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/popup.js ***!
   \***********************************************************************************************/
@@ -19361,7 +17825,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 164 */
+/* 124 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/radio.js ***!
   \***********************************************************************************************/
@@ -19405,7 +17869,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 165 */
+/* 125 */
 /*!****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/radioGroup.js ***!
   \****************************************************************************************************/
@@ -19452,7 +17916,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 166 */
+/* 126 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/rate.js ***!
   \**********************************************************************************************/
@@ -19495,7 +17959,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 167 */
+/* 127 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/readMore.js ***!
   \**************************************************************************************************/
@@ -19534,7 +17998,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 168 */
+/* 128 */
 /*!*********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/row.js ***!
   \*********************************************************************************************/
@@ -19568,7 +18032,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 169 */
+/* 129 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/rowNotice.js ***!
   \***************************************************************************************************/
@@ -19606,7 +18070,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 170 */
+/* 130 */
 /*!****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/scrollList.js ***!
   \****************************************************************************************************/
@@ -19643,7 +18107,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 171 */
+/* 131 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/search.js ***!
   \************************************************************************************************/
@@ -19701,7 +18165,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 172 */
+/* 132 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/section.js ***!
   \*************************************************************************************************/
@@ -19742,7 +18206,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 173 */
+/* 133 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/skeleton.js ***!
   \**************************************************************************************************/
@@ -19784,7 +18248,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 174 */
+/* 134 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/slider.js ***!
   \************************************************************************************************/
@@ -19826,7 +18290,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 175 */
+/* 135 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/statusBar.js ***!
   \***************************************************************************************************/
@@ -19858,7 +18322,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 176 */
+/* 136 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/steps.js ***!
   \***********************************************************************************************/
@@ -19896,7 +18360,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 177 */
+/* 137 */
 /*!***************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/stepsItem.js ***!
   \***************************************************************************************************/
@@ -19931,7 +18395,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 178 */
+/* 138 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/sticky.js ***!
   \************************************************************************************************/
@@ -19968,7 +18432,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 179 */
+/* 139 */
 /*!****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/subsection.js ***!
   \****************************************************************************************************/
@@ -20008,7 +18472,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 180 */
+/* 140 */
 /*!*****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/swipeAction.js ***!
   \*****************************************************************************************************/
@@ -20040,7 +18504,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 181 */
+/* 141 */
 /*!*********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/swipeActionItem.js ***!
   \*********************************************************************************************************/
@@ -20078,7 +18542,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 182 */
+/* 142 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/swiper.js ***!
   \************************************************************************************************/
@@ -20135,7 +18599,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 183 */
+/* 143 */
 /*!**********************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/swipterIndicator.js ***!
   \**********************************************************************************************************/
@@ -20171,7 +18635,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 184 */
+/* 144 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/switch.js ***!
   \************************************************************************************************/
@@ -20212,7 +18676,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 185 */
+/* 145 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/tabbar.js ***!
   \************************************************************************************************/
@@ -20251,7 +18715,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 186 */
+/* 146 */
 /*!****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/tabbarItem.js ***!
   \****************************************************************************************************/
@@ -20288,7 +18752,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 187 */
+/* 147 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/tabs.js ***!
   \**********************************************************************************************/
@@ -20345,7 +18809,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 188 */
+/* 148 */
 /*!*********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/tag.js ***!
   \*********************************************************************************************/
@@ -20391,7 +18855,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 189 */
+/* 149 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/text.js ***!
   \**********************************************************************************************/
@@ -20447,7 +18911,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 190 */
+/* 150 */
 /*!**************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/textarea.js ***!
   \**************************************************************************************************/
@@ -20500,7 +18964,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 191 */
+/* 151 */
 /*!***********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/toast.js ***!
   \***********************************************************************************************/
@@ -20546,7 +19010,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 192 */
+/* 152 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/toolbar.js ***!
   \*************************************************************************************************/
@@ -20583,7 +19047,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 193 */
+/* 153 */
 /*!*************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/tooltip.js ***!
   \*************************************************************************************************/
@@ -20627,7 +19091,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 194 */
+/* 154 */
 /*!****************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/transition.js ***!
   \****************************************************************************************************/
@@ -20662,7 +19126,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 195 */
+/* 155 */
 /*!************************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/props/upload.js ***!
   \************************************************************************************************/
@@ -20721,7 +19185,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 196 */
+/* 156 */
 /*!******************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/config/zIndex.js ***!
   \******************************************************************************************/
@@ -20757,7 +19221,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 197 */
+/* 157 */
 /*!**********************************************************************************************!*\
   !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/libs/function/platform.js ***!
   \**********************************************************************************************/
@@ -20785,6 +19249,1775 @@ platform = 'weixin';
 platform = 'mp';
 var _default = platform;
 exports.default = _default;
+
+/***/ }),
+/* 158 */
+/*!************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni.promisify.adaptor.js ***!
+  \************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(uni) {var _typeof = __webpack_require__(/*! @babel/runtime/helpers/typeof */ 13);
+uni.addInterceptor({
+  returnValue: function returnValue(res) {
+    if (!(!!res && (_typeof(res) === "object" || typeof res === "function") && typeof res.then === "function")) {
+      return res;
+    }
+    return new Promise(function (resolve, reject) {
+      res.then(function (res) {
+        if (!res) return resolve(res);
+        return res[0] ? reject(res[0]) : resolve(res[1]);
+      });
+    });
+  }
+});
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+/* 159 */,
+/* 160 */,
+/* 161 */,
+/* 162 */,
+/* 163 */,
+/* 164 */,
+/* 165 */
+/*!********************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/pages/index/index.js ***!
+  \********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni, wx) {
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.BAIDU_CLIENT_SECRET = exports.BAIDU_CLIENT_ID = exports.BAIDU_AK = void 0;
+exports.addWatermark = addWatermark;
+exports.chooseLocation = chooseLocation;
+exports.clipImg = clipImg;
+exports.compressImg = compressImg;
+exports.convertNumber = convertNumber;
+exports.getBaiduAPIAccessToken = getBaiduAPIAccessToken;
+exports.getBaiduAddressInfoByLocation = getBaiduAddressInfoByLocation;
+exports.getBaiduAddressListByKeywords = getBaiduAddressListByKeywords;
+exports.getCurrentDate = getCurrentDate;
+exports.getFileInfoFun = getFileInfoFun;
+exports.getLocation = getLocation;
+exports.getSetting = getSetting;
+exports.getUrlParamsStr = getUrlParamsStr;
+exports.isNotEmptyArr = isNotEmptyArr;
+exports.isNotEmptyObj = isNotEmptyObj;
+exports.parseAddressByBaiduAPI = parseAddressByBaiduAPI;
+exports.saveImageToPA = saveImageToPA;
+exports.showModal = showModal;
+exports.showMsg = showMsg;
+exports.showNextMsg = showNextMsg;
+var _objectDestructuringEmpty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/objectDestructuringEmpty */ 202));
+var _slicedToArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ 5));
+var _typeof2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/typeof */ 13));
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+var _objectWithoutProperties2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/objectWithoutProperties */ 166));
+var _excluded = ["canvasId", "watermarkList"];
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+// 百度AK
+var BAIDU_AK = 'YMrC0KTdWJmLZCQM5CzW5V1DPOfVvBDV';
+// 百度客户端id
+exports.BAIDU_AK = BAIDU_AK;
+var BAIDU_CLIENT_ID = '百度客户端id';
+// 百度客户端密钥
+exports.BAIDU_CLIENT_ID = BAIDU_CLIENT_ID;
+var BAIDU_CLIENT_SECRET = '百度客户端密钥';
+
+// 空字符特征
+exports.BAIDU_CLIENT_SECRET = BAIDU_CLIENT_SECRET;
+var EMPTY_STR_ARR = [undefined, '', null];
+
+// 格式化
+function formatDateStr(n) {
+  return n > 9 ? n : '0' + n;
+}
+
+/**
+ * @description: 获取当前日期 , 负数表示以前,正数标示未来
+ * @param {number} offset 偏移量
+ * @return {*}
+ */
+function getCurrentDate() {
+  var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+  var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+  var dayTimeStr = offset * (60 * 1000 * 60 * 24);
+  var dateTimeStr = new Date().getTime() + dayTimeStr;
+  var date = new Date(dateTimeStr);
+  var year = date.getFullYear();
+  var month = date.getMonth() + 1;
+  var day = date.getDate();
+  var hour = date.getHours();
+  var minute = date.getMinutes();
+  var second = date.getSeconds();
+  var dataStr = "".concat(year, "-").concat(formatDateStr(month), "-").concat(formatDateStr(day));
+  if (type === 1) {
+    dataStr += " ".concat(formatDateStr(hour), ":").concat(formatDateStr(minute), ":").concat(formatDateStr(second));
+  }
+  return dataStr;
+}
+
+/**
+ * @description: 消息模板提示
+ * @param {string} content、提示文案内容
+ * @param {string} title、提示标题
+ * @param {string} confirmText 确认文案
+ * @param {string} cancelText 取消文案
+ */
+function showModal(props) {
+  var defaultProps = {
+    title: '提示',
+    confirmText: '确定',
+    cancelText: '取消'
+  };
+  if (props) {
+    if (typeof props === 'string') {
+      defaultProps.content = props;
+    } else {
+      defaultProps = Object.assign(defaultProps, props);
+    }
+  }
+  uni.showModal(defaultProps);
+}
+
+// 信息提示
+function showMsg(text) {
+  var icon = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'none';
+  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 2500;
+  uni.showToast({
+    title: text,
+    icon: icon,
+    duration: duration
+  });
+}
+
+// 信息提示
+function showNextMsg(text) {
+  var icon = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'none';
+  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 2500;
+  setTimeout(function () {
+    uni.showToast({
+      title: text,
+      icon: icon,
+      duration: duration
+    });
+  });
+}
+
+/**
+ * @description: 如果用户取消授权，再次调用起授权; getSetting只有微信小程序支持， H5在微信环境下需要JSSDK鉴权实现
+ */
+function getSetting() {
+  return new Promise(function (resolve, reject) {
+    wx.getSetting({
+      success: function success(res) {
+        if (res.authSetting['scope.userLocation'] != undefined && res.authSetting['scope.userLocation'] != true) {
+          //非初始化进入该页面,且未授权
+          wx.showModal({
+            title: '是否授权当前位置',
+            content: '需要获取您的地理位置，请确认授权，否则无法获取您所需数据',
+            success: function success(res) {
+              if (res.cancel) {
+                reject('取消授权，地理定位失败');
+              }
+              if (res.confirm) {
+                wx.openSetting({
+                  success: function success(res) {
+                    if (res.authSetting["scope.userLocation"] == true) {
+                      showMsg('授权成功', 'success');
+                      resolve(true);
+                    } else {
+                      reject('授权失败，地理定位失败');
+                    }
+                  }
+                });
+              }
+            },
+            fail: function fail() {
+              reject('地理定位失败');
+            }
+          });
+        } else if (res.authSetting['scope.userLocation'] == undefined) {
+          //初始化进入
+          resolve(true);
+        } else {
+          //授权后默认加载
+          resolve(true);
+        }
+      }
+    });
+  });
+}
+
+/**
+ * @description: 地理定位
+ */
+function getLocation() {
+  return new Promise(function (resolve, reject) {
+    uni.getLocation({
+      type: 'gcj02',
+      isHighAccuracy: true,
+      success: function success(res) {
+        resolve(res);
+      },
+      fail: function fail(err) {
+        showMsg('定位失败，请检查网络,GPS定位是否开启以及微信地理位置授权等情况');
+        reject(false);
+      }
+    });
+  });
+}
+
+/**
+ * @description: 微信小程序的选择附近的地址
+ */
+function chooseLocation() {
+  return new Promise(function (resolve, reject) {
+    uni.chooseLocation({
+      success: function success(res) {
+        resolve(res);
+      },
+      fail: function fail(res) {
+        showMsg('获取附近地址失败！请检查网络,GPS定位是否开启以及微信地理位置授权等情况！');
+      }
+    });
+  });
+}
+
+// 处理及校验传参
+function dealWatermarkConfig(options) {
+  var valdiateRulesObj = {
+    canvasId: '画布id',
+    imagePath: '本地图片路径'
+  };
+  var defaultWatermarkItem = {
+    fontSize: 20,
+    color: 'red',
+    margin: 25,
+    position: 'bottomLeft' // topLeft / topRight / bottomLeft / bottomRight
+  };
+
+  var errLog = validateObj(options, valdiateRulesObj);
+  var canvasId = options.canvasId,
+    watermarkList = options.watermarkList,
+    restObj = (0, _objectWithoutProperties2.default)(options, _excluded);
+  var nList = [];
+  console.log('watermarkListsdf', watermarkList);
+  if (isNotEmptyArr(watermarkList)) {
+    var nErrLog = [];
+    watermarkList.forEach(function (ele) {
+      var nEle = _objectSpread(_objectSpread({}, defaultWatermarkItem), ele);
+      if (convertNumber(nEle.fontSize) <= 16) {
+        nErrLog.push('水印项字体大小需大于16');
+      }
+      if (convertNumber(nEle.margin) <= 10) {
+        nErrLog.push('水印项边距大小需大于10');
+      }
+      if (typeof nEle.text === 'string') {
+        EMPTY_STR_ARR.includes(nEle.text) && nErrLog.push('水印项文案不能为空');
+      } else {
+        !isNotEmptyArr(nEle.text) && nErrLog.push('水印项文案数组不能为空');
+      }
+      var positionArr = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
+      if (!positionArr.includes(nEle.position)) {
+        nErrLog.push("\u6C34\u5370\u9879\u4F4D\u7F6E\u4E0D\u6EE1\u8DB3\u3010".concat(positionArr.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
+      }
+      if (!nErrLog.length) {
+        nList.push(nEle);
+      }
+    });
+    errLog.push.apply(errLog, nErrLog);
+  } else {
+    errLog.push('水印项是必填的且为数组');
+  }
+  return {
+    errLog: errLog,
+    config: _objectSpread(_objectSpread({}, restObj), {}, {
+      canvasId: canvasId,
+      watermarkList: nList
+    })
+  };
+}
+
+// 计算x,y位置
+function calcPosition(options) {
+  var height = options.height,
+    width = options.width,
+    position = options.position,
+    marginVal = options.margin,
+    ind = options.ind,
+    fontSize = options.fontSize,
+    textMetrics = options.textMetrics;
+  var calcX = marginVal;
+  var calcY = height - marginVal;
+  switch (position) {
+    case 'topLeft':
+      {
+        calcX = marginVal;
+        calcY = marginVal + fontSize * (ind + 1);
+        break;
+      }
+    case 'topRight':
+      {
+        calcX = width - marginVal - textMetrics.width;
+        calcY = marginVal + fontSize * (ind + 1);
+        break;
+      }
+    case 'bottomLeft':
+      {
+        calcX = marginVal;
+        calcY = height - marginVal - fontSize * ind;
+        break;
+      }
+    case 'bottomRight':
+      {
+        calcX = width - marginVal - textMetrics.width;
+        calcY = height - marginVal - fontSize * ind;
+        break;
+      }
+  }
+  return {
+    calcX: calcX,
+    calcY: calcY
+  };
+}
+
+/**
+ * @description: 给图片添加水印
+ * @param {string} options
+ * @param {string} that 组件的this实例
+ * @return {*}
+ * ···
+ * // 在template 中加入：
+ * 			<canvas :style="{ width: watermarkCanvasOption.width + 'px', height: watermarkCanvasOption.height + 'px' }"
+ *				canvas-id="watermarkCanvas" id="watermarkCanvas" style="position: absolute; top: -10000000rpx;" />
+ * 
+ * // 在 script 的 data中加入
+ *   			watermarkCanvasOption: {
+ *					width: 0,
+ *					height: 0,
+ *					canvasContext: void(0)
+ *				}
+ * 
+ * // 在对应地方使用
+ * addWatermark({
+					canvasId: 'watermarkCanvas',
+					imagePath: tPath,
+					watermarkList: [{
+						fontSize: 12,
+						text: '测试',
+						// text: ['测试', '测试12'],
+					}]
+				}, this).then(res => {
+					return saveImageToPA(res)
+				})
+ * ···
+ */
+function addWatermark(options, that) {
+  return new Promise(function (resolve, reject) {
+    var _dealWatermarkConfig = dealWatermarkConfig(options),
+      errLog = _dealWatermarkConfig.errLog,
+      config = _dealWatermarkConfig.config;
+    if (!errLog.length) {
+      var canvasId = config.canvasId,
+        imagePath = config.imagePath,
+        watermarkList = config.watermarkList;
+      var ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
+      uni.getImageInfo({
+        // 获取图片信息，以便获取图片的真实宽高信息
+        src: imagePath,
+        success: function success(info) {
+          var width = info.width,
+            height = info.height; // 获取图片的原始宽高
+          that.watermarkCanvasOption.width = width;
+          that.watermarkCanvasOption.height = height;
+          ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
+          // 绘制水印项
+          var drawWMItem = function drawWMItem(ctx, options) {
+            var fontSize = options.fontSize,
+              color = options.color,
+              cText = options.text,
+              position = options.position,
+              margin = options.margin;
+            // 添加水印
+            ctx.setFontSize(fontSize); // 设置字体大小
+            ctx.setFillStyle(color); // 设置字体颜色为红色
+
+            if (isNotEmptyArr(cText)) {
+              var _text = cText.filter(Boolean);
+              if (position.startsWith('bottom')) {
+                _text.reverse();
+              }
+              _text.forEach(function (str, ind) {
+                var textMetrics = ctx.measureText(str);
+                var _calcPosition = calcPosition({
+                    height: height,
+                    width: width,
+                    position: position,
+                    margin: margin,
+                    ind: ind,
+                    fontSize: fontSize,
+                    textMetrics: textMetrics
+                  }),
+                  calcX = _calcPosition.calcX,
+                  calcY = _calcPosition.calcY;
+                ctx.fillText(str, calcX, calcY, width);
+              });
+            } else {
+              var textMetrics = ctx.measureText(cText);
+              var _calcPosition2 = calcPosition({
+                  height: height,
+                  width: width,
+                  position: position,
+                  margin: margin,
+                  ind: 0,
+                  fontSize: fontSize,
+                  textMetrics: textMetrics
+                }),
+                calcX = _calcPosition2.calcX,
+                calcY = _calcPosition2.calcY;
+              // 在图片底部添加水印文字
+              ctx.fillText(text, calcX, calcY, width);
+            }
+          };
+          watermarkList.forEach(function (ele) {
+            drawWMItem(ctx, ele);
+          });
+
+          // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+          ctx.draw(false, function () {
+            uni.canvasToTempFilePath({
+              // 将画布内容导出为图片
+              canvasId: canvasId,
+              x: 0,
+              y: 0,
+              width: width,
+              height: height,
+              destWidth: width,
+              destHeight: height,
+              success: function success(res) {
+                console.log('res.tempFilePath', res);
+                resolve(res.tempFilePath);
+              },
+              fail: function fail() {
+                reject(false);
+              }
+            }, that);
+          });
+        }
+      });
+    } else {
+      var errStr = errLog.join(';');
+      showMsg(errStr);
+      reject(errStr);
+    }
+  });
+}
+
+// 保存图片到相册
+function saveImageToPA(tPath) {
+  return new Promise(function (resolve, reject) {
+    if (tPath) {
+      uni.saveImageToPhotosAlbum({
+        filePath: tPath,
+        success: function success() {
+          showMsg('保存成功');
+          resolve(true);
+        },
+        fail: function fail() {
+          reject(false);
+        }
+      });
+    } else {
+      showMsg('未获取到图片本地路径');
+      reject(false);
+    }
+  });
+}
+
+// 获取url params 字符串
+function getUrlParamsStr(paramsObj) {
+  if ((0, _typeof2.default)(paramsObj) === 'object') {
+    return Object.entries(paramsObj).map(function (ele) {
+      return "".concat(ele[0], "=").concat(ele[1]);
+    }).join('&');
+  } else {
+    return '';
+  }
+}
+
+/**
+ * @description: 转换为数字
+ * @param {unknown} str
+ * @return {*}
+ */
+function convertNumber(str) {
+  var val = Number(str);
+  return isNaN(val) ? 0 : val;
+}
+
+// 判断是否是空对象
+function isNotEmptyObj(obj) {
+  var _Object$keys;
+  return (0, _typeof2.default)(obj) === 'object' && ((_Object$keys = Object.keys(obj)) === null || _Object$keys === void 0 ? void 0 : _Object$keys.length);
+}
+
+// 判断是否是空数组
+function isNotEmptyArr(arr) {
+  return Array.isArray(arr) && arr.length;
+}
+
+// 校验对象属性值不能为空
+function validateObj(valdiateData) {
+  var validateRules = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var text = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+  if (isNotEmptyObj(validateRules)) {
+    if (isNotEmptyObj(valdiateData)) {
+      var errLog = [];
+      Object.entries(validateRules).forEach(function (item) {
+        var _item = (0, _slicedToArray2.default)(item, 2),
+          key = _item[0],
+          value = _item[1];
+        var val = valdiateData[key];
+        if (typeof value === 'string') {
+          if (EMPTY_STR_ARR.includes(val)) {
+            errLog.push("".concat(text ? text + '-' : '').concat(validateRules[key], "\u4E0D\u80FD\u4E3A\u7A7A"));
+          }
+        } else if (isNotEmptyObj(value)) {
+          var name = value.name,
+            rules = value.rules;
+          if (isNotEmptyArr(rules) && !rules.includes(val)) {
+            errLog.push("".concat(text ? text + '-' : '').concat(name, "\u4E0D\u80FD\u6EE1\u8DB3\u3010").concat(rules.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
+          }
+        } else if (typeof value === 'function') {
+          var fRes = value(val);
+          fRes && errLog.push(fRes === null || fRes === void 0 ? void 0 : fRes.toString());
+        }
+      });
+      return errLog;
+    } else {
+      return [];
+    }
+  } else {
+    return [];
+  }
+}
+
+// 获取百度accessToken
+function getBaiduAPIAccessToken() {
+  var that = this;
+  return new Promise(function (resolve, reject) {
+    var paramsObj = {
+      client_id: BAIDU_CLIENT_ID,
+      client_secret: BAIDU_CLIENT_SECRET,
+      grant_type: 'client_credentials'
+    };
+    var paramsStr = getUrlParamsStr(paramsObj);
+    uni.request({
+      url: 'https://aip.baidubce.com/oauth/2.0/token?' + paramsStr,
+      method: "POST",
+      dataType: "json",
+      header: {
+        'Content-Type': 'application/json'
+      },
+      success: function success(res) {
+        var _res$data;
+        console.log('获取百度accessToken======>', res);
+        var token = (res === null || res === void 0 ? void 0 : (_res$data = res.data) === null || _res$data === void 0 ? void 0 : _res$data.access_token) || '';
+        if (token) {
+          resolve(token);
+        } else {
+          reject(false);
+        }
+      },
+      fail: function fail(res) {
+        reject(false);
+      }
+    });
+  });
+}
+
+/**
+ * @description: 通过百度AI 开放接口解析地址
+ * @param { { access_token:string , addressStr:string } } config  access_token 百度token , addressStr 地址文案
+ */
+function parseAddressByBaiduAPI(config) {
+  return new Promise(function (resolve, reject) {
+    var access_token = config.access_token,
+      addressStr = config.addressStr;
+    if (access_token) {
+      if (addressStr) {
+        uni.request({
+          url: 'https://aip.baidubce.com/rpc/2.0/nlp/v1/address?access_token=' + access_token,
+          method: "POST",
+          dataType: "json",
+          header: {
+            'Content-Type': 'application/json'
+          },
+          data: {
+            "text": addressStr,
+            "confidence": 100
+          },
+          success: function success(res) {
+            console.log('通过百度AI 开放接口解析地址=====>', res);
+            resolve(res);
+          },
+          fail: function fail(res) {
+            reject(false);
+          }
+        });
+      } else {
+        reject('解析地址字符串不能为空');
+      }
+    } else {
+      reject('缺少百度accessToken,无法调用此API');
+    }
+  });
+}
+
+/**
+ * @description: 通过关键词获取百度地址
+ * @param { { provice:string , city:string, area:string, address:string } } config 关键词
+ */
+function getBaiduAddressListByKeywords(config) {
+  return new Promise(function (resolve, reject) {
+    if (config && (0, _typeof2.default)(config) === 'object') {
+      var valdiateRulesObj = {
+        province: '省份',
+        city: '城市',
+        area: '区/县',
+        address: '详细地址'
+      };
+      var errLog = validateObj(config, valdiateRulesObj);
+      if (!errLog.length) {
+        var province = config.province,
+          city = config.city,
+          area = config.area,
+          address = config.address;
+        var region = province + city + area;
+        var paramsObj = {
+          ak: BAIDU_AK,
+          query: region + address,
+          region: region,
+          output: 'json'
+        };
+        var paramsStr = getUrlParamsStr(paramsObj);
+        uni.request({
+          url: 'https://api.map.baidu.com/place/v2/search?' + paramsStr,
+          method: "get",
+          dataType: "json",
+          header: {
+            'Content-Type': 'application/json'
+          },
+          success: function success(res) {
+            var _res$data2;
+            var addressList = (res === null || res === void 0 ? void 0 : (_res$data2 = res.data) === null || _res$data2 === void 0 ? void 0 : _res$data2.results) || [];
+            resolve(addressList);
+          },
+          fail: function fail(res) {
+            reject('搜索详细地址列表失败');
+          }
+        });
+      } else {
+        showMsg(errLog[0]);
+        reject(errLog[0]);
+      }
+    } else {
+      showMsg('参数[config]为非空对象');
+      reject('参数[config]为非空对象');
+    }
+  });
+}
+
+/**
+ * @description: 通过经纬度解析百度地址
+ * @param { { location:string | number, latitude:string | number  } } config 经纬度对象
+ * 
+ * 示例请求： https://api.map.baidu.com/reverse_geocoding/v3/?ak=您的ak&output=json&coordtype=wgs84ll&location=31.225696563611,121.49884033194
+ * 官方文档： https://lbsyun.baidu.com/faq/api?title=webapi/guide/webservice-geocoding-abroad-base
+ */
+function getBaiduAddressInfoByLocation(config) {
+  return new Promise(function (resolve, reject) {
+    if (config && (0, _typeof2.default)(config) === 'object') {
+      var longitude = config.longitude,
+        latitude = config.latitude;
+      var longitudeVal = convertNumber(longitude);
+      var latitudeVal = convertNumber(latitude);
+      var errLog = [];
+      if (longitudeVal >= 180 && longitudeVal <= 90) {
+        errLog.push('经度[longitude]参数需大90度并小于180度');
+      }
+      if (latitudeVal >= 90 && latitudeVal <= 0) {
+        errLog.push('经度[longitude]参数需大0度并小于90度');
+      }
+      if (!errLog.length) {
+        var paramsObj = {
+          ak: BAIDU_AK,
+          location: "".concat(latitudeVal, ",").concat(longitudeVal),
+          output: 'json'
+        };
+        var paramsStr = getUrlParamsStr(paramsObj);
+        uni.request({
+          url: 'https://api.map.baidu.com/reverse_geocoding/v3/?' + paramsStr,
+          method: "get",
+          dataType: "json",
+          header: {
+            'Content-Type': 'application/json'
+          },
+          success: function success(res) {
+            var _res$data3;
+            var addressInfo = res === null || res === void 0 ? void 0 : (_res$data3 = res.data) === null || _res$data3 === void 0 ? void 0 : _res$data3.result;
+            console.log('经纬度解析百度地址', addressInfo);
+            if (addressInfo) {
+              resolve(addressInfo);
+            } else {
+              reject('经纬度解析地址失败');
+            }
+          },
+          fail: function fail(res) {
+            reject('经纬度解析地址失败');
+          }
+        });
+      } else {
+        reject(errLog[0]);
+      }
+    } else {
+      reject('参数[config]为非空对象');
+    }
+  });
+}
+
+/**
+ * @description: 根据文件尺寸获取压缩比
+ * @param { number } fileSize 文件尺寸
+ */
+function getCompressionRatio(fileSize) {
+  var compressionRatio = 1;
+  if (fileSize > 7 * 1024 * 1024) {
+    compressionRatio = 0.1;
+  } else if (fileSize > 4 * 1024 * 1024) {
+    compressionRatio = 0.3;
+  } else if (fileSize > 2 * 1024 * 1024) {
+    compressionRatio = 0.5;
+  } else if (fileSize > 1 * 1024 * 1024) {
+    compressionRatio = 0.7;
+  }
+  return compressionRatio;
+}
+
+// 校验参数
+function dealCompressImgConfig(options) {
+  var valdiateRulesObj = {
+    canvasId: '画布id',
+    imagePath: '本地图片路径',
+    fileSize: '文件尺寸'
+  };
+  var errLog = validateObj(options, valdiateRulesObj);
+  return {
+    errLog: errLog,
+    config: options
+  };
+}
+
+/**
+ * @description: 获取文件信息
+ * @param { { imagePath :  string  } } config 本地图片路径
+ * 
+ *  ios 微信小程序支持 wx.compressImage(Object object) 压缩图片接口，可选压缩质量。iOS 仅支持压缩 JPG 格式图片
+ */
+function getFileInfoFun(options) {
+  return new Promise(function (resolve, reject) {
+    var imagePath = options.imagePath;
+    if (imagePath) {
+      var fileManager = uni.getFileSystemManager();
+      fileManager.getFileInfo({
+        filePath: imagePath,
+        success: function success(res) {
+          return resolve(res);
+        },
+        fail: function fail() {
+          return reject(false);
+        }
+      });
+    } else {
+      reject(false);
+    }
+  });
+}
+
+// 压缩图片
+function compressImg(options, that) {
+  return new Promise(function (resolve, reject) {
+    var _dealCompressImgConfi = dealCompressImgConfig(options),
+      errLog = _dealCompressImgConfi.errLog,
+      config = _dealCompressImgConfi.config;
+    if (!errLog.length) {
+      var canvasId = config.canvasId,
+        imagePath = config.imagePath,
+        _fileSize = config.fileSize;
+
+      // 获取图片信息，以便获取图片的真实宽高信息
+      uni.getImageInfo({
+        src: imagePath,
+        success: function success(info) {
+          var width = info.width,
+            height = info.height; // 获取图片的原始宽高
+
+          var ratio = getCompressionRatio(_fileSize);
+          if (ratio < 1) {
+            // 按对折比例缩小
+            var imageW = Math.floor(width * ratio);
+            var imageH = Math.floor(height * ratio);
+
+            // 获取canvas绘图上下文
+            var ctx = uni.createCanvasContext(canvasId, that);
+            that.watermarkCanvasOption.width = imageW;
+            that.watermarkCanvasOption.height = imageH;
+
+            // 绘制原始图片到canvas上
+            ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+
+            // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+            ctx.draw(false, function () {
+              uni.canvasToTempFilePath({
+                // 将画布内容导出为图片
+                canvasId: canvasId,
+                x: 0,
+                y: 0,
+                width: imageW,
+                height: imageH,
+                destWidth: imageW,
+                destHeight: imageH,
+                success: function success(res) {
+                  console.log('res.tempFilePath', res);
+                  resolve(res.tempFilePath);
+                },
+                fail: function fail() {
+                  reject(false);
+                }
+              }, that);
+            });
+          } else {
+            return imagePath;
+          }
+        }
+      });
+    } else {
+      var errStr = errLog.join(';');
+      showMsg(errStr);
+      reject(errStr);
+    }
+  });
+}
+
+// 校验参数
+function dealClipImgConfig(options) {
+  var valdiateRulesObj = {
+    canvasId: '画布id',
+    imagePath: '本地图片路径'
+  };
+  var errLog = validateObj(options, valdiateRulesObj);
+  return {
+    errLog: errLog,
+    config: options
+  };
+}
+
+// 计算剪切位置
+function calcClipPosition(options) {
+  (0, _objectDestructuringEmpty2.default)(options);
+}
+
+// 剪切图片
+function clipImg(options, that) {
+  return new Promise(function (resolve, reject) {
+    var _dealClipImgConfig = dealClipImgConfig(options),
+      errLog = _dealClipImgConfig.errLog,
+      config = _dealClipImgConfig.config;
+    if (!errLog.length) {
+      var canvasId = config.canvasId,
+        imagePath = config.imagePath;
+
+      // 获取图片信息，以便获取图片的真实宽高信息
+      uni.getImageInfo({
+        src: imagePath,
+        success: function success(info) {
+          var width = info.width,
+            height = info.height; // 获取图片的原始宽高
+
+          var ratio = getCompressionRatio(fileSize);
+          if (ratio < 1) {
+            // 按对折比例缩小
+            var imageW = Math.floor(width * ratio);
+            var imageH = Math.floor(height * ratio);
+
+            // 获取canvas绘图上下文
+            var ctx = uni.createCanvasContext(canvasId, that);
+            that.watermarkCanvasOption.width = imageW;
+            that.watermarkCanvasOption.height = imageH;
+
+            // 绘制原始图片到canvas上
+            ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+
+            // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+            ctx.draw(false, function () {
+              uni.canvasToTempFilePath({
+                // 将画布内容导出为图片
+                canvasId: canvasId,
+                x: 0,
+                y: 0,
+                width: imageW,
+                height: imageH,
+                destWidth: imageW,
+                destHeight: imageH,
+                success: function success(res) {
+                  console.log('res.tempFilePath', res);
+                  resolve(res.tempFilePath);
+                },
+                fail: function fail() {
+                  reject(false);
+                }
+              }, that);
+            });
+          } else {
+            return imagePath;
+          }
+        }
+      });
+    } else {
+      var errStr = errLog.join(';');
+      showMsg(errStr);
+      reject(errStr);
+    }
+  });
+}
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/wx.js */ 1)["default"]))
+
+/***/ }),
+/* 166 */
+/*!************************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/objectWithoutProperties.js ***!
+  \************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var objectWithoutPropertiesLoose = __webpack_require__(/*! ./objectWithoutPropertiesLoose.js */ 167);
+function _objectWithoutProperties(source, excluded) {
+  if (source == null) return {};
+  var target = objectWithoutPropertiesLoose(source, excluded);
+  var key, i;
+  if (Object.getOwnPropertySymbols) {
+    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+    for (i = 0; i < sourceSymbolKeys.length; i++) {
+      key = sourceSymbolKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+module.exports = _objectWithoutProperties, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+/* 167 */
+/*!*****************************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/objectWithoutPropertiesLoose.js ***!
+  \*****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+  return target;
+}
+module.exports = _objectWithoutPropertiesLoose, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+/* 168 */,
+/* 169 */,
+/* 170 */,
+/* 171 */,
+/* 172 */,
+/* 173 */,
+/* 174 */,
+/* 175 */
+/*!*************************************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-upload/utils.js ***!
+  \*************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni, wx) {
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.chooseFile = chooseFile;
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function pickExclude(obj, keys) {
+  // 某些情况下，type可能会为
+  if (!['[object Object]', '[object File]'].includes(Object.prototype.toString.call(obj))) {
+    return {};
+  }
+  return Object.keys(obj).reduce(function (prev, key) {
+    if (!keys.includes(key)) {
+      prev[key] = obj[key];
+    }
+    return prev;
+  }, {});
+}
+function formatImage(res) {
+  return res.tempFiles.map(function (item) {
+    return _objectSpread(_objectSpread({}, pickExclude(item, ['path'])), {}, {
+      type: 'image',
+      url: item.path,
+      thumb: item.path,
+      size: item.size
+    });
+  });
+}
+function formatVideo(res) {
+  return [_objectSpread(_objectSpread({}, pickExclude(res, ['tempFilePath', 'thumbTempFilePath', 'errMsg'])), {}, {
+    type: 'video',
+    url: res.tempFilePath,
+    thumb: res.thumbTempFilePath,
+    size: res.size
+  })];
+}
+function formatMedia(res) {
+  return res.tempFiles.map(function (item) {
+    return _objectSpread(_objectSpread({}, pickExclude(item, ['fileType', 'thumbTempFilePath', 'tempFilePath'])), {}, {
+      type: res.type,
+      url: item.tempFilePath,
+      thumb: res.type === 'video' ? item.thumbTempFilePath : item.tempFilePath,
+      size: item.size
+    });
+  });
+}
+function formatFile(res) {
+  return res.tempFiles.map(function (item) {
+    return _objectSpread(_objectSpread({}, pickExclude(item, ['path'])), {}, {
+      url: item.path,
+      size: item.size
+    });
+  });
+}
+function chooseFile(_ref) {
+  var accept = _ref.accept,
+    multiple = _ref.multiple,
+    capture = _ref.capture,
+    compressed = _ref.compressed,
+    maxDuration = _ref.maxDuration,
+    sizeType = _ref.sizeType,
+    camera = _ref.camera,
+    maxCount = _ref.maxCount;
+  return new Promise(function (resolve, reject) {
+    switch (accept) {
+      case 'image':
+        uni.chooseImage({
+          count: multiple ? Math.min(maxCount, 9) : 1,
+          sourceType: capture,
+          sizeType: sizeType,
+          success: function success(res) {
+            return resolve(formatImage(res));
+          },
+          fail: reject
+        });
+        break;
+
+      // 只有微信小程序才支持chooseMedia接口
+      case 'media':
+        wx.chooseMedia({
+          count: multiple ? Math.min(maxCount, 9) : 1,
+          sourceType: capture,
+          maxDuration: maxDuration,
+          sizeType: sizeType,
+          camera: camera,
+          success: function success(res) {
+            return resolve(formatMedia(res));
+          },
+          fail: reject
+        });
+        break;
+      case 'video':
+        uni.chooseVideo({
+          sourceType: capture,
+          compressed: compressed,
+          maxDuration: maxDuration,
+          camera: camera,
+          success: function success(res) {
+            return resolve(formatVideo(res));
+          },
+          fail: reject
+        });
+        break;
+
+      // 只有微信小程序才支持chooseMessageFile接口
+      case 'file':
+        wx.chooseMessageFile({
+          count: multiple ? maxCount : 1,
+          type: accept,
+          success: function success(res) {
+            return resolve(formatFile(res));
+          },
+          fail: reject
+        });
+        break;
+      default:
+        // 此为保底选项，在accept不为上面任意一项的时候选取全部文件
+
+        wx.chooseMessageFile({
+          count: multiple ? maxCount : 1,
+          type: 'all',
+          success: function success(res) {
+            return resolve(formatFile(res));
+          },
+          fail: reject
+        });
+    }
+  });
+}
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/wx.js */ 1)["default"]))
+
+/***/ }),
+/* 176 */
+/*!*************************************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-upload/mixin.js ***!
+  \*************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  watch: {
+    // 监听accept的变化，判断是否符合个平台要求
+    // 只有微信小程序才支持选择媒体，文件类型，所以这里做一个判断提示
+    accept: {
+      immediate: true,
+      handler: function handler(val) {}
+    }
+  }
+};
+exports.default = _default;
+
+/***/ }),
+/* 177 */
+/*!*************************************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-upload/props.js ***!
+  \*************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  props: {
+    // 接受的文件类型, 可选值为all media image file video
+    accept: {
+      type: String,
+      default: uni.$u.props.upload.accept
+    },
+    // 	图片或视频拾取模式，当accept为image类型时设置capture可选额外camera可以直接调起摄像头
+    capture: {
+      type: [String, Array],
+      default: uni.$u.props.upload.capture
+    },
+    // 当accept为video时生效，是否压缩视频，默认为true
+    compressed: {
+      type: Boolean,
+      default: uni.$u.props.upload.compressed
+    },
+    // 当accept为video时生效，可选值为back或front
+    camera: {
+      type: String,
+      default: uni.$u.props.upload.camera
+    },
+    // 当accept为video时生效，拍摄视频最长拍摄时间，单位秒
+    maxDuration: {
+      type: Number,
+      default: uni.$u.props.upload.maxDuration
+    },
+    // 上传区域的图标，只能内置图标
+    uploadIcon: {
+      type: String,
+      default: uni.$u.props.upload.uploadIcon
+    },
+    // 上传区域的图标的颜色，默认
+    uploadIconColor: {
+      type: String,
+      default: uni.$u.props.upload.uploadIconColor
+    },
+    // 是否开启文件读取前事件
+    useBeforeRead: {
+      type: Boolean,
+      default: uni.$u.props.upload.useBeforeRead
+    },
+    // 读取后的处理函数
+    afterRead: {
+      type: Function,
+      default: null
+    },
+    // 读取前的处理函数
+    beforeRead: {
+      type: Function,
+      default: null
+    },
+    // 是否显示组件自带的图片预览功能
+    previewFullImage: {
+      type: Boolean,
+      default: uni.$u.props.upload.previewFullImage
+    },
+    // 最大上传数量
+    maxCount: {
+      type: [String, Number],
+      default: uni.$u.props.upload.maxCount
+    },
+    // 是否启用
+    disabled: {
+      type: Boolean,
+      default: uni.$u.props.upload.disabled
+    },
+    // 预览上传的图片时的裁剪模式，和image组件mode属性一致
+    imageMode: {
+      type: String,
+      default: uni.$u.props.upload.imageMode
+    },
+    // 标识符，可以在回调函数的第二项参数中获取
+    name: {
+      type: String,
+      default: uni.$u.props.upload.name
+    },
+    // 所选的图片的尺寸, 可选值为original compressed
+    sizeType: {
+      type: Array,
+      default: uni.$u.props.upload.sizeType
+    },
+    // 是否开启图片多选，部分安卓机型不支持
+    multiple: {
+      type: Boolean,
+      default: uni.$u.props.upload.multiple
+    },
+    // 是否展示删除按钮
+    deletable: {
+      type: Boolean,
+      default: uni.$u.props.upload.deletable
+    },
+    // 文件大小限制，单位为byte
+    maxSize: {
+      type: [String, Number],
+      default: uni.$u.props.upload.maxSize
+    },
+    // 显示已上传的文件列表
+    fileList: {
+      type: Array,
+      default: uni.$u.props.upload.fileList
+    },
+    // 上传区域的提示文字
+    uploadText: {
+      type: String,
+      default: uni.$u.props.upload.uploadText
+    },
+    // 内部预览图片区域和选择图片按钮的区域宽度
+    width: {
+      type: [String, Number],
+      default: uni.$u.props.upload.width
+    },
+    // 内部预览图片区域和选择图片按钮的区域高度
+    height: {
+      type: [String, Number],
+      default: uni.$u.props.upload.height
+    },
+    // 是否在上传完成后展示预览图
+    previewImage: {
+      type: Boolean,
+      default: uni.$u.props.upload.previewImage
+    }
+  }
+};
+exports.default = _default;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+/* 178 */,
+/* 179 */,
+/* 180 */,
+/* 181 */,
+/* 182 */,
+/* 183 */,
+/* 184 */,
+/* 185 */
+/*!***********************************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-icon/icons.js ***!
+  \***********************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  'uicon-level': "\uE693",
+  'uicon-column-line': "\uE68E",
+  'uicon-checkbox-mark': "\uE807",
+  'uicon-folder': "\uE7F5",
+  'uicon-movie': "\uE7F6",
+  'uicon-star-fill': "\uE669",
+  'uicon-star': "\uE65F",
+  'uicon-phone-fill': "\uE64F",
+  'uicon-phone': "\uE622",
+  'uicon-apple-fill': "\uE881",
+  'uicon-chrome-circle-fill': "\uE885",
+  'uicon-backspace': "\uE67B",
+  'uicon-attach': "\uE632",
+  'uicon-cut': "\uE948",
+  'uicon-empty-car': "\uE602",
+  'uicon-empty-coupon': "\uE682",
+  'uicon-empty-address': "\uE646",
+  'uicon-empty-favor': "\uE67C",
+  'uicon-empty-permission': "\uE686",
+  'uicon-empty-news': "\uE687",
+  'uicon-empty-search': "\uE664",
+  'uicon-github-circle-fill': "\uE887",
+  'uicon-rmb': "\uE608",
+  'uicon-person-delete-fill': "\uE66A",
+  'uicon-reload': "\uE788",
+  'uicon-order': "\uE68F",
+  'uicon-server-man': "\uE6BC",
+  'uicon-search': "\uE62A",
+  'uicon-fingerprint': "\uE955",
+  'uicon-more-dot-fill': "\uE630",
+  'uicon-scan': "\uE662",
+  'uicon-share-square': "\uE60B",
+  'uicon-map': "\uE61D",
+  'uicon-map-fill': "\uE64E",
+  'uicon-tags': "\uE629",
+  'uicon-tags-fill': "\uE651",
+  'uicon-bookmark-fill': "\uE63B",
+  'uicon-bookmark': "\uE60A",
+  'uicon-eye': "\uE613",
+  'uicon-eye-fill': "\uE641",
+  'uicon-mic': "\uE64A",
+  'uicon-mic-off': "\uE649",
+  'uicon-calendar': "\uE66E",
+  'uicon-calendar-fill': "\uE634",
+  'uicon-trash': "\uE623",
+  'uicon-trash-fill': "\uE658",
+  'uicon-play-left': "\uE66D",
+  'uicon-play-right': "\uE610",
+  'uicon-minus': "\uE618",
+  'uicon-plus': "\uE62D",
+  'uicon-info': "\uE653",
+  'uicon-info-circle': "\uE7D2",
+  'uicon-info-circle-fill': "\uE64B",
+  'uicon-question': "\uE715",
+  'uicon-error': "\uE6D3",
+  'uicon-close': "\uE685",
+  'uicon-checkmark': "\uE6A8",
+  'uicon-android-circle-fill': "\uE67E",
+  'uicon-android-fill': "\uE67D",
+  'uicon-ie': "\uE87B",
+  'uicon-IE-circle-fill': "\uE889",
+  'uicon-google': "\uE87A",
+  'uicon-google-circle-fill': "\uE88A",
+  'uicon-setting-fill': "\uE872",
+  'uicon-setting': "\uE61F",
+  'uicon-minus-square-fill': "\uE855",
+  'uicon-plus-square-fill': "\uE856",
+  'uicon-heart': "\uE7DF",
+  'uicon-heart-fill': "\uE851",
+  'uicon-camera': "\uE7D7",
+  'uicon-camera-fill': "\uE870",
+  'uicon-more-circle': "\uE63E",
+  'uicon-more-circle-fill': "\uE645",
+  'uicon-chat': "\uE620",
+  'uicon-chat-fill': "\uE61E",
+  'uicon-bag-fill': "\uE617",
+  'uicon-bag': "\uE619",
+  'uicon-error-circle-fill': "\uE62C",
+  'uicon-error-circle': "\uE624",
+  'uicon-close-circle': "\uE63F",
+  'uicon-close-circle-fill': "\uE637",
+  'uicon-checkmark-circle': "\uE63D",
+  'uicon-checkmark-circle-fill': "\uE635",
+  'uicon-question-circle-fill': "\uE666",
+  'uicon-question-circle': "\uE625",
+  'uicon-share': "\uE631",
+  'uicon-share-fill': "\uE65E",
+  'uicon-shopping-cart': "\uE621",
+  'uicon-shopping-cart-fill': "\uE65D",
+  'uicon-bell': "\uE609",
+  'uicon-bell-fill': "\uE640",
+  'uicon-list': "\uE650",
+  'uicon-list-dot': "\uE616",
+  'uicon-zhihu': "\uE6BA",
+  'uicon-zhihu-circle-fill': "\uE709",
+  'uicon-zhifubao': "\uE6B9",
+  'uicon-zhifubao-circle-fill': "\uE6B8",
+  'uicon-weixin-circle-fill': "\uE6B1",
+  'uicon-weixin-fill': "\uE6B2",
+  'uicon-twitter-circle-fill': "\uE6AB",
+  'uicon-twitter': "\uE6AA",
+  'uicon-taobao-circle-fill': "\uE6A7",
+  'uicon-taobao': "\uE6A6",
+  'uicon-weibo-circle-fill': "\uE6A5",
+  'uicon-weibo': "\uE6A4",
+  'uicon-qq-fill': "\uE6A1",
+  'uicon-qq-circle-fill': "\uE6A0",
+  'uicon-moments-circel-fill': "\uE69A",
+  'uicon-moments': "\uE69B",
+  'uicon-qzone': "\uE695",
+  'uicon-qzone-circle-fill': "\uE696",
+  'uicon-baidu-circle-fill': "\uE680",
+  'uicon-baidu': "\uE681",
+  'uicon-facebook-circle-fill': "\uE68A",
+  'uicon-facebook': "\uE689",
+  'uicon-car': "\uE60C",
+  'uicon-car-fill': "\uE636",
+  'uicon-warning-fill': "\uE64D",
+  'uicon-warning': "\uE694",
+  'uicon-clock-fill': "\uE638",
+  'uicon-clock': "\uE60F",
+  'uicon-edit-pen': "\uE612",
+  'uicon-edit-pen-fill': "\uE66B",
+  'uicon-email': "\uE611",
+  'uicon-email-fill': "\uE642",
+  'uicon-minus-circle': "\uE61B",
+  'uicon-minus-circle-fill': "\uE652",
+  'uicon-plus-circle': "\uE62E",
+  'uicon-plus-circle-fill': "\uE661",
+  'uicon-file-text': "\uE663",
+  'uicon-file-text-fill': "\uE665",
+  'uicon-pushpin': "\uE7E3",
+  'uicon-pushpin-fill': "\uE86E",
+  'uicon-grid': "\uE673",
+  'uicon-grid-fill': "\uE678",
+  'uicon-play-circle': "\uE647",
+  'uicon-play-circle-fill': "\uE655",
+  'uicon-pause-circle-fill': "\uE654",
+  'uicon-pause': "\uE8FA",
+  'uicon-pause-circle': "\uE643",
+  'uicon-eye-off': "\uE648",
+  'uicon-eye-off-outline': "\uE62B",
+  'uicon-gift-fill': "\uE65C",
+  'uicon-gift': "\uE65B",
+  'uicon-rmb-circle-fill': "\uE657",
+  'uicon-rmb-circle': "\uE677",
+  'uicon-kefu-ermai': "\uE656",
+  'uicon-server-fill': "\uE751",
+  'uicon-coupon-fill': "\uE8C4",
+  'uicon-coupon': "\uE8AE",
+  'uicon-integral': "\uE704",
+  'uicon-integral-fill': "\uE703",
+  'uicon-home-fill': "\uE964",
+  'uicon-home': "\uE965",
+  'uicon-hourglass-half-fill': "\uE966",
+  'uicon-hourglass': "\uE967",
+  'uicon-account': "\uE628",
+  'uicon-plus-people-fill': "\uE626",
+  'uicon-minus-people-fill': "\uE615",
+  'uicon-account-fill': "\uE614",
+  'uicon-thumb-down-fill': "\uE726",
+  'uicon-thumb-down': "\uE727",
+  'uicon-thumb-up': "\uE733",
+  'uicon-thumb-up-fill': "\uE72F",
+  'uicon-lock-fill': "\uE979",
+  'uicon-lock-open': "\uE973",
+  'uicon-lock-opened-fill': "\uE974",
+  'uicon-lock': "\uE97A",
+  'uicon-red-packet-fill': "\uE690",
+  'uicon-photo-fill': "\uE98B",
+  'uicon-photo': "\uE98D",
+  'uicon-volume-off-fill': "\uE659",
+  'uicon-volume-off': "\uE644",
+  'uicon-volume-fill': "\uE670",
+  'uicon-volume': "\uE633",
+  'uicon-red-packet': "\uE691",
+  'uicon-download': "\uE63C",
+  'uicon-arrow-up-fill': "\uE6B0",
+  'uicon-arrow-down-fill': "\uE600",
+  'uicon-play-left-fill': "\uE675",
+  'uicon-play-right-fill': "\uE676",
+  'uicon-rewind-left-fill': "\uE679",
+  'uicon-rewind-right-fill': "\uE67A",
+  'uicon-arrow-downward': "\uE604",
+  'uicon-arrow-leftward': "\uE601",
+  'uicon-arrow-rightward': "\uE603",
+  'uicon-arrow-upward': "\uE607",
+  'uicon-arrow-down': "\uE60D",
+  'uicon-arrow-right': "\uE605",
+  'uicon-arrow-left': "\uE60E",
+  'uicon-arrow-up': "\uE606",
+  'uicon-skip-back-left': "\uE674",
+  'uicon-skip-forward-right': "\uE672",
+  'uicon-rewind-right': "\uE66F",
+  'uicon-rewind-left': "\uE671",
+  'uicon-arrow-right-double': "\uE68D",
+  'uicon-arrow-left-double': "\uE68C",
+  'uicon-wifi-off': "\uE668",
+  'uicon-wifi': "\uE667",
+  'uicon-empty-data': "\uE62F",
+  'uicon-empty-history': "\uE684",
+  'uicon-empty-list': "\uE68B",
+  'uicon-empty-page': "\uE627",
+  'uicon-empty-order': "\uE639",
+  'uicon-man': "\uE697",
+  'uicon-woman': "\uE69C",
+  'uicon-man-add': "\uE61C",
+  'uicon-man-add-fill': "\uE64C",
+  'uicon-man-delete': "\uE61A",
+  'uicon-man-delete-fill': "\uE66A",
+  'uicon-zh': "\uE70A",
+  'uicon-en': "\uE692"
+};
+exports.default = _default;
+
+/***/ }),
+/* 186 */
+/*!***********************************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-icon/props.js ***!
+  \***********************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  props: {
+    // 图标类名
+    name: {
+      type: String,
+      default: uni.$u.props.icon.name
+    },
+    // 图标颜色，可接受主题色
+    color: {
+      type: String,
+      default: uni.$u.props.icon.color
+    },
+    // 字体大小，单位px
+    size: {
+      type: [String, Number],
+      default: uni.$u.props.icon.size
+    },
+    // 是否显示粗体
+    bold: {
+      type: Boolean,
+      default: uni.$u.props.icon.bold
+    },
+    // 点击图标的时候传递事件出去的index（用于区分点击了哪一个）
+    index: {
+      type: [String, Number],
+      default: uni.$u.props.icon.index
+    },
+    // 触摸图标时的类名
+    hoverClass: {
+      type: String,
+      default: uni.$u.props.icon.hoverClass
+    },
+    // 自定义扩展前缀，方便用户扩展自己的图标库
+    customPrefix: {
+      type: String,
+      default: uni.$u.props.icon.customPrefix
+    },
+    // 图标右边或者下面的文字
+    label: {
+      type: [String, Number],
+      default: uni.$u.props.icon.label
+    },
+    // label的位置，只能右边或者下边
+    labelPos: {
+      type: String,
+      default: uni.$u.props.icon.labelPos
+    },
+    // label的大小
+    labelSize: {
+      type: [String, Number],
+      default: uni.$u.props.icon.labelSize
+    },
+    // label的颜色
+    labelColor: {
+      type: String,
+      default: uni.$u.props.icon.labelColor
+    },
+    // label与图标的距离
+    space: {
+      type: [String, Number],
+      default: uni.$u.props.icon.space
+    },
+    // 图片的mode
+    imgMode: {
+      type: String,
+      default: uni.$u.props.icon.imgMode
+    },
+    // 用于显示图片小图标时，图片的宽度
+    width: {
+      type: [String, Number],
+      default: uni.$u.props.icon.width
+    },
+    // 用于显示图片小图标时，图片的高度
+    height: {
+      type: [String, Number],
+      default: uni.$u.props.icon.height
+    },
+    // 用于解决某些情况下，让图标垂直居中的用途
+    top: {
+      type: [String, Number],
+      default: uni.$u.props.icon.top
+    },
+    // 是否阻止事件传播
+    stop: {
+      type: Boolean,
+      default: uni.$u.props.icon.stop
+    }
+  }
+};
+exports.default = _default;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+/* 187 */,
+/* 188 */,
+/* 189 */,
+/* 190 */,
+/* 191 */,
+/* 192 */,
+/* 193 */,
+/* 194 */
+/*!*******************************************************************************************************!*\
+  !*** E:/blqc-project/Archer/uniapp_watermark/uni_modules/uview-ui/components/u-loading-icon/props.js ***!
+  \*******************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  props: {
+    // 是否显示组件
+    show: {
+      type: Boolean,
+      default: uni.$u.props.loadingIcon.show
+    },
+    // 颜色
+    color: {
+      type: String,
+      default: uni.$u.props.loadingIcon.color
+    },
+    // 提示文字颜色
+    textColor: {
+      type: String,
+      default: uni.$u.props.loadingIcon.textColor
+    },
+    // 文字和图标是否垂直排列
+    vertical: {
+      type: Boolean,
+      default: uni.$u.props.loadingIcon.vertical
+    },
+    // 模式选择，circle-圆形，spinner-花朵形，semicircle-半圆形
+    mode: {
+      type: String,
+      default: uni.$u.props.loadingIcon.mode
+    },
+    // 图标大小，单位默认px
+    size: {
+      type: [String, Number],
+      default: uni.$u.props.loadingIcon.size
+    },
+    // 文字大小
+    textSize: {
+      type: [String, Number],
+      default: uni.$u.props.loadingIcon.textSize
+    },
+    // 文字内容
+    text: {
+      type: [String, Number],
+      default: uni.$u.props.loadingIcon.text
+    },
+    // 动画模式
+    timingFunction: {
+      type: String,
+      default: uni.$u.props.loadingIcon.timingFunction
+    },
+    // 动画执行周期时间
+    duration: {
+      type: [String, Number],
+      default: uni.$u.props.loadingIcon.duration
+    },
+    // mode=circle时的暗边颜色
+    inactiveColor: {
+      type: String,
+      default: uni.$u.props.loadingIcon.inactiveColor
+    }
+  }
+};
+exports.default = _default;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+/* 195 */,
+/* 196 */,
+/* 197 */,
+/* 198 */,
+/* 199 */,
+/* 200 */,
+/* 201 */,
+/* 202 */
+/*!*************************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/objectDestructuringEmpty.js ***!
+  \*************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _objectDestructuringEmpty(obj) {
+  if (obj == null) throw new TypeError("Cannot destructure " + obj);
+}
+module.exports = _objectDestructuringEmpty, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ })
 ]]);
