@@ -218,7 +218,7 @@
 									color: 'red', // '#333333',
 									margin: 32,
 									position: 'bottomRight',
-									text: [cTime, '帅啊，兄弟', , '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
+									text: [cTime, '帅啊，兄弟', null , '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
 								},
 							]
 						}, that).then(res => {
