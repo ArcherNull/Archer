@@ -61,7 +61,7 @@
 						</view>
 						高<input type="number" v-model="clipHeight" class="inputCss" />px
 
-						<view class="inputBox_2">剪裁区域：中央</view>
+						<view class="inputBox_2">剪裁区域：{{ clipPosition }}</view>
 					</view>
 				</view>
 
@@ -99,7 +99,9 @@
 		isNotEmptyArr,
 
 		compressImg,
-		getFileInfoFun
+		getFileInfoFun,
+		convertNumber,
+		clipImg
 	} from './index.js'
 
 	export default {
@@ -135,8 +137,9 @@
 					canvasContext: null
 				},
 
-				clipWidth: 1000,
-				clipHeight: 500
+				clipWidth: 250,
+				clipHeight: 250,
+				clipPosition: 'center', // topLeft  topRight  bottomLeft  bottomRight  center
 			}
 		},
 		onLoad() {
@@ -336,34 +339,27 @@
 						// });
 					})
 					.catch(err => {
-						console.log('地址解析失败', err)
+						console.log('压缩图片失败', err)
 						uni.hideLoading()
-						showMsg(err || '获取当前定位位置失败，无法添加图片定位水印')
+						showMsg(err || '压缩图片失败')
 					})
 					.finally(() => {
 						uni.hideLoading()
 					})
 			},
 
-			//新增图片
+			// 新增图片
 			upload3(event) {
 				const that = this
 				that.imageName = event.name;
 				const tPath = event.file.url
-				getFileInfoFun({
-						imagePath: tPath
-					}).then(res => {
-						console.log('res=====>', res)
-						if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
-							return compressImg({
-								canvasId: 'watermarkCanvas',
-								imagePath: tPath,
-								fileSize: res.size
-							}, that)
-						} else {
-							return Promise.reject('获取文件信息失败')
-						}
-					})
+				return clipImg({
+						canvasId: 'watermarkCanvas',
+						imagePath: tPath,
+						cWidth: convertNumber(that.clipWidth),
+						cHeight: convertNumber(that.clipHeight),
+						position: that.clipPosition,
+					}, that)
 					.then(res => {
 						console.log('下载图片====>', res)
 						// 下载图片
@@ -375,9 +371,9 @@
 						// });
 					})
 					.catch(err => {
-						console.log('地址解析失败', err)
+						console.log('剪切图片失败', err)
 						uni.hideLoading()
-						showMsg(err || '获取当前定位位置失败，无法添加图片定位水印')
+						showMsg(err || '剪切图片失败')
 					})
 					.finally(() => {
 						uni.hideLoading()

@@ -280,8 +280,9 @@ var _default = {
         height: 0,
         canvasContext: null
       },
-      clipWidth: 1000,
-      clipHeight: 500
+      clipWidth: 250,
+      clipHeight: 250,
+      clipPosition: 'center' // topLeft  topRight  bottomLeft  bottomRight  center
     };
   },
   onLoad: function onLoad() {
@@ -461,32 +462,25 @@ var _default = {
         // 	url: res
         // });
       }).catch(function (err) {
-        console.log('地址解析失败', err);
+        console.log('压缩图片失败', err);
         uni.hideLoading();
-        (0, _index.showMsg)(err || '获取当前定位位置失败，无法添加图片定位水印');
+        (0, _index.showMsg)(err || '压缩图片失败');
       }).finally(function () {
         uni.hideLoading();
       });
     },
-    //新增图片
+    // 新增图片
     upload3: function upload3(event) {
       var that = this;
       that.imageName = event.name;
       var tPath = event.file.url;
-      (0, _index.getFileInfoFun)({
-        imagePath: tPath
-      }).then(function (res) {
-        console.log('res=====>', res);
-        if ((res === null || res === void 0 ? void 0 : res.errMsg) === 'getFileInfo:ok' && res !== null && res !== void 0 && res.size) {
-          return (0, _index.compressImg)({
-            canvasId: 'watermarkCanvas',
-            imagePath: tPath,
-            fileSize: res.size
-          }, that);
-        } else {
-          return Promise.reject('获取文件信息失败');
-        }
-      }).then(function (res) {
+      return (0, _index.clipImg)({
+        canvasId: 'watermarkCanvas',
+        imagePath: tPath,
+        cWidth: (0, _index.convertNumber)(that.clipWidth),
+        cHeight: (0, _index.convertNumber)(that.clipHeight),
+        position: that.clipPosition
+      }, that).then(function (res) {
         console.log('下载图片====>', res);
         // 下载图片
         return (0, _index.saveImageToPA)(res);
@@ -496,9 +490,9 @@ var _default = {
         // 	url: res
         // });
       }).catch(function (err) {
-        console.log('地址解析失败', err);
+        console.log('剪切图片失败', err);
         uni.hideLoading();
-        (0, _index.showMsg)(err || '获取当前定位位置失败，无法添加图片定位水印');
+        (0, _index.showMsg)(err || '剪切图片失败');
       }).finally(function () {
         uni.hideLoading();
       });

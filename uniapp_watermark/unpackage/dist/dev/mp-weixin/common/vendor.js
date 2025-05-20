@@ -19316,7 +19316,6 @@ exports.saveImageToPA = saveImageToPA;
 exports.showModal = showModal;
 exports.showMsg = showMsg;
 exports.showNextMsg = showNextMsg;
-var _objectDestructuringEmpty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/objectDestructuringEmpty */ 202));
 var _slicedToArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ 5));
 var _typeof2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/typeof */ 13));
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
@@ -19513,29 +19512,29 @@ function dealWatermarkConfig(options) {
   var nList = [];
   console.log('watermarkListsdf', watermarkList);
   if (isNotEmptyArr(watermarkList)) {
-    var nErrLog = [];
+    var _nErrLog = [];
     watermarkList.forEach(function (ele) {
       var nEle = _objectSpread(_objectSpread({}, defaultWatermarkItem), ele);
       if (convertNumber(nEle.fontSize) <= 16) {
-        nErrLog.push('水印项字体大小需大于16');
+        _nErrLog.push('水印项字体大小需大于16');
       }
       if (convertNumber(nEle.margin) <= 10) {
-        nErrLog.push('水印项边距大小需大于10');
+        _nErrLog.push('水印项边距大小需大于10');
       }
       if (typeof nEle.text === 'string') {
-        EMPTY_STR_ARR.includes(nEle.text) && nErrLog.push('水印项文案不能为空');
+        EMPTY_STR_ARR.includes(nEle.text) && _nErrLog.push('水印项文案不能为空');
       } else {
-        !isNotEmptyArr(nEle.text) && nErrLog.push('水印项文案数组不能为空');
+        !isNotEmptyArr(nEle.text) && _nErrLog.push('水印项文案数组不能为空');
       }
       var positionArr = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
       if (!positionArr.includes(nEle.position)) {
-        nErrLog.push("\u6C34\u5370\u9879\u4F4D\u7F6E\u4E0D\u6EE1\u8DB3\u3010".concat(positionArr.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
+        _nErrLog.push("\u6C34\u5370\u9879\u4F4D\u7F6E\u4E0D\u6EE1\u8DB3\u3010".concat(positionArr.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
       }
-      if (!nErrLog.length) {
+      if (!_nErrLog.length) {
         nList.push(nEle);
       }
     });
-    errLog.push.apply(errLog, nErrLog);
+    errLog.push.apply(errLog, _nErrLog);
   } else {
     errLog.push('水印项是必填的且为数组');
   }
@@ -20063,7 +20062,7 @@ function compressImg(options, that) {
     if (!errLog.length) {
       var canvasId = config.canvasId,
         imagePath = config.imagePath,
-        _fileSize = config.fileSize;
+        fileSize = config.fileSize;
 
       // 获取图片信息，以便获取图片的真实宽高信息
       uni.getImageInfo({
@@ -20072,7 +20071,7 @@ function compressImg(options, that) {
           var width = info.width,
             height = info.height; // 获取图片的原始宽高
 
-          var ratio = getCompressionRatio(_fileSize);
+          var ratio = getCompressionRatio(fileSize);
           if (ratio < 1) {
             // 按对折比例缩小
             var imageW = Math.floor(width * ratio);
@@ -20123,18 +20122,97 @@ function compressImg(options, that) {
 function dealClipImgConfig(options) {
   var valdiateRulesObj = {
     canvasId: '画布id',
-    imagePath: '本地图片路径'
+    imagePath: '本地图片路径',
+    cWidth: '剪裁宽度',
+    cHeight: '剪裁高度',
+    position: '剪裁位置'
   };
-  var errLog = validateObj(options, valdiateRulesObj);
+  var defaultConfig = {
+    position: 'center',
+    cWidth: 500,
+    cHeight: 500
+  };
+  var cOptions = Object.assign(defaultConfig, options);
+  var errLog = validateObj(cOptions, valdiateRulesObj);
+  var positionArr = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight', 'center'];
+  if (!positionArr.includes(cOptions.position)) {
+    nErrLog.push("\u6C34\u5370\u9879\u4F4D\u7F6E\u4E0D\u6EE1\u8DB3\u3010".concat(positionArr.join('/'), "\u3011\u5176\u4E2D\u4E4B\u4E00"));
+  }
+  if (convertNumber(cOptions.cWidth) <= 10) {
+    nErrLog.push('剪裁宽度需大于10');
+  }
+  if (convertNumber(cOptions.cHeight) <= 10) {
+    nErrLog.push('剪裁高度需大于10');
+  }
   return {
     errLog: errLog,
-    config: options
+    config: cOptions
   };
 }
 
 // 计算剪切位置
 function calcClipPosition(options) {
-  (0, _objectDestructuringEmpty2.default)(options);
+  var cWidth = options.cWidth,
+    cHeight = options.cHeight,
+    position = options.position,
+    width = options.width,
+    height = options.height;
+
+  // 开始点
+  var calcSX = 0;
+  var calcSY = 0;
+
+  // 结束点
+  var calcEX = 0;
+  var calcEY = 0;
+  switch (position) {
+    case 'topLeft':
+      {
+        calcSX = 0;
+        calcSY = 0;
+        calcEX = cWidth;
+        calcEY = cHeight;
+        break;
+      }
+    case 'topRight':
+      {
+        calcSX = width - cWidth;
+        calcSY = 0;
+        calcEX = width;
+        calcEY = cHeight;
+        break;
+      }
+    case 'bottomLeft':
+      {
+        calcSX = 0;
+        calcSY = height - cHeight;
+        calcEX = cWidth;
+        calcEY = height;
+        break;
+      }
+    case 'bottomRight':
+      {
+        calcSX = width - cWidth;
+        calcSY = height - cHeight;
+        calcEX = width;
+        calcEY = height;
+        break;
+      }
+    case 'center':
+      {
+        calcSX = Math.floor((width - cWidth) / 2);
+        calcSY = Math.floor((height - cHeight) / 2);
+        calcEX = cWidth + calcSX;
+        calcEY = cHeight + calcSY;
+        break;
+      }
+  }
+  return {
+    calcSX: calcSX,
+    calcSY: calcSY,
+    calcEX: calcEX,
+    calcEY: calcEY
+  };
 }
 
 // 剪切图片
@@ -20145,7 +20223,10 @@ function clipImg(options, that) {
       config = _dealClipImgConfig.config;
     if (!errLog.length) {
       var canvasId = config.canvasId,
-        imagePath = config.imagePath;
+        imagePath = config.imagePath,
+        cWidth = config.cWidth,
+        cHeight = config.cHeight,
+        position = config.position;
 
       // 获取图片信息，以便获取图片的真实宽高信息
       uni.getImageInfo({
@@ -20154,31 +20235,39 @@ function clipImg(options, that) {
           var width = info.width,
             height = info.height; // 获取图片的原始宽高
 
-          var ratio = getCompressionRatio(fileSize);
-          if (ratio < 1) {
-            // 按对折比例缩小
-            var imageW = Math.floor(width * ratio);
-            var imageH = Math.floor(height * ratio);
+          // 自定义剪裁范围要在图片内
+          if (width >= cWidth && height >= cHeight) {
+            var _calcClipPosition = calcClipPosition({
+                cWidth: cWidth,
+                cHeight: cHeight,
+                position: position,
+                width: width,
+                height: height
+              }),
+              calcSX = _calcClipPosition.calcSX,
+              calcSY = _calcClipPosition.calcSY,
+              calcEX = _calcClipPosition.calcEX,
+              calcEY = _calcClipPosition.calcEY;
 
             // 获取canvas绘图上下文
             var ctx = uni.createCanvasContext(canvasId, that);
-            that.watermarkCanvasOption.width = imageW;
-            that.watermarkCanvasOption.height = imageH;
+            that.watermarkCanvasOption.width = width;
+            that.watermarkCanvasOption.height = height;
 
             // 绘制原始图片到canvas上
-            ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+            ctx.drawImage(imagePath, 0, 0, width, height);
 
             // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
             ctx.draw(false, function () {
               uni.canvasToTempFilePath({
                 // 将画布内容导出为图片
                 canvasId: canvasId,
-                x: 0,
-                y: 0,
-                width: imageW,
-                height: imageH,
-                destWidth: imageW,
-                destHeight: imageH,
+                x: calcSX,
+                y: calcSY,
+                width: cWidth,
+                height: cHeight,
+                destWidth: cWidth,
+                destHeight: cHeight,
                 success: function success(res) {
                   console.log('res.tempFilePath', res);
                   resolve(res.tempFilePath);
@@ -20998,26 +21087,6 @@ var _default = {
 };
 exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-/* 195 */,
-/* 196 */,
-/* 197 */,
-/* 198 */,
-/* 199 */,
-/* 200 */,
-/* 201 */,
-/* 202 */
-/*!*************************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/objectDestructuringEmpty.js ***!
-  \*************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function _objectDestructuringEmpty(obj) {
-  if (obj == null) throw new TypeError("Cannot destructure " + obj);
-}
-module.exports = _objectDestructuringEmpty, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ })
 ]]);

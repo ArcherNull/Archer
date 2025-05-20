@@ -873,19 +873,109 @@ function dealClipImgConfig(options) {
 	const valdiateRulesObj = {
 		canvasId: '画布id',
 		imagePath: '本地图片路径',
+		cWidth: '剪裁宽度',
+		cHeight: '剪裁高度',
+		position: '剪裁位置'
 	}
-	const errLog = validateObj(options, valdiateRulesObj)
+
+	const defaultConfig = {
+		position: 'center',
+		cWidth: 500,
+		cHeight: 500
+	}
+
+	const cOptions = Object.assign(defaultConfig, options)
+
+	const errLog = validateObj(cOptions, valdiateRulesObj)
+
+	const positionArr = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight', 'center']
+	if (!positionArr.includes(cOptions.position)) {
+		nErrLog.push(`水印项位置不满足【${positionArr.join('/')}】其中之一`)
+	}
+
+	if (convertNumber(cOptions.cWidth) <= 10) {
+		nErrLog.push('剪裁宽度需大于10')
+	}
+
+	if (convertNumber(cOptions.cHeight) <= 10) {
+		nErrLog.push('剪裁高度需大于10')
+	}
 
 	return {
 		errLog,
-		config: options
+		config: cOptions
 	}
 }
 
 // 计算剪切位置
-function calcClipPosition(options){
-	const {  } = options
-	
+function calcClipPosition(options) {
+	const {
+		cWidth,
+		cHeight,
+		position,
+		width,
+		height
+	} = options
+
+	// 开始点
+	let calcSX = 0
+	let calcSY = 0
+
+	// 结束点
+	let calcEX = 0
+	let calcEY = 0
+	switch (position) {
+		case 'topLeft': {
+			calcSX = 0
+			calcSY = 0
+			calcEX = cWidth
+			calcEY = cHeight
+
+			break;
+		}
+		case 'topRight': {
+			calcSX = width - cWidth
+			calcSY = 0
+			calcEX = width
+			calcEY = cHeight
+
+			break;
+		}
+
+		case 'bottomLeft': {
+			calcSX = 0
+			calcSY = height - cHeight
+			calcEX = cWidth
+			calcEY = height
+
+			break;
+		}
+
+		case 'bottomRight': {
+			calcSX = width - cWidth
+			calcSY = height - cHeight
+			calcEX = width
+			calcEY = height
+
+			break;
+		}
+
+		case 'center': {
+			calcSX = Math.floor((width - cWidth) / 2)
+			calcSY = Math.floor((height - cHeight) / 2)
+			calcEX = cWidth + calcSX
+			calcEY = cHeight + calcSY
+
+			break;
+		}
+	}
+
+	return {
+		calcSX,
+		calcSY,
+		calcEX,
+		calcEY
+	}
 }
 
 
@@ -901,6 +991,9 @@ export function clipImg(options, that) {
 			const {
 				canvasId,
 				imagePath,
+				cWidth,
+				cHeight,
+				position
 			} = config
 
 			// 获取图片信息，以便获取图片的真实宽高信息
@@ -912,31 +1005,41 @@ export function clipImg(options, that) {
 						height
 					} = info; // 获取图片的原始宽高
 
-					const ratio = getCompressionRatio(fileSize)
-					if (ratio < 1) {
-						// 按对折比例缩小
-						const imageW = Math.floor(width * ratio)
-						const imageH = Math.floor(height * ratio)
+					// 自定义剪裁范围要在图片内
+					if (width >= cWidth && height >= cHeight) {
+
+						const {
+							calcSX,
+							calcSY,
+							calcEX,
+							calcEY
+						} = calcClipPosition({
+							cWidth,
+							cHeight,
+							position,
+							width,
+							height
+						})
 
 						// 获取canvas绘图上下文
 						const ctx = uni.createCanvasContext(canvasId, that);
 
-						that.watermarkCanvasOption.width = imageW
-						that.watermarkCanvasOption.height = imageH
+						that.watermarkCanvasOption.width = width
+						that.watermarkCanvasOption.height = height
 
 						// 绘制原始图片到canvas上
-						ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+						ctx.drawImage(imagePath, 0, 0, width, height);
 
 						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
 						ctx.draw(false, () => {
 							uni.canvasToTempFilePath({ // 将画布内容导出为图片
 								canvasId,
-								x: 0,
-								y: 0,
-								width: imageW,
-								height: imageH,
-								destWidth: imageW,
-								destHeight: imageH,
+								x: calcSX,
+								y: calcSY,
+								width: cWidth,
+								height: cHeight,
+								destWidth: cWidth,
+								destHeight: cHeight,
 								success: (res) => {
 									console.log('res.tempFilePath', res)
 									resolve(res.tempFilePath)
