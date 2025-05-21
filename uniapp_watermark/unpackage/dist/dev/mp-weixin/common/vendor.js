@@ -20055,6 +20055,7 @@ function getFileInfoFun(options) {
 
 // 压缩图片
 function compressImg(options, that) {
+  console.log('压缩图片=====>');
   return new Promise(function (resolve, reject) {
     var _dealCompressImgConfi = dealCompressImgConfig(options),
       errLog = _dealCompressImgConfi.errLog,
@@ -20106,7 +20107,7 @@ function compressImg(options, that) {
               }, that);
             });
           } else {
-            return imagePath;
+            resolve(imagePath);
           }
         }
       });

@@ -137,8 +137,8 @@
 					canvasContext: null
 				},
 
-				clipWidth: 250,
-				clipHeight: 250,
+				clipWidth: 1000,
+				clipHeight: 1000,
 				clipPosition: 'center', // topLeft  topRight  bottomLeft  bottomRight  center
 			}
 		},
@@ -317,7 +317,6 @@
 				getFileInfoFun({
 						imagePath: tPath
 					}).then(res => {
-						console.log('res=====>', res)
 						if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
 							return compressImg({
 								canvasId: 'watermarkCanvas',

@@ -280,8 +280,8 @@ var _default = {
         height: 0,
         canvasContext: null
       },
-      clipWidth: 250,
-      clipHeight: 250,
+      clipWidth: 1000,
+      clipHeight: 1000,
       clipPosition: 'center' // topLeft  topRight  bottomLeft  bottomRight  center
     };
   },
@@ -442,7 +442,6 @@ var _default = {
       (0, _index.getFileInfoFun)({
         imagePath: tPath
       }).then(function (res) {
-        console.log('res=====>', res);
         if ((res === null || res === void 0 ? void 0 : res.errMsg) === 'getFileInfo:ok' && res !== null && res !== void 0 && res.size) {
           return (0, _index.compressImg)({
             canvasId: 'watermarkCanvas',

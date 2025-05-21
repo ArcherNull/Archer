@@ -796,6 +796,7 @@ export function getFileInfoFun(options) {
 
 // 压缩图片
 export function compressImg(options, that) {
+	console.log('压缩图片=====>')
 	return new Promise((resolve, reject) => {
 		const {
 			errLog,
@@ -854,7 +855,7 @@ export function compressImg(options, that) {
 						});
 
 					} else {
-						return imagePath
+						resolve(imagePath)
 					}
 				}
 			})
