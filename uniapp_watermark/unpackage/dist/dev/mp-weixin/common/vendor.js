@@ -446,13 +446,14 @@ var isIOS = false;
 var deviceWidth = 0;
 var deviceDPR = 0;
 function checkDeviceWidth() {
-  var _Object$assign = Object.assign({}, wx.getWindowInfo(), {
-      platform: wx.getDeviceInfo().platform
-    }),
-    windowWidth = _Object$assign.windowWidth,
-    pixelRatio = _Object$assign.pixelRatio,
-    platform = _Object$assign.platform; // uni=>wx runtime 编译目标是 uni 对象，内部不允许直接使用 uni
-
+  var windowWidth, pixelRatio, platform;
+  {
+    var windowInfo = typeof wx.getWindowInfo === 'function' && wx.getWindowInfo() ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    var deviceInfo = typeof wx.getDeviceInfo === 'function' && wx.getDeviceInfo() ? wx.getDeviceInfo() : wx.getSystemInfoSync();
+    windowWidth = windowInfo.windowWidth;
+    pixelRatio = windowInfo.pixelRatio;
+    platform = deviceInfo.platform;
+  }
   deviceWidth = windowWidth;
   deviceDPR = pixelRatio;
   isIOS = platform === 'ios';
@@ -488,7 +489,7 @@ var messages = {};
 function getLocaleLanguage() {
   var localeLanguage = '';
   {
-    var appBaseInfo = wx.getAppBaseInfo();
+    var appBaseInfo = typeof wx.getAppBaseInfo === 'function' && wx.getAppBaseInfo() ? wx.getAppBaseInfo() : wx.getSystemInfoSync();
     var language = appBaseInfo && appBaseInfo.language ? appBaseInfo.language : LOCALE_EN;
     localeLanguage = normalizeLocale(language) || LOCALE_EN;
   }
@@ -747,6 +748,43 @@ function addSafeAreaInsets(result) {
     };
   }
 }
+function getOSInfo(system, platform) {
+  var osName = '';
+  var osVersion = '';
+  if (platform && "mp-weixin" === 'mp-baidu') {
+    osName = platform;
+    osVersion = system;
+  } else {
+    osName = system.split(' ')[0] || platform;
+    osVersion = system.split(' ')[1] || '';
+  }
+  osName = osName.toLocaleLowerCase();
+  switch (osName) {
+    case 'harmony': // alipay
+    case 'ohos': // weixin
+    case 'openharmony':
+      // feishu
+      osName = 'harmonyos';
+      break;
+    case 'iphone os':
+      // alipay
+      osName = 'ios';
+      break;
+    case 'mac': // weixin qq
+    case 'darwin':
+      // feishu
+      osName = 'macos';
+      break;
+    case 'windows_nt':
+      // feishu
+      osName = 'windows';
+      break;
+  }
+  return {
+    osName: osName,
+    osVersion: osVersion
+  };
+}
 function populateParameters(result) {
   var _result$brand = result.brand,
     brand = _result$brand === void 0 ? '' : _result$brand,
@@ -768,12 +806,9 @@ function populateParameters(result) {
   var extraParam = {};
 
   // osName osVersion
-  var osName = '';
-  var osVersion = '';
-  {
-    osName = system.split(' ')[0] || '';
-    osVersion = system.split(' ')[1] || '';
-  }
+  var _getOSInfo = getOSInfo(system, platform),
+    osName = _getOSInfo.osName,
+    osVersion = _getOSInfo.osVersion;
   var hostVersion = version;
 
   // deviceType
@@ -805,9 +840,9 @@ function populateParameters(result) {
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
-    uniCompileVersion: "4.56",
-    uniCompilerVersion: "4.56",
-    uniRuntimeVersion: "4.56",
+    uniCompileVersion: "4.66",
+    uniCompilerVersion: "4.66",
+    uniRuntimeVersion: "4.66",
     uniPlatform: undefined || "mp-weixin",
     deviceBrand: deviceBrand,
     deviceModel: model,
@@ -913,9 +948,9 @@ var getAppBaseInfo = {
       hostTheme: theme,
       isUniAppX: false,
       uniPlatform: undefined || "mp-weixin",
-      uniCompileVersion: "4.56",
-      uniCompilerVersion: "4.56",
-      uniRuntimeVersion: "4.56"
+      uniCompileVersion: "4.66",
+      uniCompilerVersion: "4.66",
+      uniRuntimeVersion: "4.66"
     }));
   }
 };
@@ -923,14 +958,23 @@ var getDeviceInfo = {
   returnValue: function returnValue(result) {
     var _result2 = result,
       brand = _result2.brand,
-      model = _result2.model;
+      model = _result2.model,
+      _result2$system = _result2.system,
+      system = _result2$system === void 0 ? '' : _result2$system,
+      _result2$platform = _result2.platform,
+      platform = _result2$platform === void 0 ? '' : _result2$platform;
     var deviceType = getGetDeviceType(result, model);
     var deviceBrand = getDeviceBrand(brand);
     useDeviceId(result);
+    var _getOSInfo2 = getOSInfo(system, platform),
+      osName = _getOSInfo2.osName,
+      osVersion = _getOSInfo2.osVersion;
     result = sortObject(Object.assign(result, {
       deviceType: deviceType,
       deviceBrand: deviceBrand,
-      deviceModel: model
+      deviceModel: model,
+      osName: osName,
+      osVersion: osVersion
     }));
   }
 };
@@ -19297,6 +19341,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.BAIDU_CLIENT_SECRET = exports.BAIDU_CLIENT_ID = exports.BAIDU_AK = void 0;
 exports.addWatermark = addWatermark;
+exports.addWatermarkAndCompress = addWatermarkAndCompress;
 exports.chooseLocation = chooseLocation;
 exports.clipImg = clipImg;
 exports.compressImg = compressImg;
@@ -19493,11 +19538,14 @@ function chooseLocation() {
 }
 
 // 处理及校验传参
-function dealWatermarkConfig(options) {
+function dealWatermarkConfig(options, type) {
   var valdiateRulesObj = {
     canvasId: '画布id',
     imagePath: '本地图片路径'
   };
+  if (type === 'addCompress') {
+    valdiateRulesObj.fileSize = '文件尺寸';
+  }
   var defaultWatermarkItem = {
     fontSize: 20,
     color: 'red',
@@ -19997,20 +20045,23 @@ function getBaiduAddressInfoByLocation(config) {
 
 /**
  * @description: 根据文件尺寸获取压缩比
- * @param { number } fileSize 文件尺寸
+ * @param { number } fSize 文件尺寸
  */
-function getCompressionRatio(fileSize) {
-  var compressionRatio = 1;
-  if (fileSize > 7 * 1024 * 1024) {
-    compressionRatio = 0.1;
-  } else if (fileSize > 4 * 1024 * 1024) {
-    compressionRatio = 0.3;
-  } else if (fileSize > 2 * 1024 * 1024) {
-    compressionRatio = 0.5;
-  } else if (fileSize > 1 * 1024 * 1024) {
-    compressionRatio = 0.7;
+function getCompressionRatio(fSize) {
+  var getSize = function getSize(num) {
+    return num * 1024 * 1024;
+  };
+  if (fSize < getSize(1)) {
+    return 0.8;
+  } else if (fSize < getSize(2)) {
+    return 0.5;
+  } else if (fSize < getSize(4)) {
+    return 0.3;
+  } else if (fSize < getSize(7)) {
+    return 0.2;
+  } else {
+    return 0.1;
   }
-  return compressionRatio;
 }
 
 // 校验参数
@@ -20281,6 +20332,119 @@ function clipImg(options, that) {
           } else {
             return imagePath;
           }
+        }
+      });
+    } else {
+      var errStr = errLog.join(';');
+      showMsg(errStr);
+      reject(errStr);
+    }
+  });
+}
+
+// 添加水印并压缩
+function addWatermarkAndCompress(options, that) {
+  var isCompress = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+  return new Promise(function (resolve, reject) {
+    var _dealWatermarkConfig2 = dealWatermarkConfig(options, isCompress ? 'addCompress' : undefined),
+      errLog = _dealWatermarkConfig2.errLog,
+      config = _dealWatermarkConfig2.config;
+    if (!errLog.length) {
+      var canvasId = config.canvasId,
+        imagePath = config.imagePath,
+        watermarkList = config.watermarkList,
+        fileSize = config.fileSize;
+      var ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
+      uni.getImageInfo({
+        // 获取图片信息，以便获取图片的真实宽高信息
+        src: imagePath,
+        success: function success(info) {
+          var oWidth = info.width,
+            oHeight = info.height; // 获取图片的原始宽高
+
+          var width = oWidth;
+          var height = oHeight;
+          if (isCompress) {
+            var ratio = getCompressionRatio(fileSize);
+            // 按对折比例缩小
+            width = Math.floor(oWidth * ratio);
+            height = Math.floor(oHeight * ratio);
+          }
+          that.watermarkCanvasOption.width = width;
+          that.watermarkCanvasOption.height = height;
+          ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
+          // 绘制水印项
+          var drawWMItem = function drawWMItem(ctx, options) {
+            var fontSize = options.fontSize,
+              color = options.color,
+              cText = options.text,
+              position = options.position,
+              margin = options.margin;
+            // 添加水印
+            ctx.setFontSize(fontSize); // 设置字体大小
+            ctx.setFillStyle(color); // 设置字体颜色为红色
+
+            if (isNotEmptyArr(cText)) {
+              var _text2 = cText.filter(Boolean);
+              if (position.startsWith('bottom')) {
+                _text2.reverse();
+              }
+              _text2.forEach(function (str, ind) {
+                var textMetrics = ctx.measureText(str);
+                var _calcPosition3 = calcPosition({
+                    height: height,
+                    width: width,
+                    position: position,
+                    margin: margin,
+                    ind: ind,
+                    fontSize: fontSize,
+                    textMetrics: textMetrics
+                  }),
+                  calcX = _calcPosition3.calcX,
+                  calcY = _calcPosition3.calcY;
+                ctx.fillText(str, calcX, calcY, width);
+              });
+            } else {
+              var textMetrics = ctx.measureText(cText);
+              var _calcPosition4 = calcPosition({
+                  height: height,
+                  width: width,
+                  position: position,
+                  margin: margin,
+                  ind: 0,
+                  fontSize: fontSize,
+                  textMetrics: textMetrics
+                }),
+                calcX = _calcPosition4.calcX,
+                calcY = _calcPosition4.calcY;
+              // 在图片底部添加水印文字
+              ctx.fillText(text, calcX, calcY, width);
+            }
+          };
+          watermarkList.forEach(function (ele) {
+            drawWMItem(ctx, ele);
+          });
+
+          // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+          ctx.draw(false, function () {
+            uni.canvasToTempFilePath({
+              // 将画布内容导出为图片
+              canvasId: canvasId,
+              x: 0,
+              y: 0,
+              width: width,
+              height: height,
+              destWidth: width,
+              destHeight: height,
+              success: function success(res) {
+                console.log('res.tempFilePath', res);
+                resolve(res.tempFilePath);
+              },
+              fail: function fail() {
+                reject(false);
+              }
+            }, that);
+          });
         }
       });
     } else {

@@ -17,7 +17,7 @@
 
 		<view class="upload">
 			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
-				上传添加水印
+				上传添加水印(单传)
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="1"
@@ -30,10 +30,40 @@
 			</view>
 		</view>
 
+		<view class="upload">
+			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
+				上传添加水印并压缩(单传)
+			</view>
+			<view class="upload_box">
+				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="5"
+					:maxSize="maxSize" :fileList="imageSrc5" @afterRead="upload5()" @delete="deletePic()"
+					@oversize="oversize()">
+				</u-upload>
+			</view>
+			<view class="upload_alert">
+				支持JPG、PNG格式，限制单张文件大小10M内
+			</view>
+		</view>
 
 		<view class="upload">
 			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
-				上传自动压缩图片
+				上传添加水印(多传)
+			</view>
+			<view class="upload_box">
+				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" multiple height="198rpx" name="4"
+					:maxSize="maxSize" :fileList="imageSrc4" @afterRead="upload4()" @delete="deletePic()"
+					@oversize="oversize()">
+				</u-upload>
+			</view>
+			<view class="upload_alert">
+				支持JPG、PNG格式，限制单张文件大小10M内
+			</view>
+		</view>
+
+
+		<view class="upload">
+			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
+				上传自动压缩图片(压缩比,最低为0.1)
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="2"
@@ -93,6 +123,7 @@
 		getBaiduAPIAccessToken,
 		getBaiduAddressInfoByLocation,
 		addWatermark,
+		addWatermarkAndCompress,
 		saveImageToPA,
 		getCurrentDate,
 		showModal,
@@ -111,12 +142,16 @@
 				// 10 M
 				maxSize: 10 * 1024 * 1024,
 				// 2张
-				maxCount: 2,
+				maxCount: 6,
 				//图片下标
 				imageName: '',
 
-				// 水印图片数组
+				// 水印图片数组（单传）
 				imageSrc1: [],
+				// 水印图片数组（多传）
+				imageSrc4: [],
+				// 水印并压缩图片数组（单传）
+				imageSrc5: [],
 				// 当前定位字符串
 				locationAddrStr: '',
 
@@ -146,6 +181,41 @@
 			this.getCusLocation()
 		},
 		methods: {
+
+			getWatermarkList() {
+				const that = this
+				const cTime = getCurrentDate()
+				return [{
+						fontSize: 32,
+						color: 'red', // '#333333',
+						margin: 32,
+						position: 'topLeft',
+						text: ['飞一般的感觉', '飞一般的感觉', that.locationAddrStr],
+					},
+					{
+						fontSize: 32,
+						color: 'red', // '#333333',
+						margin: 32,
+						position: 'topRight',
+						text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr],
+					},
+					{
+						fontSize: 32,
+						color: 'red', // '#333333',
+						margin: 32,
+						position: 'bottomLeft',
+						text: [cTime, that.locationAddrStr],
+					},
+					{
+						fontSize: 32,
+						color: 'red', // '#333333',
+						margin: 32,
+						position: 'bottomRight',
+						text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
+					},
+				]
+			},
+
 			reLocation() {
 				const that = this
 				const resetLocation = () => {
@@ -243,57 +313,29 @@
 				showMsg(`文件大小超出10M，当前为${fileSize}M`)
 			},
 
-			//新增图片
+			// 新增图片（单传）
 			upload(event) {
 				const that = this
 				that.imageName = event.name;
 				const tPath = event.file.url
 
 				if (that.locationAddrStr) {
-					const cTime = getCurrentDate()
+
 					uni.showLoading({
 						title: '处理中...'
 					})
 					addWatermark({
 							canvasId: 'watermarkCanvas',
 							imagePath: tPath,
-							watermarkList: [{
-									fontSize: 32,
-									color: 'red', // '#333333',
-									margin: 32,
-									position: 'topLeft',
-									text: ['飞一般的感觉', '飞一般的感觉', that.locationAddrStr],
-								},
-								{
-									fontSize: 32,
-									color: 'red', // '#333333',
-									margin: 32,
-									position: 'topRight',
-									text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr],
-								},
-								{
-									fontSize: 32,
-									color: 'red', // '#333333',
-									margin: 32,
-									position: 'bottomLeft',
-									text: [cTime, that.locationAddrStr],
-								},
-								{
-									fontSize: 32,
-									color: 'red', // '#333333',
-									margin: 32,
-									position: 'bottomRight',
-									text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
-								},
-							]
+							watermarkList: that.getWatermarkList()
 						}, that).then(res => {
+							// u-upload组件用于展示
+							this[`imageSrc${event.name}`].push({
+								url: res
+							});
+
 							// 下载图片
 							return saveImageToPA(res)
-
-							// u-upload组件用于展示
-							// this[`imageSrc${event.name}`].push({
-							// 	url: res
-							// });
 						})
 						.catch(err => {
 							uni.hideLoading()
@@ -301,6 +343,102 @@
 						.finally(() => {
 							uni.hideLoading()
 						})
+				} else {
+					this[`imageSrc${event.name}`].push({
+						url: tPath
+					});
+				}
+			},
+
+			// 新增图片（单传）
+			upload5(event) {
+				const that = this
+				that.imageName = event.name;
+				const tPath = event.file.url
+
+				if (that.locationAddrStr) {
+					uni.showLoading({
+						title: '处理中...'
+					})
+
+					getFileInfoFun({
+							imagePath: tPath
+						}).then(res => {
+							if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
+								return addWatermarkAndCompress({
+									canvasId: 'watermarkCanvas',
+									imagePath: tPath,
+									fileSize: res.size,
+									watermarkList: that.getWatermarkList()
+								}, that, true)
+							} else {
+								return Promise.reject('获取文件信息失败')
+							}
+						}).then(res => {
+							console.log('下载图片====>', res)
+
+							// u-upload组件用于展示
+							this[`imageSrc${event.name}`].push({
+								url: res
+							});
+
+							// 下载图片
+							return saveImageToPA(res)
+
+						})
+						.catch(err => {
+							uni.hideLoading()
+							showMsg(err || '上传图片失败')
+						})
+						.finally(() => {
+							uni.hideLoading()
+						})
+				} else {
+					this[`imageSrc${event.name}`].push({
+						url: tPath
+					});
+				}
+
+			},
+
+
+			// 新增图片(多传)
+			async upload4(event) {
+				const that = this
+				that.imageName = event.name;
+				const imageList = event.file
+				console.log('imageList', imageList)
+				const tPath = event.file.url
+
+				if (that.locationAddrStr) {
+					uni.showLoading({
+						title: '处理中...'
+					})
+
+					for (let i = 0; i < imageList.length; i++) {
+						const item = imageList[i]
+						const tPath = item.url
+
+						if (tPath) {
+							const res = await addWatermark({
+								canvasId: 'watermarkCanvas',
+								imagePath: tPath,
+								watermarkList: that.getWatermarkList()
+							}, that)
+
+							if (res) {
+								// u-upload组件用于展示
+								this[`imageSrc${event.name}`].push({
+									url: res
+								});
+
+								// 下载图片
+								// saveImageToPA(res)
+							}
+						}
+					}
+
+					uni.hideLoading()
 				} else {
 					this[`imageSrc${event.name}`].push({
 						url: tPath
@@ -329,13 +467,12 @@
 					})
 					.then(res => {
 						console.log('下载图片====>', res)
+						// u-upload组件用于展示
+						this[`imageSrc${event.name}`].push({
+							url: res
+						});
 						// 下载图片
 						return saveImageToPA(res)
-
-						// u-upload组件用于展示
-						// this[`imageSrc${event.name}`].push({
-						// 	url: res
-						// });
 					})
 					.catch(err => {
 						console.log('压缩图片失败', err)
@@ -361,13 +498,12 @@
 					}, that)
 					.then(res => {
 						console.log('下载图片====>', res)
+						// u-upload组件用于展示
+						this[`imageSrc${event.name}`].push({
+							url: res
+						});
 						// 下载图片
 						return saveImageToPA(res)
-
-						// u-upload组件用于展示
-						// this[`imageSrc${event.name}`].push({
-						// 	url: res
-						// });
 					})
 					.catch(err => {
 						console.log('剪切图片失败', err)

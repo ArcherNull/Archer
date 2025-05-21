@@ -160,11 +160,44 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 /* WEBPACK VAR INJECTION */(function(uni) {
 
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 55));
+var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 57));
 var _index = __webpack_require__(/*! ./index.js */ 165);
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -259,11 +292,15 @@ var _default = {
       // 10 M
       maxSize: 10 * 1024 * 1024,
       // 2张
-      maxCount: 2,
+      maxCount: 6,
       //图片下标
       imageName: '',
-      // 水印图片数组
+      // 水印图片数组（单传）
       imageSrc1: [],
+      // 水印图片数组（多传）
+      imageSrc4: [],
+      // 水印并压缩图片数组（单传）
+      imageSrc5: [],
       // 当前定位字符串
       locationAddrStr: '',
       // 压缩图片数组
@@ -289,6 +326,39 @@ var _default = {
     this.getCusLocation();
   },
   methods: {
+    getWatermarkList: function getWatermarkList() {
+      var that = this;
+      var cTime = (0, _index.getCurrentDate)();
+      return [{
+        fontSize: 32,
+        color: 'red',
+        // '#333333',
+        margin: 32,
+        position: 'topLeft',
+        text: ['飞一般的感觉', '飞一般的感觉', that.locationAddrStr]
+      }, {
+        fontSize: 32,
+        color: 'red',
+        // '#333333',
+        margin: 32,
+        position: 'topRight',
+        text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr]
+      }, {
+        fontSize: 32,
+        color: 'red',
+        // '#333333',
+        margin: 32,
+        position: 'bottomLeft',
+        text: [cTime, that.locationAddrStr]
+      }, {
+        fontSize: 32,
+        color: 'red',
+        // '#333333',
+        margin: 32,
+        position: 'bottomRight',
+        text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr]
+      }];
+    },
     reLocation: function reLocation() {
       var that = this;
       var resetLocation = function resetLocation() {
@@ -373,56 +443,28 @@ var _default = {
       var fileSize = Math.ceil(event.file.size / 1024 / 1024);
       (0, _index.showMsg)("\u6587\u4EF6\u5927\u5C0F\u8D85\u51FA10M\uFF0C\u5F53\u524D\u4E3A".concat(fileSize, "M"));
     },
-    //新增图片
+    // 新增图片（单传）
     upload: function upload(event) {
+      var _this2 = this;
       var that = this;
       that.imageName = event.name;
       var tPath = event.file.url;
       if (that.locationAddrStr) {
-        var cTime = (0, _index.getCurrentDate)();
         uni.showLoading({
           title: '处理中...'
         });
         (0, _index.addWatermark)({
           canvasId: 'watermarkCanvas',
           imagePath: tPath,
-          watermarkList: [{
-            fontSize: 32,
-            color: 'red',
-            // '#333333',
-            margin: 32,
-            position: 'topLeft',
-            text: ['飞一般的感觉', '飞一般的感觉', that.locationAddrStr]
-          }, {
-            fontSize: 32,
-            color: 'red',
-            // '#333333',
-            margin: 32,
-            position: 'topRight',
-            text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr]
-          }, {
-            fontSize: 32,
-            color: 'red',
-            // '#333333',
-            margin: 32,
-            position: 'bottomLeft',
-            text: [cTime, that.locationAddrStr]
-          }, {
-            fontSize: 32,
-            color: 'red',
-            // '#333333',
-            margin: 32,
-            position: 'bottomRight',
-            text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr]
-          }]
+          watermarkList: that.getWatermarkList()
         }, that).then(function (res) {
+          // u-upload组件用于展示
+          _this2["imageSrc".concat(event.name)].push({
+            url: res
+          });
+
           // 下载图片
           return (0, _index.saveImageToPA)(res);
-
-          // u-upload组件用于展示
-          // this[`imageSrc${event.name}`].push({
-          // 	url: res
-          // });
         }).catch(function (err) {
           uni.hideLoading();
         }).finally(function () {
@@ -434,8 +476,124 @@ var _default = {
         });
       }
     },
+    // 新增图片（单传）
+    upload5: function upload5(event) {
+      var _this3 = this;
+      var that = this;
+      that.imageName = event.name;
+      var tPath = event.file.url;
+      if (that.locationAddrStr) {
+        uni.showLoading({
+          title: '处理中...'
+        });
+        (0, _index.getFileInfoFun)({
+          imagePath: tPath
+        }).then(function (res) {
+          if ((res === null || res === void 0 ? void 0 : res.errMsg) === 'getFileInfo:ok' && res !== null && res !== void 0 && res.size) {
+            return (0, _index.addWatermarkAndCompress)({
+              canvasId: 'watermarkCanvas',
+              imagePath: tPath,
+              fileSize: res.size,
+              watermarkList: that.getWatermarkList()
+            }, that, true);
+          } else {
+            return Promise.reject('获取文件信息失败');
+          }
+        }).then(function (res) {
+          console.log('下载图片====>', res);
+
+          // u-upload组件用于展示
+          _this3["imageSrc".concat(event.name)].push({
+            url: res
+          });
+
+          // 下载图片
+          return (0, _index.saveImageToPA)(res);
+        }).catch(function (err) {
+          uni.hideLoading();
+          (0, _index.showMsg)(err || '上传图片失败');
+        }).finally(function () {
+          uni.hideLoading();
+        });
+      } else {
+        this["imageSrc".concat(event.name)].push({
+          url: tPath
+        });
+      }
+    },
+    // 新增图片(多传)
+    upload4: function upload4(event) {
+      var _this4 = this;
+      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
+        var that, imageList, tPath, i, item, _tPath, res;
+        return _regenerator.default.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                that = _this4;
+                that.imageName = event.name;
+                imageList = event.file;
+                console.log('imageList', imageList);
+                tPath = event.file.url;
+                if (!that.locationAddrStr) {
+                  _context.next = 22;
+                  break;
+                }
+                uni.showLoading({
+                  title: '处理中...'
+                });
+                i = 0;
+              case 8:
+                if (!(i < imageList.length)) {
+                  _context.next = 19;
+                  break;
+                }
+                item = imageList[i];
+                _tPath = item.url;
+                if (!_tPath) {
+                  _context.next = 16;
+                  break;
+                }
+                _context.next = 14;
+                return (0, _index.addWatermark)({
+                  canvasId: 'watermarkCanvas',
+                  imagePath: _tPath,
+                  watermarkList: that.getWatermarkList()
+                }, that);
+              case 14:
+                res = _context.sent;
+                if (res) {
+                  // u-upload组件用于展示
+                  _this4["imageSrc".concat(event.name)].push({
+                    url: res
+                  });
+
+                  // 下载图片
+                  // saveImageToPA(res)
+                }
+              case 16:
+                i++;
+                _context.next = 8;
+                break;
+              case 19:
+                uni.hideLoading();
+                _context.next = 23;
+                break;
+              case 22:
+                _this4["imageSrc".concat(event.name)].push({
+                  url: tPath
+                });
+              case 23:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }))();
+    },
     //新增图片
     upload2: function upload2(event) {
+      var _this5 = this;
       var that = this;
       that.imageName = event.name;
       var tPath = event.file.url;
@@ -453,13 +611,12 @@ var _default = {
         }
       }).then(function (res) {
         console.log('下载图片====>', res);
+        // u-upload组件用于展示
+        _this5["imageSrc".concat(event.name)].push({
+          url: res
+        });
         // 下载图片
         return (0, _index.saveImageToPA)(res);
-
-        // u-upload组件用于展示
-        // this[`imageSrc${event.name}`].push({
-        // 	url: res
-        // });
       }).catch(function (err) {
         console.log('压缩图片失败', err);
         uni.hideLoading();
@@ -470,6 +627,7 @@ var _default = {
     },
     // 新增图片
     upload3: function upload3(event) {
+      var _this6 = this;
       var that = this;
       that.imageName = event.name;
       var tPath = event.file.url;
@@ -481,13 +639,12 @@ var _default = {
         position: that.clipPosition
       }, that).then(function (res) {
         console.log('下载图片====>', res);
+        // u-upload组件用于展示
+        _this6["imageSrc".concat(event.name)].push({
+          url: res
+        });
         // 下载图片
         return (0, _index.saveImageToPA)(res);
-
-        // u-upload组件用于展示
-        // this[`imageSrc${event.name}`].push({
-        // 	url: res
-        // });
       }).catch(function (err) {
         console.log('剪切图片失败', err);
         uni.hideLoading();
