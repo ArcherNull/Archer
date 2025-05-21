@@ -285,6 +285,10 @@ var _index = __webpack_require__(/*! ./index.js */ 165);
 //
 //
 //
+//
+//
+//
+//
 var _default = {
   data: function data() {
     return {
@@ -388,13 +392,13 @@ var _default = {
     },
     // 获取当前位置
     getCusLocation: function getCusLocation() {
-      var _this = this;
       var that = this;
       if (!that.locationAddrStr) {
         uni.showLoading({
           title: '定位中...'
         });
         (0, _index.getSetting)().then(function (res) {
+          console.log('getSetting123123123', res);
           if (res) {
             return (0, _index.getLocation)();
           } else {
@@ -404,8 +408,8 @@ var _default = {
           console.log('获取当前位置', res);
           var latitude = res.latitude,
             longitude = res.longitude;
-          _this.location.latitude = latitude;
-          _this.location.longitude = longitude;
+          that.location.latitude = latitude;
+          that.location.longitude = longitude;
           return (0, _index.getBaiduAddressInfoByLocation)({
             latitude: latitude,
             longitude: longitude
@@ -445,7 +449,8 @@ var _default = {
     },
     // 新增图片（单传）
     upload: function upload(event) {
-      var _this2 = this;
+      var _this = this;
+      console.log('event123123123', event);
       var that = this;
       that.imageName = event.name;
       var tPath = event.file.url;
@@ -459,7 +464,7 @@ var _default = {
           watermarkList: that.getWatermarkList()
         }, that).then(function (res) {
           // u-upload组件用于展示
-          _this2["imageSrc".concat(event.name)].push({
+          _this["imageSrc".concat(event.name)].push({
             url: res
           });
 
@@ -478,32 +483,26 @@ var _default = {
     },
     // 新增图片（单传）
     upload5: function upload5(event) {
-      var _this3 = this;
+      var _this2 = this;
       var that = this;
       that.imageName = event.name;
-      var tPath = event.file.url;
+      var file = event.file;
+      var tPath = file.url;
+      var fileSize = file.size;
       if (that.locationAddrStr) {
         uni.showLoading({
           title: '处理中...'
         });
-        (0, _index.getFileInfoFun)({
-          imagePath: tPath
-        }).then(function (res) {
-          if ((res === null || res === void 0 ? void 0 : res.errMsg) === 'getFileInfo:ok' && res !== null && res !== void 0 && res.size) {
-            return (0, _index.addWatermarkAndCompress)({
-              canvasId: 'watermarkCanvas',
-              imagePath: tPath,
-              fileSize: res.size,
-              watermarkList: that.getWatermarkList()
-            }, that, true);
-          } else {
-            return Promise.reject('获取文件信息失败');
-          }
-        }).then(function (res) {
+        (0, _index.addWatermarkAndCompress)({
+          canvasId: 'watermarkCanvas',
+          imagePath: tPath,
+          fileSize: fileSize,
+          watermarkList: that.getWatermarkList()
+        }, that, true).then(function (res) {
           console.log('下载图片====>', res);
 
           // u-upload组件用于展示
-          _this3["imageSrc".concat(event.name)].push({
+          _this2["imageSrc".concat(event.name)].push({
             url: res
           });
 
@@ -523,14 +522,14 @@ var _default = {
     },
     // 新增图片(多传)
     upload4: function upload4(event) {
-      var _this4 = this;
+      var _this3 = this;
       return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
         var that, imageList, tPath, i, item, _tPath, res;
         return _regenerator.default.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                that = _this4;
+                that = _this3;
                 that.imageName = event.name;
                 imageList = event.file;
                 console.log('imageList', imageList);
@@ -564,7 +563,7 @@ var _default = {
                 res = _context.sent;
                 if (res) {
                   // u-upload组件用于展示
-                  _this4["imageSrc".concat(event.name)].push({
+                  _this3["imageSrc".concat(event.name)].push({
                     url: res
                   });
 
@@ -580,7 +579,7 @@ var _default = {
                 _context.next = 23;
                 break;
               case 22:
-                _this4["imageSrc".concat(event.name)].push({
+                _this3["imageSrc".concat(event.name)].push({
                   url: tPath
                 });
               case 23:
@@ -593,26 +592,20 @@ var _default = {
     },
     //新增图片
     upload2: function upload2(event) {
-      var _this5 = this;
+      var _this4 = this;
       var that = this;
+      var file = event.file;
       that.imageName = event.name;
-      var tPath = event.file.url;
-      (0, _index.getFileInfoFun)({
-        imagePath: tPath
-      }).then(function (res) {
-        if ((res === null || res === void 0 ? void 0 : res.errMsg) === 'getFileInfo:ok' && res !== null && res !== void 0 && res.size) {
-          return (0, _index.compressImg)({
-            canvasId: 'watermarkCanvas',
-            imagePath: tPath,
-            fileSize: res.size
-          }, that);
-        } else {
-          return Promise.reject('获取文件信息失败');
-        }
-      }).then(function (res) {
+      var tPath = file.url;
+      var fileSize = file.size;
+      (0, _index.compressImg)({
+        canvasId: 'watermarkCanvas',
+        imagePath: tPath,
+        fileSize: fileSize
+      }, that).then(function (res) {
         console.log('下载图片====>', res);
         // u-upload组件用于展示
-        _this5["imageSrc".concat(event.name)].push({
+        _this4["imageSrc".concat(event.name)].push({
           url: res
         });
         // 下载图片
@@ -625,9 +618,9 @@ var _default = {
         uni.hideLoading();
       });
     },
-    // 新增图片
+    // 剪裁图片
     upload3: function upload3(event) {
-      var _this6 = this;
+      var _this5 = this;
       var that = this;
       that.imageName = event.name;
       var tPath = event.file.url;
@@ -640,7 +633,7 @@ var _default = {
       }, that).then(function (res) {
         console.log('下载图片====>', res);
         // u-upload组件用于展示
-        _this6["imageSrc".concat(event.name)].push({
+        _this5["imageSrc".concat(event.name)].push({
           url: res
         });
         // 下载图片

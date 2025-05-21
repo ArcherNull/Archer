@@ -1,6 +1,9 @@
 <template>
 	<view class="uploadBox">
-		请去注册百度AK
+		请去注册百度AK,
+
+		H5 谷歌比较慢，请使用IE无无痕，要快点
+
 		<view class="upload">
 			<view class="upload_title">
 				当前位置
@@ -21,8 +24,8 @@
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="1"
-					:maxSize="maxSize" :fileList="imageSrc1" @afterRead="upload()" @delete="deletePic()"
-					@oversize="oversize()">
+					:maxSize="maxSize" :fileList="imageSrc1" @afterRead="upload" @delete="deletePic"
+					@oversize="oversize">
 				</u-upload>
 			</view>
 			<view class="upload_alert">
@@ -36,8 +39,8 @@
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="5"
-					:maxSize="maxSize" :fileList="imageSrc5" @afterRead="upload5()" @delete="deletePic()"
-					@oversize="oversize()">
+					:maxSize="maxSize" :fileList="imageSrc5" @afterRead="upload5" @delete="deletePic"
+					@oversize="oversize">
 				</u-upload>
 			</view>
 			<view class="upload_alert">
@@ -51,8 +54,8 @@
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" multiple height="198rpx" name="4"
-					:maxSize="maxSize" :fileList="imageSrc4" @afterRead="upload4()" @delete="deletePic()"
-					@oversize="oversize()">
+					:maxSize="maxSize" :fileList="imageSrc4" @afterRead="upload4" @delete="deletePic"
+					@oversize="oversize">
 				</u-upload>
 			</view>
 			<view class="upload_alert">
@@ -67,8 +70,8 @@
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="2"
-					:maxSize="maxSize" :fileList="imageSrc2" @afterRead="upload2()" @delete="deletePic()"
-					@oversize="oversize()">
+					:maxSize="maxSize" :fileList="imageSrc2" @afterRead="upload2" @delete="deletePic"
+					@oversize="oversize">
 				</u-upload>
 			</view>
 			<view class="upload_alert">
@@ -98,9 +101,9 @@
 
 			</view>
 			<view class="upload_box">
-				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="2"
-					:maxSize="maxSize" :fileList="imageSrc3" @afterRead="upload3()" @delete="deletePic()"
-					@oversize="oversize()">
+				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="3"
+					:maxSize="maxSize" :fileList="imageSrc3" @afterRead="upload3" @delete="deletePic"
+					@oversize="oversize">
 				</u-upload>
 			</view>
 			<view class="upload_alert">
@@ -110,7 +113,8 @@
 
 
 		<!-- 给图片添加的标签 -->
-		<canvas :style="{ width: watermarkCanvasOption.width + 'px', height: watermarkCanvasOption.height + 'px' }"
+		<canvas v-if="watermarkCanvasOption.width > 0 && watermarkCanvasOption.height > 0"
+			:style="{ width: watermarkCanvasOption.width + 'px', height: watermarkCanvasOption.height + 'px' }"
 			canvas-id="watermarkCanvas" id="watermarkCanvas" style="position: absolute; top: -10000000rpx;" />
 	</view>
 </template>
@@ -253,6 +257,7 @@
 						title: '定位中...'
 					})
 					getSetting().then(res => {
+							console.log('getSetting123123123', res)
 							if (res) {
 								return getLocation()
 							} else {
@@ -264,8 +269,8 @@
 								latitude,
 								longitude
 							} = res
-							this.location.latitude = latitude
-							this.location.longitude = longitude
+							that.location.latitude = latitude
+							that.location.longitude = longitude
 							return getBaiduAddressInfoByLocation({
 								latitude,
 								longitude
@@ -315,6 +320,7 @@
 
 			// 新增图片（单传）
 			upload(event) {
+				console.log('event123123123', event)
 				const that = this
 				that.imageName = event.name;
 				const tPath = event.file.url
@@ -354,27 +360,21 @@
 			upload5(event) {
 				const that = this
 				that.imageName = event.name;
-				const tPath = event.file.url
+				const file = event.file
+				const tPath = file.url
+				const fileSize = file.size
 
 				if (that.locationAddrStr) {
 					uni.showLoading({
 						title: '处理中...'
 					})
 
-					getFileInfoFun({
-							imagePath: tPath
-						}).then(res => {
-							if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
-								return addWatermarkAndCompress({
-									canvasId: 'watermarkCanvas',
-									imagePath: tPath,
-									fileSize: res.size,
-									watermarkList: that.getWatermarkList()
-								}, that, true)
-							} else {
-								return Promise.reject('获取文件信息失败')
-							}
-						}).then(res => {
+					addWatermarkAndCompress({
+							canvasId: 'watermarkCanvas',
+							imagePath: tPath,
+							fileSize,
+							watermarkList: that.getWatermarkList()
+						}, that, true).then(res => {
 							console.log('下载图片====>', res)
 
 							// u-upload组件用于展示
@@ -450,21 +450,15 @@
 			//新增图片
 			upload2(event) {
 				const that = this
+				const file = event.file
 				that.imageName = event.name;
-				const tPath = event.file.url
-				getFileInfoFun({
-						imagePath: tPath
-					}).then(res => {
-						if (res?.errMsg === 'getFileInfo:ok' && res?.size) {
-							return compressImg({
-								canvasId: 'watermarkCanvas',
-								imagePath: tPath,
-								fileSize: res.size
-							}, that)
-						} else {
-							return Promise.reject('获取文件信息失败')
-						}
-					})
+				const tPath = file.url
+				const fileSize = file.size
+				compressImg({
+						canvasId: 'watermarkCanvas',
+						imagePath: tPath,
+						fileSize
+					}, that)
 					.then(res => {
 						console.log('下载图片====>', res)
 						// u-upload组件用于展示
@@ -484,7 +478,7 @@
 					})
 			},
 
-			// 新增图片
+			// 剪裁图片
 			upload3(event) {
 				const that = this
 				that.imageName = event.name;

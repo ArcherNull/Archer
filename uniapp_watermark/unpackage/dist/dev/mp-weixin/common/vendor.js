@@ -19511,11 +19511,14 @@ function getLocation() {
       type: 'gcj02',
       isHighAccuracy: true,
       success: function success(res) {
-        resolve(res);
+        if ((res === null || res === void 0 ? void 0 : res.errMsg) === 'getLocation:ok') {
+          resolve(res);
+        } else {
+          reject('定位失败，请重试');
+        }
       },
       fail: function fail(err) {
-        showMsg('定位失败，请检查网络,GPS定位是否开启以及微信地理位置授权等情况');
-        reject(false);
+        reject('定位失败，请检查网络,GPS定位是否开启以及微信地理位置授权等情况');
       }
     });
   });
@@ -19678,87 +19681,95 @@ function addWatermark(options, that) {
       var canvasId = config.canvasId,
         imagePath = config.imagePath,
         watermarkList = config.watermarkList;
-      var ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
+      that.watermarkCanvasOption.width = 0;
+      that.watermarkCanvasOption.height = 0;
       uni.getImageInfo({
         // 获取图片信息，以便获取图片的真实宽高信息
         src: imagePath,
         success: function success(info) {
+          console.log('info123123123', info);
           var width = info.width,
             height = info.height; // 获取图片的原始宽高
+
           that.watermarkCanvasOption.width = width;
           that.watermarkCanvasOption.height = height;
-          ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
-          // 绘制水印项
-          var drawWMItem = function drawWMItem(ctx, options) {
-            var fontSize = options.fontSize,
-              color = options.color,
-              cText = options.text,
-              position = options.position,
-              margin = options.margin;
-            // 添加水印
-            ctx.setFontSize(fontSize); // 设置字体大小
-            ctx.setFillStyle(color); // 设置字体颜色为红色
+          that.$nextTick(function () {
+            var ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
 
-            if (isNotEmptyArr(cText)) {
-              var _text = cText.filter(Boolean);
-              if (position.startsWith('bottom')) {
-                _text.reverse();
-              }
-              _text.forEach(function (str, ind) {
-                var textMetrics = ctx.measureText(str);
-                var _calcPosition = calcPosition({
+            console.log('ctx', ctx);
+            ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
+            // 绘制水印项
+            var drawWMItem = function drawWMItem(ctx, options) {
+              var fontSize = options.fontSize,
+                color = options.color,
+                cText = options.text,
+                position = options.position,
+                margin = options.margin;
+              // 添加水印
+              ctx.setFontSize(fontSize); // 设置字体大小
+              ctx.setFillStyle(color); // 设置字体颜色为红色
+
+              if (isNotEmptyArr(cText)) {
+                var _text = cText.filter(Boolean);
+                if (position.startsWith('bottom')) {
+                  _text.reverse();
+                }
+                _text.forEach(function (str, ind) {
+                  var textMetrics = ctx.measureText(str);
+                  var _calcPosition = calcPosition({
+                      height: height,
+                      width: width,
+                      position: position,
+                      margin: margin,
+                      ind: ind,
+                      fontSize: fontSize,
+                      textMetrics: textMetrics
+                    }),
+                    calcX = _calcPosition.calcX,
+                    calcY = _calcPosition.calcY;
+                  ctx.fillText(str, calcX, calcY, width);
+                });
+              } else {
+                var textMetrics = ctx.measureText(cText);
+                var _calcPosition2 = calcPosition({
                     height: height,
                     width: width,
                     position: position,
                     margin: margin,
-                    ind: ind,
+                    ind: 0,
                     fontSize: fontSize,
                     textMetrics: textMetrics
                   }),
-                  calcX = _calcPosition.calcX,
-                  calcY = _calcPosition.calcY;
-                ctx.fillText(str, calcX, calcY, width);
-              });
-            } else {
-              var textMetrics = ctx.measureText(cText);
-              var _calcPosition2 = calcPosition({
-                  height: height,
-                  width: width,
-                  position: position,
-                  margin: margin,
-                  ind: 0,
-                  fontSize: fontSize,
-                  textMetrics: textMetrics
-                }),
-                calcX = _calcPosition2.calcX,
-                calcY = _calcPosition2.calcY;
-              // 在图片底部添加水印文字
-              ctx.fillText(text, calcX, calcY, width);
-            }
-          };
-          watermarkList.forEach(function (ele) {
-            drawWMItem(ctx, ele);
-          });
-
-          // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-          ctx.draw(false, function () {
-            uni.canvasToTempFilePath({
-              // 将画布内容导出为图片
-              canvasId: canvasId,
-              x: 0,
-              y: 0,
-              width: width,
-              height: height,
-              destWidth: width,
-              destHeight: height,
-              success: function success(res) {
-                console.log('res.tempFilePath', res);
-                resolve(res.tempFilePath);
-              },
-              fail: function fail() {
-                reject(false);
+                  calcX = _calcPosition2.calcX,
+                  calcY = _calcPosition2.calcY;
+                // 在图片底部添加水印文字
+                ctx.fillText(text, calcX, calcY, width);
               }
-            }, that);
+            };
+            watermarkList.forEach(function (ele) {
+              drawWMItem(ctx, ele);
+            });
+
+            // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+            ctx.draw(false, function () {
+              uni.canvasToTempFilePath({
+                // 将画布内容导出为图片
+                canvasId: canvasId,
+                x: 0,
+                y: 0,
+                width: width,
+                height: height,
+                destWidth: width,
+                destHeight: height,
+                success: function success(res) {
+                  console.log('res.tempFilePath', res);
+                  resolve(res.tempFilePath);
+                },
+                fail: function fail() {
+                  reject(false);
+                }
+              }, that);
+            });
           });
         }
       });
@@ -20115,6 +20126,8 @@ function compressImg(options, that) {
       var canvasId = config.canvasId,
         imagePath = config.imagePath,
         fileSize = config.fileSize;
+      that.watermarkCanvasOption.width = 0;
+      that.watermarkCanvasOption.height = 0;
 
       // 获取图片信息，以便获取图片的真实宽高信息
       uni.getImageInfo({
@@ -20128,34 +20141,35 @@ function compressImg(options, that) {
             // 按对折比例缩小
             var imageW = Math.floor(width * ratio);
             var imageH = Math.floor(height * ratio);
-
-            // 获取canvas绘图上下文
-            var ctx = uni.createCanvasContext(canvasId, that);
             that.watermarkCanvasOption.width = imageW;
             that.watermarkCanvasOption.height = imageH;
+            that.$nextTick(function () {
+              // 获取canvas绘图上下文
+              var ctx = uni.createCanvasContext(canvasId, that);
 
-            // 绘制原始图片到canvas上
-            ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+              // 绘制原始图片到canvas上
+              ctx.drawImage(imagePath, 0, 0, imageW, imageH);
 
-            // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-            ctx.draw(false, function () {
-              uni.canvasToTempFilePath({
-                // 将画布内容导出为图片
-                canvasId: canvasId,
-                x: 0,
-                y: 0,
-                width: imageW,
-                height: imageH,
-                destWidth: imageW,
-                destHeight: imageH,
-                success: function success(res) {
-                  console.log('res.tempFilePath', res);
-                  resolve(res.tempFilePath);
-                },
-                fail: function fail() {
-                  reject(false);
-                }
-              }, that);
+              // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+              ctx.draw(false, function () {
+                uni.canvasToTempFilePath({
+                  // 将画布内容导出为图片
+                  canvasId: canvasId,
+                  x: 0,
+                  y: 0,
+                  width: imageW,
+                  height: imageH,
+                  destWidth: imageW,
+                  destHeight: imageH,
+                  success: function success(res) {
+                    console.log('res.tempFilePath', res);
+                    resolve(res.tempFilePath);
+                  },
+                  fail: function fail() {
+                    reject(false);
+                  }
+                }, that);
+              });
             });
           } else {
             resolve(imagePath);
@@ -20273,6 +20287,8 @@ function clipImg(options, that) {
     var _dealClipImgConfig = dealClipImgConfig(options),
       errLog = _dealClipImgConfig.errLog,
       config = _dealClipImgConfig.config;
+    that.watermarkCanvasOption.width = 0;
+    that.watermarkCanvasOption.height = 0;
     if (!errLog.length) {
       var canvasId = config.canvasId,
         imagePath = config.imagePath,
@@ -20289,45 +20305,46 @@ function clipImg(options, that) {
 
           // 自定义剪裁范围要在图片内
           if (width >= cWidth && height >= cHeight) {
-            var _calcClipPosition = calcClipPosition({
-                cWidth: cWidth,
-                cHeight: cHeight,
-                position: position,
-                width: width,
-                height: height
-              }),
-              calcSX = _calcClipPosition.calcSX,
-              calcSY = _calcClipPosition.calcSY,
-              calcEX = _calcClipPosition.calcEX,
-              calcEY = _calcClipPosition.calcEY;
-
-            // 获取canvas绘图上下文
-            var ctx = uni.createCanvasContext(canvasId, that);
             that.watermarkCanvasOption.width = width;
             that.watermarkCanvasOption.height = height;
+            that.$nextTick(function () {
+              // 获取canvas绘图上下文
+              var ctx = uni.createCanvasContext(canvasId, that);
+              var _calcClipPosition = calcClipPosition({
+                  cWidth: cWidth,
+                  cHeight: cHeight,
+                  position: position,
+                  width: width,
+                  height: height
+                }),
+                calcSX = _calcClipPosition.calcSX,
+                calcSY = _calcClipPosition.calcSY,
+                calcEX = _calcClipPosition.calcEX,
+                calcEY = _calcClipPosition.calcEY;
 
-            // 绘制原始图片到canvas上
-            ctx.drawImage(imagePath, 0, 0, width, height);
+              // 绘制原始图片到canvas上
+              ctx.drawImage(imagePath, 0, 0, width, height);
 
-            // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-            ctx.draw(false, function () {
-              uni.canvasToTempFilePath({
-                // 将画布内容导出为图片
-                canvasId: canvasId,
-                x: calcSX,
-                y: calcSY,
-                width: cWidth,
-                height: cHeight,
-                destWidth: cWidth,
-                destHeight: cHeight,
-                success: function success(res) {
-                  console.log('res.tempFilePath', res);
-                  resolve(res.tempFilePath);
-                },
-                fail: function fail() {
-                  reject(false);
-                }
-              }, that);
+              // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+              ctx.draw(false, function () {
+                uni.canvasToTempFilePath({
+                  // 将画布内容导出为图片
+                  canvasId: canvasId,
+                  x: calcSX,
+                  y: calcSY,
+                  width: cWidth,
+                  height: cHeight,
+                  destWidth: cWidth,
+                  destHeight: cHeight,
+                  success: function success(res) {
+                    console.log('res.tempFilePath', res);
+                    resolve(res.tempFilePath);
+                  },
+                  fail: function fail() {
+                    reject(false);
+                  }
+                }, that);
+              });
             });
           } else {
             return imagePath;
@@ -20349,16 +20366,18 @@ function addWatermarkAndCompress(options, that) {
     var _dealWatermarkConfig2 = dealWatermarkConfig(options, isCompress ? 'addCompress' : undefined),
       errLog = _dealWatermarkConfig2.errLog,
       config = _dealWatermarkConfig2.config;
+    that.watermarkCanvasOption.width = 0;
+    that.watermarkCanvasOption.height = 0;
     if (!errLog.length) {
       var canvasId = config.canvasId,
         imagePath = config.imagePath,
         watermarkList = config.watermarkList,
         fileSize = config.fileSize;
-      var ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
       uni.getImageInfo({
         // 获取图片信息，以便获取图片的真实宽高信息
         src: imagePath,
         success: function success(info) {
+          console.log('info123123123', info);
           var oWidth = info.width,
             oHeight = info.height; // 获取图片的原始宽高
 
@@ -20366,84 +20385,91 @@ function addWatermarkAndCompress(options, that) {
           var height = oHeight;
           if (isCompress) {
             var ratio = getCompressionRatio(fileSize);
+            console.log('ratio=====>', ratio);
+
             // 按对折比例缩小
             width = Math.floor(oWidth * ratio);
             height = Math.floor(oHeight * ratio);
           }
           that.watermarkCanvasOption.width = width;
           that.watermarkCanvasOption.height = height;
-          ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
-          // 绘制水印项
-          var drawWMItem = function drawWMItem(ctx, options) {
-            var fontSize = options.fontSize,
-              color = options.color,
-              cText = options.text,
-              position = options.position,
-              margin = options.margin;
-            // 添加水印
-            ctx.setFontSize(fontSize); // 设置字体大小
-            ctx.setFillStyle(color); // 设置字体颜色为红色
+          that.$nextTick(function () {
+            // 获取canvas绘图上下文
+            var ctx = uni.createCanvasContext(canvasId, that);
+            // 绘制原始图片到canvas上
+            ctx.drawImage(imagePath, 0, 0, width, height);
+            // 绘制水印项
+            var drawWMItem = function drawWMItem(ctx, options) {
+              var fontSize = options.fontSize,
+                color = options.color,
+                cText = options.text,
+                position = options.position,
+                margin = options.margin;
+              // 添加水印
+              ctx.setFontSize(fontSize); // 设置字体大小
+              ctx.setFillStyle(color); // 设置字体颜色为红色
 
-            if (isNotEmptyArr(cText)) {
-              var _text2 = cText.filter(Boolean);
-              if (position.startsWith('bottom')) {
-                _text2.reverse();
-              }
-              _text2.forEach(function (str, ind) {
-                var textMetrics = ctx.measureText(str);
-                var _calcPosition3 = calcPosition({
+              if (isNotEmptyArr(cText)) {
+                var _text2 = cText.filter(Boolean);
+                if (position.startsWith('bottom')) {
+                  _text2.reverse();
+                }
+                _text2.forEach(function (str, ind) {
+                  var textMetrics = ctx.measureText(str);
+                  var _calcPosition3 = calcPosition({
+                      height: height,
+                      width: width,
+                      position: position,
+                      margin: margin,
+                      ind: ind,
+                      fontSize: fontSize,
+                      textMetrics: textMetrics
+                    }),
+                    calcX = _calcPosition3.calcX,
+                    calcY = _calcPosition3.calcY;
+                  ctx.fillText(str, calcX, calcY, width);
+                });
+              } else {
+                var textMetrics = ctx.measureText(cText);
+                var _calcPosition4 = calcPosition({
                     height: height,
                     width: width,
                     position: position,
                     margin: margin,
-                    ind: ind,
+                    ind: 0,
                     fontSize: fontSize,
                     textMetrics: textMetrics
                   }),
-                  calcX = _calcPosition3.calcX,
-                  calcY = _calcPosition3.calcY;
-                ctx.fillText(str, calcX, calcY, width);
-              });
-            } else {
-              var textMetrics = ctx.measureText(cText);
-              var _calcPosition4 = calcPosition({
-                  height: height,
-                  width: width,
-                  position: position,
-                  margin: margin,
-                  ind: 0,
-                  fontSize: fontSize,
-                  textMetrics: textMetrics
-                }),
-                calcX = _calcPosition4.calcX,
-                calcY = _calcPosition4.calcY;
-              // 在图片底部添加水印文字
-              ctx.fillText(text, calcX, calcY, width);
-            }
-          };
-          watermarkList.forEach(function (ele) {
-            drawWMItem(ctx, ele);
-          });
-
-          // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-          ctx.draw(false, function () {
-            uni.canvasToTempFilePath({
-              // 将画布内容导出为图片
-              canvasId: canvasId,
-              x: 0,
-              y: 0,
-              width: width,
-              height: height,
-              destWidth: width,
-              destHeight: height,
-              success: function success(res) {
-                console.log('res.tempFilePath', res);
-                resolve(res.tempFilePath);
-              },
-              fail: function fail() {
-                reject(false);
+                  calcX = _calcPosition4.calcX,
+                  calcY = _calcPosition4.calcY;
+                // 在图片底部添加水印文字
+                ctx.fillText(text, calcX, calcY, width);
               }
-            }, that);
+            };
+            watermarkList.forEach(function (ele) {
+              drawWMItem(ctx, ele);
+            });
+
+            // 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+            ctx.draw(false, function () {
+              uni.canvasToTempFilePath({
+                // 将画布内容导出为图片
+                canvasId: canvasId,
+                x: 0,
+                y: 0,
+                width: width,
+                height: height,
+                destWidth: width,
+                destHeight: height,
+                success: function success(res) {
+                  console.log('res.tempFilePath', res);
+                  resolve(res.tempFilePath);
+                },
+                fail: function fail() {
+                  reject(false);
+                }
+              }, that);
+            });
           });
         }
       });

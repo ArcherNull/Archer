@@ -128,8 +128,57 @@ export function getSetting() {
 		})
 		// #endif
 		// #ifdef H5
-		resolve(true)
+		const systemInfo = uni.getSystemInfoSync()
+		const system = systemInfo.system
+		if (system) {
+			console.log('system123123123123', system)
+			if (navigator?.geolocation?.getCurrentPosition) {
+				function onSuccess(position) {
+					console.log('position', position)
+					resolve(true)
+				}
+				//定位数据获取失败响应  
+				function onError(error) {
+					console.log('error', error)
+					let errorStr = '定位失败'
+					switch (error.code) {
+						case error.PERMISSION_DENIED:
+							errorStr = "您拒绝对获取地理位置的请求"
+							break;
+						case error.POSITION_UNAVAILABLE:
+							errorStr = "您拒绝对获取地理位置的请求"
+							break;
+						case error.TIMEOUT:
+							errorStr = "请求您的地理位置超时"
+							break;
+						case error.UNKNOWN_ERROR:
+							errorStr = "定位失败"
+							break;
+					}
+					showMsg(errorStr)
+					setTimeout(() => {
+						reject(errorStr)
+					}, 1000)
+				}
+
+				navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+					// 高精度
+					enableHighAccuracy: true,
+					// 超时时间60s
+					timeout: 100 * 1000
+				});
+			} else {
+				reject("您的浏览器不支持使用HTML5来获取地理位置服务");
+				// resolve(true)
+			}
+		} else {
+			reject('未获取到设备信息')
+		}
+
+
 		// #endif
+
+
 	})
 }
 
@@ -139,14 +188,23 @@ export function getSetting() {
 export function getLocation() {
 	return new Promise((resolve, reject) => {
 		uni.getLocation({
+			// #ifdef MP-WEIXIN
 			type: 'gcj02',
 			isHighAccuracy: true,
+			// #endif
+			// #ifdef H5
+			type: "wgs84",
+			geocode: true,
+			// #endif
 			success: function(res) {
-				resolve(res)
+				if (res?.errMsg === 'getLocation:ok') {
+					resolve(res)
+				} else {
+					reject('定位失败，请重试')
+				}
 			},
 			fail: function(err) {
-				showMsg('定位失败，请检查网络,GPS定位是否开启以及微信地理位置授权等情况')
-				reject(false)
+				reject('定位失败，请检查网络,GPS定位是否开启以及微信地理位置授权等情况')
 			}
 		});
 	})
@@ -330,39 +388,66 @@ export function addWatermark(options, that) {
 				watermarkList
 			} = config
 
-			const ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
+			that.watermarkCanvasOption.width = 0
+			that.watermarkCanvasOption.height = 0
+
 			uni.getImageInfo({ // 获取图片信息，以便获取图片的真实宽高信息
 				src: imagePath,
 				success: (info) => {
+					console.log('info123123123', info)
 					const {
 						width,
 						height
 					} = info; // 获取图片的原始宽高
+
 					that.watermarkCanvasOption.width = width
 					that.watermarkCanvasOption.height = height
 
-					ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
-					// 绘制水印项
-					const drawWMItem = (ctx, options) => {
+					that.$nextTick(() => {
+						const ctx = uni.createCanvasContext(canvasId,
+							that); // 获取canvas绘图上下文
 
-						const {
-							fontSize,
-							color,
-							text: cText,
-							position,
-							margin
-						} = options
-						// 添加水印
-						ctx.setFontSize(fontSize); // 设置字体大小
-						ctx.setFillStyle(color); // 设置字体颜色为红色
+						console.log('ctx', ctx)
 
-						if (isNotEmptyArr(cText)) {
-							const text = cText.filter(Boolean)
-							if (position.startsWith('bottom')) {
-								text.reverse()
-							}
-							text.forEach((str, ind) => {
-								const textMetrics = ctx.measureText(str);
+						ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
+						// 绘制水印项
+						const drawWMItem = (ctx, options) => {
+
+							const {
+								fontSize,
+								color,
+								text: cText,
+								position,
+								margin
+							} = options
+							// 添加水印
+							ctx.setFontSize(fontSize); // 设置字体大小
+							ctx.setFillStyle(color); // 设置字体颜色为红色
+
+							if (isNotEmptyArr(cText)) {
+								const text = cText.filter(Boolean)
+								if (position.startsWith('bottom')) {
+									text.reverse()
+								}
+								text.forEach((str, ind) => {
+									const textMetrics = ctx.measureText(str);
+									const {
+										calcX,
+										calcY
+									} = calcPosition({
+										height,
+										width,
+										position,
+										margin,
+										ind,
+										fontSize,
+										textMetrics
+									})
+									ctx.fillText(str, calcX, calcY, width);
+								})
+							} else {
+								const textMetrics = ctx.measureText(cText);
+
 								const {
 									calcX,
 									calcY
@@ -371,78 +456,61 @@ export function addWatermark(options, that) {
 									width,
 									position,
 									margin,
-									ind,
+									ind: 0,
 									fontSize,
 									textMetrics
 								})
-								ctx.fillText(str, calcX, calcY, width);
-							})
-						} else {
-							const textMetrics = ctx.measureText(cText);
-
-							const {
-								calcX,
-								calcY
-							} = calcPosition({
-								height,
-								width,
-								position,
-								margin,
-								ind: 0,
-								fontSize,
-								textMetrics
-							})
-							// 在图片底部添加水印文字
-							ctx.fillText(text, calcX, calcY, width);
+								// 在图片底部添加水印文字
+								ctx.fillText(text, calcX, calcY, width);
+							}
 						}
-					}
 
-					watermarkList.forEach(ele => {
-						drawWMItem(ctx, ele)
+						watermarkList.forEach(ele => {
+							drawWMItem(ctx, ele)
+						})
+
+						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+						ctx.draw(false, () => {
+							// #ifndef MP-ALIPAY
+							uni.canvasToTempFilePath({ // 将画布内容导出为图片
+								canvasId,
+								x: 0,
+								y: 0,
+								width: width,
+								height: height,
+								destWidth: width,
+								destHeight: height,
+								success: (res) => {
+									console.log('res.tempFilePath', res)
+									resolve(res.tempFilePath)
+								},
+								fail() {
+									reject(false)
+								}
+							}, that);
+							// #endif
+
+							// #ifdef MP-ALIPAY
+							ctx.toTempFilePath({ // 将画布内容导出为图片
+								canvasId,
+								x: 0,
+								y: 0,
+								width: width,
+								height: height,
+								destWidth: width,
+								destHeight: height,
+								// fileType: 'png',
+								success: (res) => {
+									console.log('res.tempFilePath', res)
+									resolve(res.tempFilePath)
+								},
+								fail() {
+									reject(false)
+								}
+							}, that);
+							// #endif 
+						});
 					})
-
-					// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-					ctx.draw(false, () => {
-						// #ifdef MP-WEIXIN
-						uni.canvasToTempFilePath({ // 将画布内容导出为图片
-							canvasId,
-							x: 0,
-							y: 0,
-							width: width,
-							height: height,
-							destWidth: width,
-							destHeight: height,
-							success: (res) => {
-								console.log('res.tempFilePath', res)
-								resolve(res.tempFilePath)
-							},
-							fail() {
-								reject(false)
-							}
-						}, that);
-						// #endif
-
-						// #ifdef MP-ALIPAY
-						ctx.toTempFilePath({ // 将画布内容导出为图片
-							canvasId,
-							x: 0,
-							y: 0,
-							width: width,
-							height: height,
-							destWidth: width,
-							destHeight: height,
-							// fileType: 'png',
-							success: (res) => {
-								console.log('res.tempFilePath', res)
-								resolve(res.tempFilePath)
-							},
-							fail() {
-								reject(false)
-							}
-						}, that);
-						// #endif 
-					});
-
 				}
 			});
 		} else {
@@ -456,6 +524,7 @@ export function addWatermark(options, that) {
 // 保存图片到相册
 export function saveImageToPA(tPath) {
 	return new Promise((resolve, reject) => {
+		// #ifndef H5
 		if (tPath) {
 			uni.saveImageToPhotosAlbum({
 				filePath: tPath,
@@ -471,6 +540,11 @@ export function saveImageToPA(tPath) {
 			showMsg('未获取到图片本地路径')
 			reject(false)
 		}
+		// #endif
+		// #ifdef H5
+		showMsg('H5不支持saveImageToPhotosAlbum方法')
+		reject(true)
+		// #endif
 	})
 }
 
@@ -647,7 +721,12 @@ export function getBaiduAddressListByKeywords(config) {
 				const paramsStr = getUrlParamsStr(paramsObj)
 
 				uni.request({
+					// #ifdef MP-WEIXIN
 					url: 'https://api.map.baidu.com/place/v2/search?' + paramsStr,
+					// #endif
+					// #ifdef H5
+					url: '/place/v2/search?' + paramsStr,
+					// #endif
 					method: "get",
 					dataType: "json",
 					header: {
@@ -710,7 +789,12 @@ export function getBaiduAddressInfoByLocation(config) {
 				const paramsStr = getUrlParamsStr(paramsObj)
 
 				uni.request({
+					// #ifdef MP-WEIXIN
 					url: 'https://api.map.baidu.com/reverse_geocoding/v3/?' + paramsStr,
+					// #endif
+					// #ifdef H5
+					url: '/reverse_geocoding/v3/?' + paramsStr,
+					// #endif
 					method: "get",
 					dataType: "json",
 					header: {
@@ -789,12 +873,19 @@ export function getFileInfoFun(options) {
 			imagePath
 		} = options
 		if (imagePath) {
+			// #ifndef H5
 			const fileManager = uni.getFileSystemManager()
 			fileManager.getFileInfo({
 				filePath: imagePath,
 				success: (res) => resolve(res),
 				fail: () => reject(false)
 			})
+			// #endif
+
+			// #ifdef H5
+			reject('H5不支持getFileSystemManager方法')
+			// #endif
+
 		} else {
 			reject(false)
 		}
@@ -817,6 +908,9 @@ export function compressImg(options, that) {
 				fileSize,
 			} = config
 
+			that.watermarkCanvasOption.width = 0
+			that.watermarkCanvasOption.height = 0
+
 			// 获取图片信息，以便获取图片的真实宽高信息
 			uni.getImageInfo({
 				src: imagePath,
@@ -831,36 +925,37 @@ export function compressImg(options, that) {
 						// 按对折比例缩小
 						const imageW = Math.floor(width * ratio)
 						const imageH = Math.floor(height * ratio)
-
-						// 获取canvas绘图上下文
-						const ctx = uni.createCanvasContext(canvasId, that);
-
 						that.watermarkCanvasOption.width = imageW
 						that.watermarkCanvasOption.height = imageH
 
-						// 绘制原始图片到canvas上
-						ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+						that.$nextTick(() => {
+							// 获取canvas绘图上下文
+							const ctx = uni.createCanvasContext(canvasId, that);
 
-						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-						ctx.draw(false, () => {
-							uni.canvasToTempFilePath({ // 将画布内容导出为图片
-								canvasId,
-								x: 0,
-								y: 0,
-								width: imageW,
-								height: imageH,
-								destWidth: imageW,
-								destHeight: imageH,
-								success: (res) => {
-									console.log('res.tempFilePath', res)
-									resolve(res.tempFilePath)
-								},
-								fail() {
-									reject(false)
-								}
-							}, that);
-						});
+							// 绘制原始图片到canvas上
+							ctx.drawImage(imagePath, 0, 0, imageW, imageH);
 
+							// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+							ctx.draw(false, () => {
+								uni.canvasToTempFilePath({ // 将画布内容导出为图片
+									canvasId,
+									x: 0,
+									y: 0,
+									width: imageW,
+									height: imageH,
+									destWidth: imageW,
+									destHeight: imageH,
+									success: (res) => {
+										console.log('res.tempFilePath',
+											res)
+										resolve(res.tempFilePath)
+									},
+									fail() {
+										reject(false)
+									}
+								}, that);
+							});
+						})
 					} else {
 						resolve(imagePath)
 					}
@@ -995,6 +1090,9 @@ export function clipImg(options, that) {
 			config
 		} = dealClipImgConfig(options)
 
+		that.watermarkCanvasOption.width = 0
+		that.watermarkCanvasOption.height = 0
+
 		if (!errLog.length) {
 			const {
 				canvasId,
@@ -1016,48 +1114,72 @@ export function clipImg(options, that) {
 					// 自定义剪裁范围要在图片内
 					if (width >= cWidth && height >= cHeight) {
 
-						const {
-							calcSX,
-							calcSY,
-							calcEX,
-							calcEY
-						} = calcClipPosition({
-							cWidth,
-							cHeight,
-							position,
-							width,
-							height
-						})
-
-						// 获取canvas绘图上下文
-						const ctx = uni.createCanvasContext(canvasId, that);
-
 						that.watermarkCanvasOption.width = width
 						that.watermarkCanvasOption.height = height
+						that.$nextTick(() => {
+							// 获取canvas绘图上下文
+							const ctx = uni.createCanvasContext(canvasId, that);
 
-						// 绘制原始图片到canvas上
-						ctx.drawImage(imagePath, 0, 0, width, height);
+							const {
+								calcSX,
+								calcSY,
+								calcEX,
+								calcEY
+							} = calcClipPosition({
+								cWidth,
+								cHeight,
+								position,
+								width,
+								height
+							})
 
-						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-						ctx.draw(false, () => {
-							uni.canvasToTempFilePath({ // 将画布内容导出为图片
-								canvasId,
-								x: calcSX,
-								y: calcSY,
-								width: cWidth,
-								height: cHeight,
-								destWidth: cWidth,
-								destHeight: cHeight,
-								success: (res) => {
-									console.log('res.tempFilePath', res)
-									resolve(res.tempFilePath)
-								},
-								fail() {
-									reject(false)
-								}
-							}, that);
-						});
+							// 绘制原始图片到canvas上
+							ctx.drawImage(imagePath, 0, 0, width, height);
 
+							// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+							ctx.draw(false, () => {
+								// #ifndef MP-ALIPAY
+								uni.canvasToTempFilePath({ // 将画布内容导出为图片
+									canvasId,
+									x: calcSX,
+									y: calcSY,
+									width: cWidth,
+									height: cHeight,
+									destWidth: cWidth,
+									destHeight: cHeight,
+									success: (res) => {
+										console.log('res.tempFilePath',
+											res)
+										resolve(res.tempFilePath)
+									},
+									fail() {
+										reject(false)
+									}
+								}, that);
+								// #endif
+
+								// #ifdef MP-ALIPAY
+								ctx.toTempFilePath({ // 将画布内容导出为图片
+									canvasId,
+									x: 0,
+									y: 0,
+									width: width,
+									height: height,
+									destWidth: width,
+									destHeight: height,
+									// fileType: 'png',
+									success: (res) => {
+										console.log('res.tempFilePath',
+											res)
+										resolve(res.tempFilePath)
+									},
+									fail() {
+										reject(false)
+									}
+								}, that);
+								// #endif 
+							});
+						})
 					} else {
 						return imagePath
 					}
@@ -1079,6 +1201,9 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 			errLog,
 			config
 		} = dealWatermarkConfig(options, isCompress ? 'addCompress' : undefined)
+
+		that.watermarkCanvasOption.width = 0
+		that.watermarkCanvasOption.height = 0
 		if (!errLog.length) {
 			const {
 				canvasId,
@@ -1087,10 +1212,10 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 				fileSize
 			} = config
 
-			const ctx = uni.createCanvasContext(canvasId, that); // 获取canvas绘图上下文
 			uni.getImageInfo({ // 获取图片信息，以便获取图片的真实宽高信息
 				src: imagePath,
 				success: (info) => {
+					console.log('info123123123', info)
 					const {
 						width: oWidth,
 						height: oHeight,
@@ -1100,6 +1225,9 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 					let height = oHeight
 					if (isCompress) {
 						const ratio = getCompressionRatio(fileSize)
+						
+						console.log('ratio=====>', ratio)
+						
 						// 按对折比例缩小
 						width = Math.floor(oWidth * ratio)
 						height = Math.floor(oHeight * ratio)
@@ -1108,28 +1236,48 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 					that.watermarkCanvasOption.width = width
 					that.watermarkCanvasOption.height = height
 
-					ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
-					// 绘制水印项
-					const drawWMItem = (ctx, options) => {
+					that.$nextTick(() => {
+						// 获取canvas绘图上下文
+						const ctx = uni.createCanvasContext(canvasId, that);
+						// 绘制原始图片到canvas上
+						ctx.drawImage(imagePath, 0, 0, width, height);
+						// 绘制水印项
+						const drawWMItem = (ctx, options) => {
+							const {
+								fontSize,
+								color,
+								text: cText,
+								position,
+								margin
+							} = options
+							// 添加水印
+							ctx.setFontSize(fontSize); // 设置字体大小
+							ctx.setFillStyle(color); // 设置字体颜色为红色
 
-						const {
-							fontSize,
-							color,
-							text: cText,
-							position,
-							margin
-						} = options
-						// 添加水印
-						ctx.setFontSize(fontSize); // 设置字体大小
-						ctx.setFillStyle(color); // 设置字体颜色为红色
+							if (isNotEmptyArr(cText)) {
+								const text = cText.filter(Boolean)
+								if (position.startsWith('bottom')) {
+									text.reverse()
+								}
+								text.forEach((str, ind) => {
+									const textMetrics = ctx.measureText(str);
+									const {
+										calcX,
+										calcY
+									} = calcPosition({
+										height,
+										width,
+										position,
+										margin,
+										ind,
+										fontSize,
+										textMetrics
+									})
+									ctx.fillText(str, calcX, calcY, width);
+								})
+							} else {
+								const textMetrics = ctx.measureText(cText);
 
-						if (isNotEmptyArr(cText)) {
-							const text = cText.filter(Boolean)
-							if (position.startsWith('bottom')) {
-								text.reverse()
-							}
-							text.forEach((str, ind) => {
-								const textMetrics = ctx.measureText(str);
 								const {
 									calcX,
 									calcY
@@ -1138,78 +1286,61 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 									width,
 									position,
 									margin,
-									ind,
+									ind: 0,
 									fontSize,
 									textMetrics
 								})
-								ctx.fillText(str, calcX, calcY, width);
-							})
-						} else {
-							const textMetrics = ctx.measureText(cText);
-
-							const {
-								calcX,
-								calcY
-							} = calcPosition({
-								height,
-								width,
-								position,
-								margin,
-								ind: 0,
-								fontSize,
-								textMetrics
-							})
-							// 在图片底部添加水印文字
-							ctx.fillText(text, calcX, calcY, width);
+								// 在图片底部添加水印文字
+								ctx.fillText(text, calcX, calcY, width);
+							}
 						}
-					}
 
-					watermarkList.forEach(ele => {
-						drawWMItem(ctx, ele)
+						watermarkList.forEach(ele => {
+							drawWMItem(ctx, ele)
+						})
+
+						// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
+						ctx.draw(false, () => {
+							// #ifndef MP-ALIPAY
+							uni.canvasToTempFilePath({ // 将画布内容导出为图片
+								canvasId,
+								x: 0,
+								y: 0,
+								width,
+								height,
+								destWidth: width,
+								destHeight: height,
+								success: (res) => {
+									console.log('res.tempFilePath', res)
+									resolve(res.tempFilePath)
+								},
+								fail() {
+									reject(false)
+								}
+							}, that);
+							// #endif
+
+							// #ifdef MP-ALIPAY
+							ctx.toTempFilePath({ // 将画布内容导出为图片
+								canvasId,
+								x: 0,
+								y: 0,
+								width: width,
+								height: height,
+								destWidth: width,
+								destHeight: height,
+								// fileType: 'png',
+								success: (res) => {
+									console.log('res.tempFilePath', res)
+									resolve(res.tempFilePath)
+								},
+								fail() {
+									reject(false)
+								}
+							}, that);
+							// #endif 
+						});
 					})
-
-					// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-					ctx.draw(false, () => {
-						// #ifdef MP-WEIXIN
-						uni.canvasToTempFilePath({ // 将画布内容导出为图片
-							canvasId,
-							x: 0,
-							y: 0,
-							width,
-							height,
-							destWidth: width,
-							destHeight: height,
-							success: (res) => {
-								console.log('res.tempFilePath', res)
-								resolve(res.tempFilePath)
-							},
-							fail() {
-								reject(false)
-							}
-						}, that);
-						// #endif
-
-						// #ifdef MP-ALIPAY
-						ctx.toTempFilePath({ // 将画布内容导出为图片
-							canvasId,
-							x: 0,
-							y: 0,
-							width: width,
-							height: height,
-							destWidth: width,
-							destHeight: height,
-							// fileType: 'png',
-							success: (res) => {
-								console.log('res.tempFilePath', res)
-								resolve(res.tempFilePath)
-							},
-							fail() {
-								reject(false)
-							}
-						}, that);
-						// #endif 
-					});
-
 				}
 			});
 		} else {
