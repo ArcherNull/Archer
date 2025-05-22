@@ -1,6 +1,4 @@
 {
-  "navigationBarTitleText": "uni-app",
-  "usingComponents": {
-    "u-upload": "/uni_modules/uview-ui/components/u-upload/u-upload"
-  }
+  "navigationBarTitleText": "示例界面",
+  "usingComponents": {}
 }

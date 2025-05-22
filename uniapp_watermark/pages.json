@@ -3,7 +3,25 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "示例界面"
+			}
+		},
+		{
+			"path": "pages/my/index",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+		{
+			"path": "pages/index/location/index",
+			"style": {
+				"navigationBarTitleText": "定位"
+			}
+		},
+		{
+			"path": "pages/index/upload/index",
+			"style": {
+				"navigationBarTitleText": "上传"
 			}
 		}
 	],
@@ -17,5 +35,24 @@
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	},
-	"uniIdRouter": {}
+	"uniIdRouter": {},
+	"tabBar": {
+		"color": "#00000059",
+		"selectedColor": "#F6AD02",
+		"borderStyle": "black",
+		"backgroundColor": "#FFFFFF",
+		"list": [{
+				"pagePath": "pages/index/index",
+				"iconPath": "static/order.png",
+				"selectedIconPath": "static/order_full.png",
+				"text": "示例"
+			},
+			{
+				"pagePath": "pages/my/index",
+				"iconPath": "static/my.png",
+				"selectedIconPath": "static/my_full.png",
+				"text": "我的"
+			}
+		]
+	}
 }

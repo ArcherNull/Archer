@@ -131,7 +131,7 @@ export function getSetting() {
 		const systemInfo = uni.getSystemInfoSync()
 		const system = systemInfo.system
 		if (system) {
-			console.log('system123123123123', system)
+			console.log('system=====>', system)
 			if (navigator?.geolocation?.getCurrentPosition) {
 				function onSuccess(position) {
 					console.log('position', position)

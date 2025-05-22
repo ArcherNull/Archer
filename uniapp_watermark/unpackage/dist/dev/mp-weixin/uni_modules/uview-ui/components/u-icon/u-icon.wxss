@@ -24,6 +24,10 @@
 /* 垂直间距 */
 /* 透明度 */
 /* 文章场景相关 */
+.borderRed.data-v-2ee87dc9 {
+  border: solid 1px #f00;
+  box-sizing: border-box;
+}
 view.data-v-2ee87dc9, scroll-view.data-v-2ee87dc9, swiper-item.data-v-2ee87dc9 {
   display: flex;
   flex-direction: column;
