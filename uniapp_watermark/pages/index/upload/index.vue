@@ -362,7 +362,6 @@
 				that.imageName = event.name;
 				const file = event.file
 				const tPath = file.url
-				const fileSize = file.size
 
 				if (that.locationAddrStr) {
 					uni.showLoading({
@@ -372,7 +371,6 @@
 					addWatermarkAndCompress({
 							canvasId: 'watermarkCanvas',
 							imagePath: tPath,
-							fileSize,
 							watermarkList: that.getWatermarkList()
 						}, that, true).then(res => {
 							console.log('下载图片====>', res)

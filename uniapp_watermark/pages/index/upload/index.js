@@ -223,14 +223,10 @@ export function chooseLocation() {
 }
 
 // 处理及校验传参
-function dealWatermarkConfig(options, type) {
+function dealWatermarkConfig(options) {
 	const valdiateRulesObj = {
 		canvasId: '画布id',
 		imagePath: '本地图片路径',
-	}
-
-	if (type === 'addCompress') {
-		valdiateRulesObj.fileSize = '文件尺寸'
 	}
 
 	const defaultWatermarkItem = {
@@ -1189,13 +1185,46 @@ export function clipImg(options, that) {
 	})
 }
 
+// 计算等比缩放的宽高
+function calcRatioHeightAndWight(options) {
+	const {
+		oWidth,
+		oHeight,
+		quality,
+		orientation
+	} = options
+
+	let cWidth
+	let cHeight
+
+	if (oWidth >= oHeight) {
+		cWidth = Math.floor(oWidth * quality)
+		cHeight = Math.floor((oHeight * cWidth) / oWidth)
+	} else {
+		cHeight = Math.floor(oHeight * quality)
+		cWidth = Math.floor((oWidth * cHeight) / oWidth)
+	}
+
+	if (orientation === 'up') {
+		return {
+			cWidth,
+			cHeight
+		}
+	} else {
+		return {
+			cWidth: cHeight,
+			cHeight: cWidth
+		}
+	}
+}
+
 // 添加水印并压缩
 export function addWatermarkAndCompress(options, that, isCompress = false) {
 	return new Promise((resolve, reject) => {
 		const {
 			errLog,
 			config
-		} = dealWatermarkConfig(options, isCompress ? 'addCompress' : undefined)
+		} = dealWatermarkConfig(options)
 
 		that.watermarkCanvasOption.width = 0
 		that.watermarkCanvasOption.height = 0
@@ -1204,28 +1233,41 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 				canvasId,
 				imagePath,
 				watermarkList,
-				fileSize
+				quality = 0.6
 			} = config
 
 			uni.getImageInfo({ // 获取图片信息，以便获取图片的真实宽高信息
 				src: imagePath,
 				success: (info) => {
-					console.log('info123123123', info)
 					const {
 						width: oWidth,
 						height: oHeight,
+						type,
+						orientation
 					} = info; // 获取图片的原始宽高
+					const fileTypeObj = {
+						'jpeg': 'jpg',
+						'jpg': 'jpg',
+						'png': 'png',
+					}
+					const fileType = fileTypeObj[type] || 'png'
 
 					let width = oWidth
 					let height = oHeight
+
 					if (isCompress) {
-						const ratio = getCompressionRatio(fileSize)
-						
-						console.log('ratio=====>', ratio)
-						
+						const {
+							cWidth,
+							cHeight
+						} = calcRatioHeightAndWight({
+							oWidth,
+							oHeight,
+							quality,
+							orientation
+						})
 						// 按对折比例缩小
-						width = Math.floor(oWidth * ratio)
-						height = Math.floor(oHeight * ratio)
+						width = cWidth
+						height = cHeight
 					}
 
 					that.watermarkCanvasOption.width = width
@@ -1303,6 +1345,8 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 								y: 0,
 								width,
 								height,
+								fileType,
+								quality, // 图片的质量，目前仅对 jpg 有效。取值范围为 (0, 1]，不在范围内时当作 1.0 处理。
 								destWidth: width,
 								destHeight: height,
 								success: (res) => {
@@ -1324,7 +1368,7 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 								height: height,
 								destWidth: width,
 								destHeight: height,
-								// fileType: 'png',
+								fileType: 'png',
 								success: (res) => {
 									console.log('res.tempFilePath', res)
 									resolve(res.tempFilePath)
