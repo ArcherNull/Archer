@@ -19763,7 +19763,7 @@ function addWatermark(options, that) {
                   calcX = _calcPosition2.calcX,
                   calcY = _calcPosition2.calcY;
                 // 在图片底部添加水印文字
-                ctx.fillText(text, calcX, calcY, width);
+                ctx.fillText(cText, calcX, calcY, width);
               }
             };
             watermarkList.forEach(function (ele) {

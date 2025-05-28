@@ -87,7 +87,7 @@ export function showNextMsg(text, icon = 'none', duration = 2500) {
  */
 export function getSetting() {
 	return new Promise((resolve, reject) => {
-		// #ifdef MP-WEIXIN
+		// #ifndef H5 || APP
 		wx.getSetting({
 			success: (res) => {
 				if (res.authSetting['scope.userLocation'] != undefined && res.authSetting[
@@ -174,11 +174,7 @@ export function getSetting() {
 		} else {
 			reject('未获取到设备信息')
 		}
-
-
 		// #endif
-
-
 	})
 }
 
@@ -223,7 +219,6 @@ export function chooseLocation() {
 				showMsg('获取附近地址失败！请检查网络,GPS定位是否开启以及微信地理位置授权等情况！')
 			}
 		});
-
 	})
 }
 
@@ -461,7 +456,7 @@ export function addWatermark(options, that) {
 									textMetrics
 								})
 								// 在图片底部添加水印文字
-								ctx.fillText(text, calcX, calcY, width);
+								ctx.fillText(cText, calcX, calcY, width);
 							}
 						}
 
