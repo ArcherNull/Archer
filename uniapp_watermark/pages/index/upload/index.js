@@ -8,7 +8,6 @@ export const BAIDU_CLIENT_SECRET = '百度客户端密钥'
 // 空字符特征
 const EMPTY_STR_ARR = [undefined, '', null]
 
-
 // 格式化
 function formatDateStr(n) {
 	return n > 9 ? n : '0' + n
@@ -179,7 +178,7 @@ export function getSetting() {
 }
 
 /**
- * @description: 地理定位
+ * @description: 地理定位， H5如果是微信公众号，最好是使用微信的jssdk,定位更精确
  */
 export function getLocation() {
 	return new Promise((resolve, reject) => {
@@ -244,7 +243,6 @@ function dealWatermarkConfig(options) {
 	} = options
 
 	let nList = []
-	console.log('watermarkListsdf', watermarkList)
 	if (isNotEmptyArr(watermarkList)) {
 		const nErrLog = []
 		watermarkList.forEach(ele => {
@@ -814,35 +812,11 @@ export function getBaiduAddressInfoByLocation(config) {
 	})
 }
 
-
-/**
- * @description: 根据文件尺寸获取压缩比
- * @param { number } fSize 文件尺寸
- */
-function getCompressionRatio(fSize) {
-	const getSize = (num) => {
-		return num * 1024 * 1024
-	}
-
-	if (fSize < getSize(1)) {
-		return 0.8
-	} else if (fSize < getSize(2)) {
-		return 0.5
-	} else if (fSize < getSize(4)) {
-		return 0.3
-	} else if (fSize < getSize(7)) {
-		return 0.2
-	} else {
-		return 0.1
-	}
-}
-
 // 校验参数
 function dealCompressImgConfig(options) {
 	const valdiateRulesObj = {
 		canvasId: '画布id',
 		imagePath: '本地图片路径',
-		fileSize: '文件尺寸'
 	}
 	const errLog = validateObj(options, valdiateRulesObj)
 
@@ -896,7 +870,7 @@ export function compressImg(options, that) {
 				canvasId,
 				imagePath,
 				// 文件尺寸
-				fileSize,
+				quality = 0.6
 			} = config
 
 			that.watermarkCanvasOption.width = 0
@@ -907,35 +881,60 @@ export function compressImg(options, that) {
 				src: imagePath,
 				success: (info) => {
 					const {
-						width,
-						height
+						width: oWidth,
+						height: oHeight,
+						type,
+						orientation
 					} = info; // 获取图片的原始宽高
+					const fileTypeObj = {
+						'jpeg': 'jpg',
+						'jpg': 'jpg',
+						'png': 'png',
+					}
+					const fileType = fileTypeObj[type] || 'png'
 
-					const ratio = getCompressionRatio(fileSize)
-					if (ratio < 1) {
+					let width = oWidth
+					let height = oHeight
+
+					if (quality < 1) {
+						const {
+							cWidth,
+							cHeight
+						} = calcRatioHeightAndWight({
+							oWidth,
+							oHeight,
+							quality,
+							orientation
+						})
+
 						// 按对折比例缩小
-						const imageW = Math.floor(width * ratio)
-						const imageH = Math.floor(height * ratio)
-						that.watermarkCanvasOption.width = imageW
-						that.watermarkCanvasOption.height = imageH
+						width = cWidth
+						height = cHeight
+
+						// 按对折比例缩小
+						that.watermarkCanvasOption.width = width
+						that.watermarkCanvasOption.height = height
 
 						that.$nextTick(() => {
 							// 获取canvas绘图上下文
 							const ctx = uni.createCanvasContext(canvasId, that);
 
 							// 绘制原始图片到canvas上
-							ctx.drawImage(imagePath, 0, 0, imageW, imageH);
+							ctx.drawImage(imagePath, 0, 0, width, height);
 
 							// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
 							ctx.draw(false, () => {
+								// #ifndef MP-ALIPAY
 								uni.canvasToTempFilePath({ // 将画布内容导出为图片
 									canvasId,
 									x: 0,
 									y: 0,
-									width: imageW,
-									height: imageH,
-									destWidth: imageW,
-									destHeight: imageH,
+									width,
+									height,
+									fileType,
+									quality, // 图片的质量，目前仅对 jpg 有效。取值范围为 (0, 1]，不在范围内时当作 1.0 处理。
+									destWidth: width,
+									destHeight: height,
 									success: (res) => {
 										console.log('res.tempFilePath',
 											res)
@@ -945,6 +944,29 @@ export function compressImg(options, that) {
 										reject(false)
 									}
 								}, that);
+								// #endif
+
+								// #ifdef MP-ALIPAY
+								ctx.toTempFilePath({ // 将画布内容导出为图片
+									canvasId,
+									x: 0,
+									y: 0,
+									width: width,
+									height: height,
+									destWidth: width,
+									destHeight: height,
+									quality,
+									fileType,
+									success: (res) => {
+										console.log('res.tempFilePath',
+											res)
+										resolve(res.tempFilePath)
+									},
+									fail() {
+										reject(false)
+									}
+								}, that);
+								// #endif 
 							});
 						})
 					} else {
@@ -960,6 +982,7 @@ export function compressImg(options, that) {
 		}
 	})
 }
+
 
 
 // 校验参数
@@ -1194,16 +1217,8 @@ function calcRatioHeightAndWight(options) {
 		orientation
 	} = options
 
-	let cWidth
-	let cHeight
-
-	if (oWidth >= oHeight) {
-		cWidth = Math.floor(oWidth * quality)
-		cHeight = Math.floor((oHeight * cWidth) / oWidth)
-	} else {
-		cHeight = Math.floor(oHeight * quality)
-		cWidth = Math.floor((oWidth * cHeight) / oWidth)
-	}
+	let cWidth = Math.floor(oWidth * quality)
+	let cHeight = Math.floor(oHeight * quality)
 
 	if (orientation === 'up') {
 		return {
@@ -1265,6 +1280,7 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 							quality,
 							orientation
 						})
+
 						// 按对折比例缩小
 						width = cWidth
 						height = cHeight
@@ -1368,7 +1384,8 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 								height: height,
 								destWidth: width,
 								destHeight: height,
-								fileType: 'png',
+								quality,
+								fileType,
 								success: (res) => {
 									console.log('res.tempFilePath', res)
 									resolve(res.tempFilePath)
@@ -1386,6 +1403,81 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 			const errStr = errLog.join(';')
 			showMsg(errStr)
 			reject(errStr)
+		}
+	})
+}
+
+// 判断是否在微信中
+function isWechat() {
+	var ua = window.navigator.userAgent.toLowerCase();
+	if (ua.match(/micromessenger/i) == 'micromessenger') {
+		console.log('是微信客户端')
+		return true;
+	} else {
+		console.log('不是微信客户端')
+		return false;
+	}
+}
+
+
+// 通过微信jssdk使得微信H5获取定位
+function getLocationByWxH5() {
+	let jweixin = require('jweixin-module');
+	return new Promise((resolve, reject) => {
+		if (jweixin) {
+			const ruleObj = {
+				appId: '公众号的appId',
+				timestamp: '生成签名的时间戳',
+				nonceStr: '生成签名的随机串',
+				signature: '签名',
+			}
+
+			const errLog = validateObj(data, ruleObj)
+			if (errLog.length) {
+				showMsg(errLog.join(';'))
+				reject(false);
+			} else {
+				jweixin.config({
+					debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+					appId: data.appId, // 必填，公众号的唯一标识
+					timestamp: data.timestamp, // 必填，生成签名的时间戳
+					nonceStr: data.nonceStr, // 必填，生成签名的随机串
+					signature: data.signature, // 必填，签名，见附录1
+					jsApiList: ['getLocation'], // 必填，需要使用的JS接口列表，所有JS接口列表见附录2
+					openTagList: ['wx-open-launch-weapp'] // 微信开放标签 小程序跳转按钮
+				});
+				jweixin.ready(function() {
+					jweixin.checkJsApi({
+						jsApiList: ['getLocation'], // 需要检测的JS接口列表，所有JS接口列表见附录2,
+						success: function(res) {
+							console.log('checkjsapi Success')
+						},
+						fail: function(res) {
+							resolve(false);
+						}
+					});
+					jweixin.getLocation({
+						type: 'gcj02', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+						success: function(res) {
+							resolve(res);
+						},
+						fail: function(res) {
+							showMsg('获取附近地址失败！请检查网络,GPS定位是否开启以及微信地理位置授权等情况！')
+							reject(false);
+						}
+					});
+				});
+
+				jweixin.error(function(res) {
+					console.log('error', res)
+					showMsg('微信jssdk方法调用失败')
+					reject(false)
+				});
+			}
+
+		} else {
+			showMsg('微信jssdk加载失败')
+			reject(false)
 		}
 	})
 }

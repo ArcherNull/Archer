@@ -334,31 +334,29 @@ var _default = {
       var that = this;
       var cTime = (0, _index.getCurrentDate)();
       return [{
-        fontSize: 32,
-        color: 'red',
-        // '#333333',
-        margin: 32,
+        fontSize: 18,
+        color: '#333333',
+        margin: 18,
         position: 'topLeft',
-        text: ['飞一般的感觉', '飞一般的感觉', that.locationAddrStr]
+        text: ['穿上草鞋，飞一般的感觉', '飞一般的感觉', that.locationAddrStr]
       }, {
-        fontSize: 32,
-        color: 'red',
-        // '#333333',
-        margin: 32,
+        fontSize: 18,
+        color: '#F5F5F5',
+        margin: 18,
         position: 'topRight',
         text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr]
       }, {
-        fontSize: 32,
+        fontSize: 18,
         color: 'red',
         // '#333333',
-        margin: 32,
+        margin: 18,
         position: 'bottomLeft',
         text: [cTime, that.locationAddrStr]
       }, {
-        fontSize: 32,
-        color: 'red',
+        fontSize: 18,
+        color: 'green',
         // '#333333',
-        margin: 32,
+        margin: 18,
         position: 'bottomRight',
         text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr]
       }];
@@ -488,7 +486,6 @@ var _default = {
       that.imageName = event.name;
       var file = event.file;
       var tPath = file.url;
-      var fileSize = file.size;
       if (that.locationAddrStr) {
         uni.showLoading({
           title: '处理中...'
@@ -496,7 +493,6 @@ var _default = {
         (0, _index.addWatermarkAndCompress)({
           canvasId: 'watermarkCanvas',
           imagePath: tPath,
-          fileSize: fileSize,
           watermarkList: that.getWatermarkList()
         }, that, true).then(function (res) {
           console.log('下载图片====>', res);

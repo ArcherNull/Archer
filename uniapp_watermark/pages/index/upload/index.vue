@@ -1,8 +1,8 @@
 <template>
 	<view class="uploadBox">
 		<p>请去注册百度AK</p>
-		<p>打包H5，请使用IE/QQ浏览器无痕浏览，IP定位比谷歌快</p>
-		<p>打包微信小程序通用</p>
+		<p>打包H5，请使用IE/QQ浏览器无痕浏览，IP定位比谷歌快(谷歌可能不响应)</p>
+		<p>如果是微信公众号，请使用微信jssdk</p>
 
 		<view class="upload">
 			<view class="upload_title">
@@ -66,7 +66,7 @@
 
 		<view class="upload">
 			<view :class="['upload_title',  isRequired ? 'requiredCss' : '']">
-				上传自动压缩图片(压缩比,最低为0.1)
+				上传自动压缩图片
 			</view>
 			<view class="upload_box">
 				<u-upload :previewFullImage="true" :maxCount="maxCount" width="260rpx" height="198rpx" name="2"
@@ -190,30 +190,30 @@
 				const that = this
 				const cTime = getCurrentDate()
 				return [{
-						fontSize: 32,
-						color: 'red', // '#333333',
-						margin: 32,
+						fontSize: 18,
+						color: '#333333',
+						margin: 18,
 						position: 'topLeft',
-						text: ['飞一般的感觉', '飞一般的感觉', that.locationAddrStr],
+						text: ['穿上草鞋，飞一般的感觉', '飞一般的感觉', that.locationAddrStr],
 					},
 					{
-						fontSize: 32,
-						color: 'red', // '#333333',
-						margin: 32,
+						fontSize: 18,
+						color: '#F5F5F5',
+						margin: 18,
 						position: 'topRight',
 						text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr],
 					},
 					{
-						fontSize: 32,
+						fontSize: 18,
 						color: 'red', // '#333333',
-						margin: 32,
+						margin: 18,
 						position: 'bottomLeft',
 						text: [cTime, that.locationAddrStr],
 					},
 					{
-						fontSize: 32,
-						color: 'red', // '#333333',
-						margin: 32,
+						fontSize: 18,
+						color: 'green', // '#333333',
+						margin: 18,
 						position: 'bottomRight',
 						text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
 					},
@@ -259,6 +259,7 @@
 					getSetting().then(res => {
 							console.log('getSetting123123123', res)
 							if (res) {
+								
 								return getLocation()
 							} else {
 								return Promise.reject('地理位置授权失败')
@@ -517,11 +518,11 @@
 
 <style lang="scss" scoped>
 	.upload {
-		margin-bottom: 32rpx;
+		margin-bottom: 18rpx;
 		font-size: 28rpx;
 
 		&_title {
-			margin-bottom: 20rpx;
+			margin-bottom: 18rpx;
 			color: #999;
 		}
 
@@ -564,12 +565,12 @@
 	}
 
 	.uploadBox {
-		padding: 20rpx 32rpx;
+		padding: 18rpx 18rpx;
 		box-sizing: border-box;
 	}
 
 	.clipBox {
-		margin-bottom: 20rpx;
+		margin-bottom: 18rpx;
 	}
 
 	.inputBox {
@@ -586,7 +587,7 @@
 		}
 
 		&_2 {
-			margin-left: 20rpx;
+			margin-left: 18rpx;
 		}
 	}
 
