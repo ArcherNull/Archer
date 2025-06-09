@@ -1,5 +1,5 @@
 // 百度AK
-export const BAIDU_AK = 'YMrC0KTdWJmLZCQM5CzW5V1DPOfVvBDV'
+export const BAIDU_AK = '百度BAIDU_AK'
 // 百度客户端id
 export const BAIDU_CLIENT_ID = '百度客户端id'
 // 百度客户端密钥
