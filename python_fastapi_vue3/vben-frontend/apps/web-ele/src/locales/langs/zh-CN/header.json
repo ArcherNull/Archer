@@ -1,0 +1,28 @@
+{
+    "resetPassword": "重置密码",
+    "personalCenter": "个人中心",
+    "resetPwdDialog": {
+      "oldPassword": "原密码",
+      "newPassword": "新密码",
+      "oldPasswordPlac": "请输入原密码",
+      "newPasswordPlac": "请输入新密码",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlac": "请输入确认密码",
+      "confirmPasswordTip": "两次输入的密码不一致",
+      "passwordStrength": "使用 8 个或更多字符，混合大小写字母及数字"
+    },
+    "personalCenterDialog": {
+      "avatar": "头像",
+      "userName": "账号",
+      "nickName": "昵称",
+      "sex": "性别",
+      "phonenumber": "手机号码",
+      "department": "所属部门",
+      "email": "邮箱",
+      "male": "男性",
+      "female": "女性",
+      "unKnown": "未知"
+    },
+    "pleaseInput": "请输入{slot}",
+    "pleaseSelect": "请选择{slot}"
+}

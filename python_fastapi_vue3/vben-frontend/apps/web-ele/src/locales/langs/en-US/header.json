@@ -1,0 +1,28 @@
+{
+    "resetPassword": "Reset Password",
+    "personalCenter": "Personal Center",
+    "resetPwdDialog": {
+      "oldPassword": "Old Password",
+      "newPassword": "New Password",
+      "oldPasswordPlac": "Please enter the old password",
+      "newPasswordPlac": "Please enter the new password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlac": "Please enter the confirm password",
+      "confirmPasswordTip": "The passwords do not match",
+      "passwordStrength": "Use 8 or more characters with a mix of letters, numbers & symbols"
+    },
+    "personalCenterDialog": {
+      "avatar": "avatar",
+      "userName": "userName",
+      "nickName": "nickName",
+      "sex": "sex",
+      "phonenumber": "phonenumber",
+      "department": "department",
+      "email": "email",
+      "male":"male",
+      "female":"female",
+      "unKnown":"unKnown"
+    },
+    "pleaseInput": "Please enter {slot}",
+    "pleaseSelect": "Please select a {slot}"
+}
