@@ -1,13 +1,44 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/my/index",
+    "pages/index/location/index",
+    "pages/index/upload/index"
   ],
   "subPackages": [],
   "window": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "uni-app",
+    "navigationBarTitleText": "uniapp_watermark",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },
+  "tabBar": {
+    "color": "#00000059",
+    "selectedColor": "#F6AD02",
+    "borderStyle": "black",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/order.png",
+        "selectedIconPath": "static/order_full.png",
+        "text": "示例"
+      },
+      {
+        "pagePath": "pages/my/index",
+        "iconPath": "static/my.png",
+        "selectedIconPath": "static/my_full.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "您的位置信息将用于定位时的地址数据展示"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
   "usingComponents": {}
 }

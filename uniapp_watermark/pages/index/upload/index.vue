@@ -137,7 +137,7 @@
 		getFileInfoFun,
 		convertNumber,
 		clipImg
-	} from './index.js'
+	} from '@/utils/index.js'
 
 	export default {
 		data() {
@@ -190,30 +190,30 @@
 				const that = this
 				const cTime = getCurrentDate()
 				return [{
-						fontSize: 18,
+						fontSize: 30,
 						color: '#333333',
-						margin: 18,
+						margin: 30,
 						position: 'topLeft',
 						text: ['穿上草鞋，飞一般的感觉', '飞一般的感觉', that.locationAddrStr],
 					},
 					{
-						fontSize: 18,
+						fontSize: 30,
 						color: '#F5F5F5',
-						margin: 18,
+						margin: 30,
 						position: 'topRight',
 						text: [cTime, '还得是你呀，一键三联啊', '还得是你呀，一键三联啊', that.locationAddrStr],
 					},
 					{
-						fontSize: 18,
+						fontSize: 30,
 						color: 'red', // '#333333',
-						margin: 18,
+						margin: 30,
 						position: 'bottomLeft',
 						text: [cTime, that.locationAddrStr],
 					},
 					{
-						fontSize: 18,
+						fontSize: 30,
 						color: 'green', // '#333333',
-						margin: 18,
+						margin: 30,
 						position: 'bottomRight',
 						text: [cTime, '帅啊，兄弟', null, '帅啊，兄弟', '帅啊，兄弟', that.locationAddrStr],
 					},
@@ -518,11 +518,11 @@
 
 <style lang="scss" scoped>
 	.upload {
-		margin-bottom: 18rpx;
+		margin-bottom: 30rpx;
 		font-size: 28rpx;
 
 		&_title {
-			margin-bottom: 18rpx;
+			margin-bottom: 30rpx;
 			color: #999;
 		}
 
@@ -565,12 +565,12 @@
 	}
 
 	.uploadBox {
-		padding: 18rpx 18rpx;
+		padding: 30rpx 18rpx;
 		box-sizing: border-box;
 	}
 
 	.clipBox {
-		margin-bottom: 18rpx;
+		margin-bottom: 30rpx;
 	}
 
 	.inputBox {
@@ -587,7 +587,7 @@
 		}
 
 		&_2 {
-			margin-left: 18rpx;
+			margin-left: 30rpx;
 		}
 	}
 

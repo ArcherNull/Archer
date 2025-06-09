@@ -29,11 +29,11 @@
   box-sizing: border-box;
 }
 .upload.data-v-4982951a {
-  margin-bottom: 18rpx;
+  margin-bottom: 30rpx;
   font-size: 28rpx;
 }
 .upload_title.data-v-4982951a {
-  margin-bottom: 18rpx;
+  margin-bottom: 30rpx;
   color: #999;
 }
 .upload_box.data-v-4982951a {
@@ -65,11 +65,11 @@
   margin-top: 10rpx;
 }
 .uploadBox.data-v-4982951a {
-  padding: 18rpx 18rpx;
+  padding: 30rpx 18rpx;
   box-sizing: border-box;
 }
 .clipBox.data-v-4982951a {
-  margin-bottom: 18rpx;
+  margin-bottom: 30rpx;
 }
 .inputBox.data-v-4982951a {
   display: flex;
@@ -82,7 +82,7 @@
   margin: 0 12rpx;
 }
 .inputBox_2.data-v-4982951a {
-  margin-left: 18rpx;
+  margin-left: 30rpx;
 }
 .inputCss.data-v-4982951a {
   width: 100rpx;

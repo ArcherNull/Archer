@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "上传",
+  "usingComponents": {
+    "u-upload": "/uni_modules/uview-ui/components/u-upload/u-upload"
+  }
+}

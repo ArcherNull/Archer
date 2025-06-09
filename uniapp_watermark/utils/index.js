@@ -386,8 +386,15 @@ export function addWatermark(options, that) {
 					console.log('info123123123', info)
 					const {
 						width,
-						height
+						height,
+						type,
 					} = info; // 获取图片的原始宽高
+					const fileTypeObj = {
+						'jpeg': 'jpg',
+						'jpg': 'jpg',
+						'png': 'png',
+					}
+					const fileType = fileTypeObj[type] || 'png'
 
 					that.watermarkCanvasOption.width = width
 					that.watermarkCanvasOption.height = height
@@ -469,6 +476,7 @@ export function addWatermark(options, that) {
 								height: height,
 								destWidth: width,
 								destHeight: height,
+								fileType,
 								success: (res) => {
 									console.log('res.tempFilePath', res)
 									resolve(res.tempFilePath)
@@ -488,7 +496,7 @@ export function addWatermark(options, that) {
 								height: height,
 								destWidth: width,
 								destHeight: height,
-								// fileType: 'png',
+								fileType,
 								success: (res) => {
 									console.log('res.tempFilePath', res)
 									resolve(res.tempFilePath)
@@ -684,8 +692,6 @@ export function getBaiduAddressListByKeywords(config) {
 			const valdiateRulesObj = {
 				province: '省份',
 				city: '城市',
-				area: '区/县',
-				address: '详细地址'
 			}
 
 			const errLog = validateObj(config, valdiateRulesObj)

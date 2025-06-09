@@ -14,7 +14,7 @@
 		data() {
 			return {
 				navigatorList: [{
-					name: '地理定位',
+					name: '地图定位',
 					url: '/pages/index/location/index'
 				}, {
 					name: '图片上传',
