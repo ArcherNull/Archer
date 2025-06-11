@@ -82,9 +82,13 @@ export const getSerialNumberColumns = (options: any = {}) => {
     lockPosition: true,
     maxWidth: 200,
     pinned: 'left',
-
+    field: 'numericalOrder',
     sortable: false,
     valueGetter(params: any) {
+      if (params.node.rowPinned === 'bottom') {
+        const { data, colDef } = params;
+        return colDef.field ? data[colDef.field] : '';
+      }
       return params?.node?.rowIndex + 1 || null;
     },
     width: 90,
@@ -196,6 +200,7 @@ export function getColumnDefs(options: any, slots?: any) {
                     index: rowIndex,
                     row: data,
                     value,
+                    params: props.params,
                   };
 
                   return () => {
@@ -239,6 +244,7 @@ export function getColumnDefs(options: any, slots?: any) {
                     index: rowIndex,
                     row: data,
                     value,
+                    params: props.params,
                   });
 
                   return () => {
@@ -261,6 +267,7 @@ export function getColumnDefs(options: any, slots?: any) {
                       index: rowIndex,
                       row: data,
                       value,
+                      params: props.params,
                     };
 
                     return () => {
@@ -334,8 +341,6 @@ export function getColumnDefs(options: any, slots?: any) {
         ...nColumnDefs,
         operationColumns,
       ].filter(Boolean);
-
-      console.log('nClos123123123', nClos);
 
       return {
         aClos: autoGroupColumns,

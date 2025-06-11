@@ -1,14 +1,14 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2024-09-20 14:03:23
- * @LastEditTime: 2025-06-04 09:01:13
+ * @LastEditTime: 2025-06-10 15:12:41
  * @Description: 
 -->
 <script setup lang="jsx" name="ImportFile">
 import { reactive, ref, toRaw } from 'vue';
 
 import { cloneDeep } from 'lodash-es';
-
+import { ElDatePicker, ElInput, ElOption, ElSelect } from 'element-plus';
 import { getImportCenterList, queryFileSource } from '#/api/system/fileCenter';
 import { downLoadByATag, generateAUrl } from '#/comm/hooks/useDownload';
 import { getDefaultTime, getTimePickerShortcuts } from '#/comm/utils/index';
@@ -17,21 +17,44 @@ import ProTable from '#/components/ProTable/index.vue';
 import { Page } from '@vben/common-ui';
 
 // ProTable 实例
+const defaultTime = getDefaultTime();
 const proTableRef = ref();
 const typeOptionsList = ref([]);
-const initParam = reactive({ type: 1 });
+const initParam = reactive({
+  type: 1,
+  data: cloneDeep(defaultTime),
+  timeType: 1,
+});
 // 表格配置项
 const columns = reactive([
   { label: '#', type: 'index', width: 80 },
   {
     align: 'left',
-    // enum: typeOptionsList,
     label: '文件来源',
     minWidth: 200,
     prop: 'menuName',
     search: {
       el: 'select',
-      props: { filterable: true },
+      label: '文件来源1',
+      key: 'test',
+      props: {
+        filterable: true,
+        placeholder: '请选择文件来源',
+        options: [
+          {
+            label: '来源一',
+            value: 1,
+          },
+          {
+            label: '来源二',
+            value: 2,
+          },
+          {
+            label: '来源三',
+            value: 3,
+          },
+        ],
+      },
     },
   },
   {
@@ -39,6 +62,34 @@ const columns = reactive([
     prop: 'status',
     tag: true,
     width: 100,
+    search: {
+      label: '',
+      render({ searchParam }) {
+        return (
+          <ElInput
+            clearable
+            placeholder="请输入搜索值"
+            v-slots={{
+              prepend: () => {
+                return (
+                  <ElSelect
+                    placeholder="请选择选项"
+                    style="width: 130px"
+                    vModel_trim={searchParam.type}
+                  >
+                    <ElOption label="部门" value={1} />
+                    <ElOption label="合同主体" value={2} />
+                    <ElOption label="运单号/批次号" value={3} />
+                  </ElSelect>
+                );
+              },
+            }}
+            vModel_trim={searchParam.fuzzyQuery}
+          ></ElInput>
+        );
+      },
+      span: 2,
+    },
   },
   {
     label: '文件名称',
@@ -78,12 +129,42 @@ const columns = reactive([
     label: '耗时',
     prop: 'time',
     width: 100,
+    search: {
+      label: '',
+      render({ searchParam }) {
+        console.log('searchParam', searchParam);
+        return (
+          <div style="display: flex; align-items: center">
+            <ElSelect
+              placeholder="请选择"
+              style="width: 130px"
+              vModel_trim={searchParam.timeType}
+            >
+              <ElOption label="签署时间" value={1} />
+              <ElOption label="指派时间" value={2} />
+            </ElSelect>
+            <ElDatePicker
+              class="input-with-select"
+              end-placeholder="结束时间"
+              placeholder="请输入"
+              range-separator="到"
+              shortcuts={getTimePickerShortcuts()}
+              start-placeholder="开始时间"
+              type="datetimerange"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              vModel_trim={searchParam.data}
+            ></ElDatePicker>
+          </div>
+        );
+      },
+      span: 2,
+    },
   },
   {
     label: '创建时间',
     prop: 'createdTime',
     search: {
-      defaultValue: getDefaultTime(),
+      defaultValue: defaultTime,
       el: 'date-picker',
       key: 'cTime',
       props: {
@@ -107,7 +188,6 @@ const columns = reactive([
 // 获取文件来源
 const getQueryFileSource = async () => {
   const res = await queryFileSource();
-  console.log('res123123123', res);
   const resData = res?.data || [];
   const list = [];
   resData.forEach((ele) => {
@@ -148,37 +228,34 @@ const downLoadFile = (row) => {
 
 <template>
   <Page>
-
-
-  <ProTable
-    ref="proTableRef"
-    :columns="columns"
-    :indent="20"
-    :init-param="initParam"
-    :file-config="{
-      fileType: '94',
-      importFileType: '93',
-      template: '费控统计配置.xlsx',
-      exportParam: exportParams,
-    }"
-    :request-api="getTableList"
-  >
-    <!-- 表格 header 按钮 -->
-    <template #tableHeader>
-      <DKButton type="primary"> 按钮 </DKButton>
-    </template>
-    <!-- 表格操作  -->
-    <template #operation="scope">
-      <DKButton
-        v-if="scope.row.errorFileUrl"
-        class="textBtnCss"
-        text
-        @click="downLoadFile(scope.row)"
-      >
-        下载错误文件
-      </DKButton>
-    </template>
-  </ProTable>
-</Page>
-
+    <ProTable
+      ref="proTableRef"
+      :columns="columns"
+      :indent="20"
+      :init-param="initParam"
+      :file-config="{
+        fileType: '94',
+        importFileType: '93',
+        template: '费控统计配置.xlsx',
+        exportParam: exportParams,
+      }"
+      :request-api="getTableList"
+    >
+      <!-- 表格 header 按钮 -->
+      <template #tableHeader>
+        <DKButton type="primary"> 按钮 </DKButton>
+      </template>
+      <!-- 表格操作  -->
+      <template #operation="scope">
+        <DKButton
+          v-if="scope.row.errorFileUrl"
+          class="textBtnCss"
+          text
+          @click="downLoadFile(scope.row)"
+        >
+          下载错误文件
+        </DKButton>
+      </template>
+    </ProTable>
+  </Page>
 </template>

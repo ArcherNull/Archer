@@ -1,7 +1,7 @@
 /*
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2024-09-15 10:59:53
- * @LastEditTime: 2025-03-05 10:58:45
+ * @LastEditTime: 2025-06-10 14:08:11
  * @Description:
  */
 import type {
@@ -28,6 +28,10 @@ import { convertNumber, numberRoundUp } from '#/comm/math/index';
 import { renderMoneyCell } from './render';
 // 时间格式化
 const DEFAULT_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+
+type ObjectType = {
+  [key: string]: any;
+};
 
 /**
  * @description: 元素是否存在数组内
@@ -932,11 +936,14 @@ export function getNestedProperty(obj: any, path: string) {
  * @param {string} field
  * @return {*}
  */
-export function calcSum(list: any[], field?: string): number {
+export function calcSum(list: any[], field: string | Function): number {
   let sumVal: number = 0;
   if (field) {
     list.forEach((ele) => {
-      const val = getNestedProperty(ele, field);
+      const val =
+        typeof field === 'function'
+          ? field(ele)
+          : getNestedProperty(ele, field);
       sumVal += convertNumber(val);
     });
   }
@@ -949,7 +956,7 @@ export function calcSum(list: any[], field?: string): number {
  * @param {string} field
  * @return {*}
  */
-export function calcAverage(list: any[], field: string): number {
+export function calcAverage(list: any[], field: string | Function): number {
   let averageVal: number = 0;
   if (field) {
     const sumVal: number = calcSum(list, field);
@@ -964,22 +971,35 @@ export function calcAverage(list: any[], field: string): number {
  * @return {*}
  */
 export function getTableSummaries(options: any): any[] {
-  const { averageColumns, columns, data, sumColumns } = options;
+  const { averageColumns, columns, data, sumColumns, specSasColumns } = options;
   const sums: any[] = [];
-
+  const sBool = isNotEmptyObj(specSasColumns);
   if (
     isNotEmptyArr(data) &&
-    (isNotEmptyArr(averageColumns) || isNotEmptyArr(sumColumns))
+    (isNotEmptyArr(averageColumns) || isNotEmptyArr(sumColumns) || sBool)
   ) {
+    let specColumns: string[] = [];
+    if (sBool) {
+      specColumns = Object.keys(specSasColumns);
+    }
     columns.forEach((column: any, index: number) => {
-      const { property } = column;
+      const property = column?.property;
       if ([0, 1].includes(index) && column?.label === '#') {
-        sums[index] = '合计';
+        if (column?.type === 'selection') {
+          sums[index] = '合计';
+        }
+
+        if (column?.type === 'index') {
+          sums[index] = `共${data.length}条`;
+        }
       } else {
         if (averageColumns.includes(property)) {
           sums[index] = calcAverage(data, property);
         } else if (sumColumns.includes(property)) {
           sums[index] = calcSum(data, property);
+        } else if (specColumns.includes(property)) {
+          const sFun = specSasColumns[property];
+          sums[index] = typeof sFun === 'function' ? sFun(data, property) : '';
         } else {
           sums[index] = '';
         }
@@ -988,6 +1008,47 @@ export function getTableSummaries(options: any): any[] {
   }
 
   return sums;
+}
+
+/**
+ * @description: 获取ag-table合计行数据
+ * @param {any} options
+ * @return {*}
+ */
+export function getTableAgSummaries(options: any): any[] {
+  const { averageColumns, columns, data, sumColumns, specSasColumns } = options;
+  const sums: ObjectType = {};
+  const sBool = isNotEmptyObj(specSasColumns);
+  if (
+    isNotEmptyArr(data) &&
+    (isNotEmptyArr(averageColumns) || isNotEmptyArr(sumColumns) || sBool)
+  ) {
+    let specColumns: string[] = [];
+    if (sBool) {
+      specColumns = Object.keys(specSasColumns);
+    }
+    columns.forEach((column: any, index: number) => {
+      const { headerName: label, field: property } = column;
+      if ([0, 1].includes(index) && label === '#') {
+        sums[property] = `共${data.length}条`;
+      } else {
+        sums[property] = '';
+        if (property) {
+          if (averageColumns.includes(property)) {
+            sums[property] = calcAverage(data, property);
+          } else if (sumColumns.includes(property)) {
+            sums[property] = calcSum(data, property);
+          } else if (specColumns.includes(property)) {
+            const sFun = specSasColumns[property];
+            sums[property] =
+              typeof sFun === 'function' ? sFun(data, property) : '';
+          }
+        }
+      }
+    });
+  }
+
+  return [sums];
 }
 
 // 错误提示

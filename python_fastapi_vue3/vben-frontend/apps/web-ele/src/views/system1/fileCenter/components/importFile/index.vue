@@ -1,7 +1,7 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2024-09-20 14:03:23
- * @LastEditTime: 2025-03-13 18:53:40
+ * @LastEditTime: 2025-06-10 14:54:44
  * @Description: 
 -->
 <script setup lang="jsx" name="ImportFile">
@@ -106,7 +106,6 @@ const columns = reactive([
 // 获取文件来源
 const getQueryFileSource = async () => {
   const res = await queryFileSource();
-  console.log('res123123123', res);
   const resData = res?.data || [];
   const list = [];
   resData.forEach((ele) => {

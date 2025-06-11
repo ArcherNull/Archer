@@ -1,19 +1,27 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2024-09-20 14:03:23
- * @LastEditTime: 2025-06-04 11:33:28
+ * @LastEditTime: 2025-06-10 17:59:47
  * @Description: 
 -->
 <script setup lang="jsx" name="ImportFile">
 import { reactive, ref, toRaw } from 'vue';
-
-import { cloneDeep } from 'lodash-es';
-import { ElTag } from 'element-plus'
+import { cloneDeep, debounce } from 'lodash-es';
+import { ElTag } from 'element-plus';
 import { getImportCenterList, queryFileSource } from '#/api/system/fileCenter';
 import { downLoadByATag, generateAUrl } from '#/comm/hooks/useDownload';
-import { getDefaultTime, getTimePickerShortcuts } from '#/comm/utils/index';
+import { convertNumber, numberRoundUp } from '#/comm/math/index';
+
+import {
+  getDefaultTime,
+  getTimePickerShortcuts,
+  getTableAgSummaries,
+  calcSum,
+  calcAverage,
+} from '#/comm/utils/index';
 import DKAGTable from '#/components/DKAGTable/index.vue';
 import DKButton from '#/components/DKButton/index.vue';
+
 
 // DKAGTable 实例
 const DKAGTableRef = ref();
@@ -33,27 +41,29 @@ const columns = reactive([
       el: 'select',
       props: { filterable: true },
     },
-    cellStyle:{
-      color: 'pink'
-    }
+    cellStyle: {
+      color: 'pink',
+    },
   },
   {
     label: '状态',
     prop: 'status',
     width: 150,
-    render(scope){
-      const { value } = scope
-      return <ElTag type='primary'>{value}</ElTag>
+    render(scope) {
+      const { value } = scope;
+      return value && <ElTag type="primary">{value}</ElTag>;
     },
-    headerStyle:{
+    headerStyle: {
       backgroundColor: 'red',
-      color: 'white'
+      color: 'white',
     },
-    cellStyle:(params)=>{
-      return params.value === '部分成功' ? {
-      backgroundColor: 'green',
-      }:{}
-    }
+    cellStyle: (params) => {
+      return params.value === '部分成功'
+        ? {
+            backgroundColor: 'green',
+          }
+        : {};
+    },
   },
   {
     label: '文件名称',
@@ -77,8 +87,11 @@ const columns = reactive([
   },
   {
     label: '成功条数',
-    prop: 'roleName',
+    prop: 'successRecord',
     render: (scope) => {
+      if (scope?.params?.node?.rowPinned === 'bottom') {
+        return scope?.params.value;
+      }
       const { failRecord, totalRecord } = scope.row;
       return <>{totalRecord - failRecord}</>;
     },
@@ -92,7 +105,7 @@ const columns = reactive([
   {
     label: '耗时',
     prop: 'time',
-    width: 100,
+    width: 160,
   },
   {
     label: '创建时间',
@@ -154,8 +167,60 @@ const getTableList = async (params) => {
 // 下载文件
 const downLoadFile = (row) => {
   const rInfo = toRaw(row);
-  console.log('downLoadFile', rInfo)
+  console.log('downLoadFile', rInfo);
 };
+
+// 合计行
+const getSummaries = (param) => {
+  const { data, columns } = param;
+  return getTableAgSummaries({
+    averageColumns: [],
+    columns,
+    data,
+    sumColumns: ['totalRecord'],
+    type: 'agTable',
+    specSasColumns: {
+      successRecord: (tData, property) => {
+        return calcSum(tData, (row) => {
+          const { failRecord, totalRecord } = row;
+          return convertNumber(totalRecord) - convertNumber(failRecord);
+        });
+      },
+      fileSize: (tData) => {
+        const size = calcSum(tData, (row) => {
+          const { fileSize } = row;
+          return convertNumber(fileSize?.replace('KB', ''));
+        });
+        return `总共${size}KB`;
+      },
+      time: (tData) => {
+        const aVal = calcAverage(tData, (row) => {
+          const { time } = row;
+          return convertNumber(time?.replace('s', ''));
+        });
+        return `平均${aVal}s`;
+      },
+    },
+  });
+};
+
+const paginationChangedFun = debounce((params) => {
+  //  获取列设置
+  const columnsDefs = params.api.getColumnDefs();
+  const filteredData = [];
+  // 获取筛选框过后的数据
+  params.api.forEachNodeAfterFilterAndSort((node) => {
+    filteredData.push(toRaw(node.data));
+  });
+  const sumRow = getSummaries({
+    data: filteredData,
+    columns: columnsDefs,
+  });
+  if (sumRow) {
+    params.api.setGridOption('pinnedBottomRowData', sumRow);
+    params.api.refreshCells({ force: true });
+  }
+}, 500);
 </script>
 
 <template>
@@ -164,6 +229,27 @@ const downLoadFile = (row) => {
     :columns="columns"
     :indent="20"
     :init-param="initParam"
+    :grid-options-fun="
+      () => {
+        return {
+          rowHeight: 36,
+          getRowStyle: (params) => {
+            if (params.node.rowPinned === 'bottom') {
+              return {
+                backgroundColor:  'transparent',
+                fontWeight: 'bold',
+              };
+            }
+          },
+
+          // getRowClass: (params) => {
+          //   if (params.node.rowPinned === 'bottom') {
+          //     return 'font-bold bg-gray-100 dark:bg-gray-700';
+          //   }
+          // },
+        };
+      }
+    "
     :file-config="{
       fileType: '94',
       importFileType: '93',
@@ -171,6 +257,7 @@ const downLoadFile = (row) => {
       exportParam: exportParams,
     }"
     :request-api="getTableList"
+    @paginationChanged="paginationChangedFun"
   >
     <template #tableHeader>
       <DKButton type="primary"> 按钮 </DKButton>

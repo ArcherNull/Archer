@@ -1,7 +1,7 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2024-09-20 14:03:23
- * @LastEditTime: 2025-06-04 11:39:02
+ * @LastEditTime: 2025-06-10 16:14:21
  * @Description: 
 -->
 <script setup lang="jsx" name="ImportFile">
@@ -11,7 +11,15 @@ import { cloneDeep } from 'lodash-es';
 
 import { getImportCenterList, queryFileSource } from '#/api/system/fileCenter';
 import { downLoadByATag, generateAUrl } from '#/comm/hooks/useDownload';
-import { getDefaultTime, getTimePickerShortcuts } from '#/comm/utils/index';
+import {
+  getDefaultTime,
+  getTimePickerShortcuts,
+  getTableSummaries,
+  calcSum,
+  calcAverage,
+} from '#/comm/utils/index';
+import { convertNumber, numberRoundUp } from '#/comm/math/index';
+
 import DKButton from '#/components/DKButton/index.vue';
 import ProTable from '#/components/ProTable/index.vue';
 
@@ -57,26 +65,26 @@ const columns = reactive([
   {
     label: '数据条数',
     prop: 'totalRecord',
-    width: 100,
+    width: 160,
   },
   {
     label: '成功条数',
-    prop: 'roleName',
+    prop: 'successRecord',
     render: (scope) => {
       const { failRecord, totalRecord } = scope.row;
       return <>{totalRecord - failRecord}</>;
     },
-    width: 100,
+    width: 160,
   },
   {
     label: '文件大小',
     prop: 'fileSize',
-    width: 100,
+    width: 160,
   },
   {
     label: '耗时',
     prop: 'time',
-    width: 100,
+    width: 160,
   },
   {
     label: '创建时间',
@@ -106,7 +114,6 @@ const columns = reactive([
 // 获取文件来源
 const getQueryFileSource = async () => {
   const res = await queryFileSource();
-  console.log('res123123123', res);
   const resData = res?.data || [];
   const list = [];
   resData.forEach((ele) => {
@@ -140,7 +147,41 @@ const getTableList = async (params) => {
 // 下载文件
 const downLoadFile = (row) => {
   const rInfo = toRaw(row);
-  console.log('downLoadFile', rInfo)
+  console.log('downLoadFile', rInfo);
+};
+
+// 合计行
+const getSummaries = (param) => {
+  const columns = toRaw(param.columns);
+  const data = toRaw(param.data);
+  return getTableSummaries({
+    averageColumns: [],
+    columns,
+    data,
+    sumColumns: ['totalRecord'],
+    specSasColumns: {
+      successRecord: (tData, property) => {
+        return calcSum(tData, (row) => {
+          const { failRecord, totalRecord } = row;
+          return convertNumber(totalRecord) - convertNumber(failRecord);
+        });
+      },
+      fileSize: (tData) => {
+        const size = calcSum(tData, (row) => {
+          const { fileSize } = row;
+          return convertNumber(fileSize?.replace('KB', ''));
+        });
+        return `总共${size}KB`;
+      },
+      time: (tData) => {
+        const aVal = calcAverage(tData, (row) => {
+          const { time } = row;
+          return convertNumber(time?.replace('s', ''));
+        });
+        return `平均${aVal}s`;
+      },
+    },
+  });
 };
 </script>
 
@@ -156,6 +197,8 @@ const downLoadFile = (row) => {
       template: '费控统计配置.xlsx',
       exportParam: exportParams,
     }"
+    :show-summary="true"
+    :summary-method="getSummaries"
     :request-api="getTableList"
   >
     <!-- 表格 header 按钮 -->

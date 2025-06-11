@@ -1,3 +1,9 @@
+<!--
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2025-06-05 10:38:48
+ * @LastEditTime: 2025-06-11 09:55:29
+ * @Description: 作者声明支持正版ag-grid，杜绝盗版ag-grid
+-->
 <script name="DKAgGrid" setup lang="tsx">
 import type {
   GridApi,
@@ -16,6 +22,7 @@ import {
   shallowRef,
   useAttrs,
   withDefaults,
+  toRaw
 } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
@@ -32,14 +39,14 @@ import {
   IntegratedChartsModule,
 } from 'ag-grid-enterprise';
 import { AgGridVue } from 'ag-grid-vue3';
-import { cloneDeep, isEmpty, isFunction, isObject, throttle } from 'lodash-es';
+import { cloneDeep, isEmpty, isFunction, isObject, debounce } from 'lodash-es';
 
 // 引入配置
 import { EXCELSTYLES, GRID_OPTIONS } from './common/agGrid-config';
 
 // 引入主题
 import './common/agGrid-theme';
-// 破解文件
+// 破解文件，只作为示例，支持正版
 import './common/agGrid-crack';
 
 defineOptions({
@@ -91,13 +98,19 @@ const customizedAttrs = computed(() => {
       console.log('DKAgGrid网格渲染完毕', params);
       gridApi.value = params.api;
     },
-    onPaginationChanged: throttle(
-      (params: PaginationChangedEvent) => {
-        console.log('表格刷新函数', params);
-      },
-      1500,
-      { trailing: false },
-    ),
+    onPaginationChanged: debounce((params: PaginationChangedEvent) => {
+      console.log('表格刷新函数', params);
+      //  获取列设置
+      const columnsDefs = params.api.getColumnDefs();
+      console.log('columnsDefs=====>', columnsDefs);
+
+      const filteredData: any[] = [];
+      // 获取筛选框过后的数据
+      params.api.forEachNodeAfterFilterAndSort((node) => {
+        filteredData.push(toRaw(node.data));
+      });
+      console.log('filteredData=====>', filteredData);
+    }, 800),
   };
 
   // 树形表格必传参数
@@ -131,7 +144,7 @@ defineExpose({
 <template>
   <AgGridVue
     :cell-selection="true"
-    :class="[isDark ? 'ag-theme-alpine-dark' : 'ag-theme-alpine']"
+    :class="[isDark ? 'ag-theme-alpine-dark ' : 'ag-theme-alpine']"
     :column-defs="tableDataOptions.columnDefs"
     :enable-cell-span="true"
     :enable-charts="true"
