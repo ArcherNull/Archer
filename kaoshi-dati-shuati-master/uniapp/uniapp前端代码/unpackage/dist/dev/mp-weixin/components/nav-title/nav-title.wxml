@@ -1,0 +1,1 @@
+<view><view class="nav-title-top" style="{{'height:'+(navHeight)+';'}}"><text class="nav-title-top-title">{{title}}</text></view></view>

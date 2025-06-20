@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "党史知识",
+  "usingComponents": {
+    "study-list": "/components/study-list/study-list"
+  }
+}

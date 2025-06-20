@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "党史知识",
+  "usingComponents": {
+    "see-list": "/components/see-list/see-list"
+  }
+}

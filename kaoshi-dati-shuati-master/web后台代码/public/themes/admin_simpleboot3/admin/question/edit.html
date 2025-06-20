@@ -1,0 +1,398 @@
+<include file="public@header" />
+<style>
+    .hide2{
+        display: none;
+    }
+    .item_select{}
+    .item_select .form-control{
+        display: inline-block;
+        margin-left: 10px;
+        margin-bottom: 10px;
+        width: 80%;
+    }
+
+    .item_span input[type='checkbox'],.item_span input[type='radio']{
+        display: none;
+        visibility: hidden;
+    }
+
+    .item_span input+label{
+        display: inline-block;
+        margin: 5px;
+        width: 34px;
+        height: 34px;
+        line-height: 34px;
+        text-align: center;
+        color: #969696;
+        font-size: 16px;
+        border: 1px solid #DCDCDC;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    .item_span[data-type='0'] input+label{
+        width: 40px;
+        border-radius: unset;
+    }
+    .item_span input:checked +label{
+        color: #ffffff;
+        border: 1px solid #38DAA6;
+        background: #38DAA6;
+    }
+
+    .span_add{
+        display: inline-block;
+        margin-bottom: 5px;
+        width: 74px;
+        height: 34px;
+        line-height: 34px;
+        text-align: center;
+        color: #38DAA6;
+        font-size: 14px;
+        border: 1px solid #38DAA6;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .span_add.no{
+        color: #C8C8C8;
+        border: 1px solid #C8C8C8;
+    }
+    .checkbd{
+        display: inline-block;
+    }
+    textarea.form-control{
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li ><a href="{:url('question/index')}">列表</a></li>
+        <li class="active"><a >{:lang('EDIT')}</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('question/editPost')}">
+
+        <div class="form-group">
+            <label for="type" class="col-sm-2 control-label"><span class="form-required">*</span>类型</label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" name="type" id="type">
+                    <volist name="type" id="v">
+                        <option value="{$key}" <if condition="$data['type'] eq $key">selected</if> >{$v}</option>
+                    </volist>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-title" class="col-sm-2 control-label"><span class="form-required">*</span>题目-文字</label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-title" name="title" value="{$data.title}">
+            </div>
+        </div>
+
+        <div class="form-group <if condition="!in_array($data['type'],['1','2','5'])">hide2</if>" id="item_select_1">
+        <label for="input-title" class="col-sm-2 control-label"><span class="form-required">*</span>选项</label>
+        <div class="col-md-6 col-sm-10">
+            <if condition="in_array($data['type'],['1','2','5'])">
+                <volist name="answer.ans" id="v">
+                    <div class="item_select"> {$select_list[$key]}. <input type="text" class="form-control" name="item_select[]" value="{$v}"></div>
+                </volist>
+                <div class="add_bd">
+                    <div class="span_add add_1_1">添加选项</div>
+                    <div class="span_add no add_1_0" <if condition="$answer['nums'] eq 1">style="display: none"</if> >减少选项</div>
+        </div>
+        <else/>
+        <div class="item_select"> A. <input type="text" class="form-control" name="item_select[]"></div>
+        <div class="item_select"> B. <input type="text" class="form-control" name="item_select[]"></div>
+        <div class="item_select"> C. <input type="text" class="form-control" name="item_select[]"></div>
+        <div class="item_select"> D. <input type="text" class="form-control" name="item_select[]"></div>
+        <div class="add_bd">
+            <div class="span_add add_1_1">添加选项</div>
+            <div class="span_add no add_1_0">减少选项</div>
+        </div>
+        </if>
+</div>
+</div>
+
+
+
+<div class="form-group">
+    <label for="input-title" class="col-sm-2 control-label"><span class="form-required">*</span>答案</label>
+    <div class="col-md-6 col-sm-10">
+        <div class="item_span <if condition="$data['type'] neq 0">hide2</if>" id="item_select_a_0" data-type="0">
+        <input type="radio" id="ans_0_1" class="test" name="ans_0" value="1" <if condition="$data['type'] eq 0 && $answer['rs'] eq 1">checked</if>>
+        <label for="ans_0_1">对</label>
+        <input type="radio" id="ans_0_0" class="test" name="ans_0" value="0" <if condition="$data['type'] eq 0 && $answer['rs'] eq 0">checked</if>>
+        <label for="ans_0_0">错</label>
+    </div>
+    <div class="item_span <if condition="$data['type'] neq 1">hide2</if>" id="item_select_a_1" data-type="1">
+    <if condition="$data['type'] eq 1">
+        <for start="0" end="$answer.nums">
+            <div class="checkbd">
+                <input type="radio" id="ans_1_{$i}" name="ans_1" value="{$i}" <if condition="$answer['rs'] eq $i">checked</if>>
+                <label for="ans_1_{$i}">{$select_list[$i]}</label>
+            </div>
+        </for>
+        <else/>
+        <div class="checkbd">
+            <input type="radio" id="ans_1_0" name="ans_1" value="0">
+            <label for="ans_1_0">A</label>
+        </div>
+        <div class="checkbd">
+            <input type="radio" id="ans_1_1" name="ans_1" value="1">
+            <label for="ans_1_1">B</label>
+        </div>
+        <div class="checkbd">
+            <input type="radio" id="ans_1_2" name="ans_1" value="2">
+            <label for="ans_1_2">C</label>
+        </div>
+        <div class="checkbd">
+            <input type="radio" id="ans_1_3" name="ans_1" value="3">
+            <label for="ans_1_3">D</label>
+        </div>
+    </if>
+
+
+</div>
+<div class="item_span <if condition="$data['type'] neq 2">hide2</if>" id="item_select_a_2" data-type="2">
+<if condition="$data['type'] eq 2">
+    <for start="0" end="$answer.nums">
+        <div class="checkbd">
+            <input type="checkbox" id="ans_2_{$i}" name="ans_2[]" value="{$i}" <in name="i" value="$answer['rs']">checked</in>>
+            <label for="ans_2_{$i}">{$select_list[$i]}</label>
+        </div>
+    </for>
+    <else/>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_2_0" name="ans_2[]" value="0">
+        <label for="ans_2_0">A</label>
+    </div>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_2_1" name="ans_2[]" value="1">
+        <label for="ans_2_1">B</label>
+    </div>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_2_2" name="ans_2[]" value="2">
+        <label for="ans_2_2">C</label>
+    </div>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_2_3" name="ans_2[]" value="3">
+        <label for="ans_2_3">D</label>
+    </div>
+</if>
+
+</div>
+<div class="item_span <if condition="$data['type'] neq 5">hide2</if>" id="item_select_a_5" data-type="5">
+<if condition="$data['type'] eq 5">
+    <for start="0" end="$answer.nums">
+        <div class="checkbd">
+            <input type="checkbox" id="ans_5_{$i}" name="ans_5[]" value="{$i}" <in name="i" value="$answer['rs']">checked</in>>
+            <label for="ans_5_{$i}">{$select_list[$i]}</label>
+        </div>
+    </for>
+    <else/>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_5_0" name="ans_5[]" value="0">
+        <label for="ans_5_0">A</label>
+    </div>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_5_1" name="ans_5[]" value="1">
+        <label for="ans_5_1">B</label>
+    </div>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_5_2" name="ans_5[]" value="2">
+        <label for="ans_5_2">C</label>
+    </div>
+    <div class="checkbd">
+        <input type="checkbox" id="ans_5_3" name="ans_5[]" value="3">
+        <label for="ans_5_3">D</label>
+    </div>
+</if>
+
+</div>
+<div class="item_input <if condition="$data['type'] neq 4">hide2</if>" id="item_select_a_4" data-type="4">
+<if condition="$data['type'] eq 4">
+    <volist name="answer.ans" id="v">
+        <textarea class="form-control" name="ans_4[]">{$v}</textarea>
+    </volist>
+    <div class="add_bd">
+        <div class="span_add add_4_1">添加填空</div>
+        <div class="span_add add_4_2 no" <if condition="$answer['nums'] eq 1">style="display: none"</if> >减少填空</div>
+    </div>
+    <else/>
+    <textarea class="form-control" name="ans_4[]"></textarea>
+    <div class="add_bd">
+        <div class="span_add add_4_1">添加填空</div>
+        <div class="span_add add_4_2 no" style="display: none">减少填空</div>
+    </div>
+</if>
+
+
+</div>
+
+
+</div>
+</div>
+
+<div class="form-group <if condition="$data['type'] eq 4">hide2</if>" id="score1">
+<label for="input-score" class="col-sm-2 control-label"><span class="form-required">*</span>分数</label>
+<div class="col-md-6 col-sm-10">
+    <input type="text" class="form-control" id="input-score" name="score" value="{$data.score}">
+</div>
+</div>
+
+<div class="form-group <if condition="$data['type'] neq 4">hide2</if>" id="score2">
+<label for="input-score2" class="col-sm-2 control-label"><span class="form-required">*</span>分数</label>
+<div class="col-md-6 col-sm-10">
+    <input type="text" class="form-control" id="input-score2" name="score2" value="{$data.score}">
+</div>
+</div>
+
+<div class="form-group <if condition="$data['type'] neq 5">hide2</if>" id="score3">
+<label for="input-score3" class="col-sm-2 control-label"><span class="form-required">*</span>漏选分数</label>
+<div class="col-md-6 col-sm-10">
+    <input type="text" class="form-control" id="input-score3" name="score3" value="{$data.score}">
+</div>
+</div>
+
+<div class="form-group">
+    <label for="input-title" class="col-sm-2 control-label"><span class="form-required">*</span>积分</label>
+    <div class="col-md-6 col-sm-10">
+        <input type="text" class="form-control" id="input-title" name="integral" value="{$data.integral}">
+    </div>
+</div>
+
+<div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+        <input type="hidden" name="id" value="{$data.id}" />
+        <button type="submit" class="btn btn-primary js-ajax-submit">{:lang('EDIT')}</button>
+        <a class="btn btn-default" href="javascript:history.back(-1);">{:lang('BACK')}</a>
+    </div>
+</div>
+
+</form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    (function (){
+
+        $('#type').on('change',function (){
+            let _that=$(this);
+            let type=_that.val();
+            let obj=$('#item_select_a_'+type);
+            obj.siblings().hide();
+            obj.show();
+
+            if(type==1 || type==2 || type==5){
+                $('#item_select_1').show();
+            }else{
+                $('#item_select_1').hide();
+            }
+
+            if(type==3){
+                $('#item_select_3').show();
+            }else{
+                $('#item_select_3').hide();
+            }
+            if(type==1 || type==2 || type==0 || type==3){
+                $('#score1').show();
+                $('#score2').hide();
+                $('#score3').hide();
+            }
+
+            if(type==4){
+                $('#score1').hide();
+                $('#score2').show();
+                $('#score3').hide();
+            }
+
+            if(type==5){
+                $('#score1').show();
+                $('#score2').hide();
+                $('#score3').show();
+            }
+
+        })
+
+        const select_list=['A','B','C','D','E','F','G','H','I','J','K','L','M','N'];
+
+        function checkSelects(){
+            let list=$('#item_select_1').find('.item_select');
+            if(list.length>1){
+                $('.add_1_0').show();
+            }else{
+                $('.add_1_0').hide();
+            }
+
+            if(list.length>13){
+                $('.add_1_1').hide();
+            }else{
+                $('.add_1_1').show();
+            }
+        }
+        $('.add_1_1').on('click',function (){
+            let _that=$(this);
+            let list=$('#item_select_1').find('.item_select');
+            let nums=list.length;
+            if(nums>13){
+                return !1;
+            }
+            let select=select_list[nums];
+            let html='<div class="item_select"> '+select+'. <input type="text" class="form-control" name="item_select[]"></div>';
+            _that.parent().before(html);
+            checkSelects();
+
+            let html1='<div class="checkbd"><input type="radio" id="ans_1_'+nums+'" name="ans_1" value="'+nums+'"><label for="ans_1_'+nums+'">'+select+'</label></div>';
+            let html2='<div class="checkbd"><input type="checkbox" id="ans_2_'+nums+'" name="ans_2[]" value="'+nums+'"><label for="ans_2_'+nums+'">'+select+'</label></div>';
+            let html5='<div class="checkbd"><input type="checkbox" id="ans_5_'+nums+'" name="ans_5[]" value="'+nums+'"><label for="ans_5_'+nums+'">'+select+'</label></div>';
+
+            $('#item_select_a_1').append(html1);
+            $('#item_select_a_2').append(html2);
+            $('#item_select_a_5').append(html5);
+        })
+
+        $('.add_1_0').on('click',function (){
+            let list=$('#item_select_1').find('.item_select');
+            let nums=list.length;
+            if(nums==1){
+                checkSelects();
+                return !1;
+            }
+            list.eq(nums-1).remove();
+            checkSelects();
+
+            $('#item_select_a_1').find('.checkbd:last-child').remove();
+            $('#item_select_a_2').find('.checkbd:last-child').remove();
+            $('#item_select_a_5').find('.checkbd:last-child').remove();
+        })
+
+        function checkInputs(){
+            let list=$('#item_select_a_4').find('textarea');
+            if(list.length>1){
+                $('.add_4_2').show();
+            }else{
+                $('.add_4_2').hide();
+            }
+        }
+        $('.add_4_1').on('click',function (){
+            let _that=$(this);
+            let html='<textarea class="form-control" name="ans_4[]"></textarea>';
+            _that.parent().before(html);
+            checkInputs();
+        })
+
+        $('.add_4_2').on('click',function (){
+            let _that=$(this);
+            let list=$('#item_select_a_4').find('textarea');
+            let nums=list.length;
+            if(nums==1){
+                checkInputs();
+                return !1;
+            }
+            list.eq(nums-1).remove();
+            checkInputs();
+        })
+    })()
+</script>
+</body>
+</html>

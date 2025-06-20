@@ -1,0 +1,218 @@
+
+page {
+	background-color: #ED292A;
+	width: 100%;
+	height: 100%;
+}
+.result-tt-top {
+	height: 270rpx;
+	/* background: url("") no-repeat; */
+	background-position: left top;
+	background-size: 100%;
+	position: relative;
+}
+.result-all-wrap {
+	width: 90%;
+	margin: 0 auto;
+}
+.page-title-wrap {
+	text-align: center;
+	color: #FFFFFF;
+	font-size: 32rpx;
+	position: relative;
+}
+.fanhui-icon {
+	position: absolute;
+	display: inline-block;
+	width: 40rpx;
+	height: 40rpx;
+	left: 6rpx;
+	top: 6rpx;
+}
+
+/* 用时正确率 */
+.time-lv-wrap {
+	position: relative;
+	height: 180rpx;
+}
+.result-top {
+	height: 250rpx;
+}
+.top_text {
+	width: 48%;
+	height: 120rpx;
+	margin: 70rpx 0 0;
+	text-align: center;
+	float: left;
+}
+.top_text3 {
+	margin-top: 10rpx;
+	font-size: 50rpx;
+}
+.shu {
+	width: 2rpx;
+	height: 100rpx;
+	position: absolute;
+	left: 50%;
+	-webkit-transform: translate(-50%);
+	        transform: translate(-50%);
+	top: 80rpx;
+	background-color: #FFFFFF;
+}
+
+/******** 下半部分 ********/
+.result-bottom {
+	/* height: calc(77vh); */
+	border-radius: 20rpx;
+	background-color: #FFFFFF;
+	position: relative;
+}
+
+/* 小圆点 */
+.result-bottom::before {
+	content: ' ';
+	position: absolute;
+	left: -20rpx;
+	top: 184rpx;
+	width: 34rpx;
+	height: 34rpx;
+	background-color: #ED292A;
+	border-radius: 50%;
+}
+.result-bottom::after {
+	content: ' ';
+	position: absolute;
+	right: -20rpx;
+	top: 184rpx;
+	width: 34rpx;
+	height: 34rpx;
+	background-color: #ED292A;
+	border-radius: 50%;
+}
+.result-bottom-t {
+	height: 120rpx;
+	background-color: #FDEDED;	
+	border-radius: 20rpx 20rpx 0 0;
+	padding: 40rpx;
+}
+.result-bottom-t-item {
+	float: left;
+}
+.result-bottom-t-img {
+	display: inline-block;
+	width: 120rpx;
+	height: 120rpx;
+}
+.result-bottom-t-text {
+	margin-left: 20rpx;
+	line-height: 60rpx;
+}
+.result-nengshou {
+	display: inline-block;
+	height: 40rpx;
+	line-height: 40rpx;
+	margin-left: 15rpx;
+	background-color: #EC292A;
+	border-radius: 20rpx 20rpx 20rpx 0;
+	padding: 0 10rpx;
+}
+
+/* 下方中部区域 */
+.result-bottom-c {
+	width: 87%;
+	margin: 0 auto;
+	min-height: 440rpx;
+	padding-top: 40rpx;
+	border-bottom: 2rpx dashed #ED292A;
+	position: relative;
+}
+.result-bottom-c-history {
+	width: 300rpx;
+	height: 40rpx;
+	line-height: 40rpx;
+	margin: 0 auto;
+	color: #FFA423;
+	background-color: #FFF4E4;
+}
+.result-bottom-c-bitem {
+	height: 180rpx;
+	width: 280rpx;
+	border-radius: 14rpx;
+	background-color: #F7F7F7;
+	position: relative;
+}
+.result-bottom-c-bitem1 {
+	margin-right: 23rpx;
+}
+.result-bottom-c-bitem2 {
+	margin: 90rpx auto 0;
+}
+.result-bottom-c-bitem::before {
+	content: '成绩';
+	position: absolute;
+	left: 50%;
+	-webkit-transform: translate(-50%);
+	        transform: translate(-50%);
+	top: -50rpx;
+	width: 100rpx;
+	height: 100rpx;
+	text-align: center;
+	line-height: 100rpx;
+	color: #FFFFFF;
+	font-size: 30rpx;
+	background-color: #ED292A;
+	border-radius: 50%;
+}
+.result-bottom-c-bitem2::before  {
+	content: '积分';
+}
+
+/* 下方底部区域 */
+.result-bottom-b {
+	min-height: 300rpx;
+	width: 87%;
+	margin: 0 auto;
+}
+.result-bottom-b-t {
+	display: flex;
+	align-items: center;
+	margin-top: 35rpx;
+	margin-bottom: 20rpx;
+}
+.qrcode-img {
+	width: 130rpx;
+	height: 130rpx;
+	display: inline-block;
+	float: left;
+}
+.result-bottom-saomiao {
+	display: inline-block;
+	margin-left: 26rpx;
+	color: #ED292A;
+}
+.button_view {
+	position: relative;
+	width: 100%;
+	height: 80rpx;
+	line-height: 80rpx;
+}
+.button_view_item {
+	width: 45%;
+	height: 80rpx;
+	line-height: 80rpx;
+	text-align: center;
+	border-radius: 40rpx;
+	letter-spacing: 2rpx;
+	background-color: #FFA423;
+	font-size: 28rpx;
+	position: absolute;
+}
+.button_view_item:nth-child(1) {
+	left: 0;
+}
+.button_view_item:nth-child(2) {
+	right: 0;	
+	background-color: #EC292A !important;
+}
+
+

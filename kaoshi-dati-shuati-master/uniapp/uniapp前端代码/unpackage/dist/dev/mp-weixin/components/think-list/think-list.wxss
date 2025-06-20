@@ -1,0 +1,43 @@
+
+.think-li-status{
+	color: red;
+	border: 1rpx solid red;
+	font-size: 22rpx;
+	padding: 0rpx 4rpx 0rpx 4rpx;
+	margin-left: 10rpx;
+}
+.think-li-bottom-mes{
+    color: #B4B4B4;
+    font-size: 26rpx;
+    float: right;
+    margin-top: 12rpx;
+}
+.think-li-bottom-name{
+    font-size: 28rpx;
+    color: #646464;
+    position: relative;
+    bottom: 16rpx;
+    left: 16rpx;
+}
+.think-li-bottom-avatar{
+	width: 60rpx;
+	height: 60rpx;
+	border-radius: 50rpx;
+}
+.think-li-bottom{
+    clear: both;
+    overflow: hidden;
+    margin-top: 24rpx;
+}
+.think-li-title{
+    font-size: 34rpx;
+    letter-spacing: 1rpx;
+    font-weight: 500;
+}
+.think-li{
+    width: 94%;
+    margin: 0 auto;
+    padding: 30rpx 0 20rpx 0;
+    border-bottom: 1rpx solid #F0F0F0;
+}
+

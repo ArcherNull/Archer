@@ -1,0 +1,37 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/index",
+    "pages/webview/index",
+    "pages/question/question",
+    "pages/question/result",
+    "pages/notice/index",
+    "pages/message/index",
+    "pages/my_history/index",
+    "pages/my_collection/index",
+    "pages/my_think/index",
+    "pages/my_update/index",
+    "pages/my/index",
+    "pages/manual/index",
+    "pages/forget/index",
+    "pages/reg/index",
+    "components/article-list/article-list",
+    "components/study-list/study-list",
+    "components/think-list/think-list",
+    "components/see-list/see-list",
+    "pages/about/banner",
+    "pages/ranking/ranking",
+    "pages/answer_history/answer_history"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "requiredBackgroundModes": [
+    "audio"
+  ],
+  "usingComponents": {}
+}

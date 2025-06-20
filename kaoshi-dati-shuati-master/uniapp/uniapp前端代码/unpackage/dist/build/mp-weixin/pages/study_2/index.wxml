@@ -1,0 +1,1 @@
+<view><view class="content"><study-list vue-id="ff523aa0-1" listType="{{listType}}" list="{{list}}" bind:__l="__l"></study-list></view></view>

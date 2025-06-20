@@ -1,0 +1,39 @@
+
+.reg-button{
+	padding: 0;
+	margin: 0;
+	width: 81%;
+	margin: 0 auto;
+	border-radius: 64rpx;
+	line-height: 82rpx;
+	color: #fff;
+	background: linear-gradient(to bottom, #FF9000, #F64330);
+	font-size: 30rpx;
+	letter-spacing: 2rpx;
+	margin-top: 100rpx;
+}
+.reg-li-getcode{
+	color: #C9C9C9;
+	font-size: 30rpx;
+}
+.reg-li-input-pl{
+	color: #C9C9C9;
+	font-size: 30rpx;
+}
+.reg-li-input{
+	width: 70%;
+	float: left;
+}
+.reg-li{
+	width: 84%;
+	margin: 0 auto;
+	clear: both;
+	overflow: hidden;
+	padding: 40rpx 0 40rpx 0;
+	border-bottom: 1px solid #E8E8E8;
+}
+.reg-li-left{
+	float: left;
+	width: 30%;
+}
+

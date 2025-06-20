@@ -1,0 +1,1 @@
+<view><block wx:for="{{list}}" wx:for-item="item" wx:for-index="index"><block><view class="message-date">{{item.addtime}}</view><view class="message-text">{{item.conotent}}</view></block></block></view>

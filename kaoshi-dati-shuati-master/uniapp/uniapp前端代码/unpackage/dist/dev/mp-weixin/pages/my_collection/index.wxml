@@ -1,0 +1,1 @@
+<view><view class="my_collection-top"></view><block wx:if="{{isA==1}}"><view class="my_collection-list"><article-list vue-id="4b3c16fb-1" list="{{list}}" bind:__l="__l"></article-list></view></block><block wx:if="{{isA==0}}"><view class="my_collection-list1"><think-list vue-id="4b3c16fb-2" list="{{list1}}" bind:__l="__l"></think-list></view></block></view>

@@ -1,0 +1,49 @@
+
+<include file="public@header" />
+</head>
+<body>
+
+<!--单位积分排行榜-->
+
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a >列表</a></li>
+    </ul>
+    <form class="well form-inline margin-top-20" method="post" action="{:url('ranking/partybranch')}">
+
+        <a class="btn btn-success exportranking" href="{:url('ranking/exportpartybranch')}">导出排行榜</a>
+    </form>
+    <form method="post" class="js-ajax-form" action="">
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>积分</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="list" item="vo">
+                <tr>
+                    <td>{$vo['id']}</td>
+                    <td>{$vo['name']}</td>
+                    <td>{$vo['score']}</td>
+                </tr>
+            </foreach>
+            </tbody>
+        </table>
+        <div class="pagination">{$page}</div>
+
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script type="text/javascript">
+
+
+
+
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,39 @@
+<include file="public@header" />
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a >列表</a></li>
+    </ul>
+    <form class="well form-inline margin-top-20" method="post" action="{:url('question/index')}">
+
+    </form>
+    <form method="post" class="js-ajax-form" action="">
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>类型</th>
+                <th>题目</th>
+                <th>分值</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="list" item="vo">
+                <tr>
+                    <td>{$vo['id']}</td>
+                    <td>{$type[$vo['type']]}</td>
+                    <td>{$vo['title']}</td>
+                    <td>{$vo['score']}</td>
+
+                </tr>
+            </foreach>
+            </tbody>
+        </table>
+        <div class="pagination">{$page}</div>
+
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

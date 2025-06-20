@@ -1,0 +1,1 @@
+<view><view class="nav-title-top" style="{{'height:'+(navHeight)+';'}}"><block wx:if="{{configInfo.small_switch==1}}"><image class="nav-title-top-logo" style="width:142rpx;height:66rpx;" src="/static/images/weiyue.png"></image></block><text class="nav-title-top-title">{{title}}</text></view></view>

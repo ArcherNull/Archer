@@ -1,0 +1,31 @@
+
+.nav-title-top-title{
+	position: relative;
+	top: 36%;
+	-webkit-transform: translateY(-50%);
+	        transform: translateY(-50%);
+	font-weight: 700;
+	font-size: 17px !important;
+	color: #ffffff;
+}
+.nav-title-top{
+	height: 68px;
+	clear: both;
+	overflow: hidden;
+	/* 顶部背景 */
+	/* background-color: #fff; */
+	text-align: center;
+	font-size: 32rpx;
+	color: #000;
+	position: relative;
+}
+.nav-title-top-logo{
+	width: 100rpx;
+	height: 100rpx;
+	position: absolute;
+	left: 30rpx;
+	top: 60%;
+	-webkit-transform: translateY(-50%);
+	        transform: translateY(-50%);
+}
+

@@ -1,0 +1,1 @@
+<view><view class="content"><see-list vue-id="78a53d51-1" list="{{list}}" bind:__l="__l"></see-list></view></view>

@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "产品介绍",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "article-list": "/components/article-list/article-list"
+  }
+}

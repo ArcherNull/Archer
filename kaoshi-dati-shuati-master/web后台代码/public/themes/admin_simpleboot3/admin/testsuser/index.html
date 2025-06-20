@@ -1,0 +1,52 @@
+<include file="public@header" />
+</head>
+<body>
+
+<!--用户做题列表-->
+
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a >列表</a></li>
+    </ul>
+    <form class="well form-inline margin-top-20" method="post" action="{:url('testsuser/index')}">
+
+    </form>
+    <form method="post" class="js-ajax-form" action="">
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th width="50">ID</th>
+                <th width="50">昵称</th>
+                <th width="50">部门</th>
+                <th width="50">分数</th>
+                <th width="50">开始时间</th>
+                <th width="50">答题时长</th>
+                <th width="50">查看题目</th>
+
+            </tr>
+            </thead>
+            <tbody>
+
+            <!-- 昵称、支部、职位、答题时间、答题分数-->
+            <foreach name="list" item="vo">
+                <tr>
+                    <td>{$vo['id']}</td>
+                    <td>{$vo['user_nickname']}</td>
+                    <td>{$vo['zhibu_name']}</td>
+                    <td>{$vo['score']}</td>
+                    <td>{$vo['starttime']}</td>
+                    <td>{$vo['time_duration']}</td>
+                    <td>
+                        <a class="btn btn-xs btn-primary" href="javascript:parent.openIframeLayer('{:url('testsuser/showquestion',array('id'=>$vo['id']))}')">点击查看</a>
+                    </td>
+                </tr>
+            </foreach>
+            </tbody>
+        </table>
+        <div class="pagination">{$page}</div>
+
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

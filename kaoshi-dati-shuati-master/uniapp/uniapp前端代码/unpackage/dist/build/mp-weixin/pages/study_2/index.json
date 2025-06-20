@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "有声读物",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "study-list": "/components/study-list/study-list"
+  }
+}

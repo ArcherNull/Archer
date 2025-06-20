@@ -1,0 +1,1 @@
+<view><think-list vue-id="8fe7b56a-1" list="{{list}}" bind:__l="__l"></think-list></view>

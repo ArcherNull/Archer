@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "我的收藏",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "article-list": "/components/article-list/article-list",
+    "think-list": "/components/think-list/think-list"
+  }
+}

@@ -1,0 +1,19 @@
+
+.message-text{
+    border: 1rpx solid #F0F0F0;
+    width: 85%;
+    margin: 0 auto;
+    border-radius: 10rpx;
+    padding: 20rpx;
+    font-size: 28rpx;
+    color: #646464;
+    line-height: 44rpx;
+    letter-spacing: 1rpx;
+}
+.message-date{
+    text-align: center;
+    padding: 40rpx 0 40rpx 0;
+    color: #969696;
+    font-size: 24rpx;
+}
+

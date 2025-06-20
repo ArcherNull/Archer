@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "",
+  "enablePullDownRefresh": false,
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "nav-title": "/components/nav-title/nav-title",
+    "study-list": "/components/study-list/study-list",
+    "see-list": "/components/see-list/see-list"
+  }
+}

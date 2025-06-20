@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "党建参阅",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "see-list": "/components/see-list/see-list"
+  }
+}

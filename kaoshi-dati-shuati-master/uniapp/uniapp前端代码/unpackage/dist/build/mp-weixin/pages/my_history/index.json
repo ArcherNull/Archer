@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "浏览历史",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "article-list": "/components/article-list/article-list"
+  }
+}

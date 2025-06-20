@@ -1,0 +1,1 @@
+{"version":3,"sources":["uni-app:///main.js"],"names":["createPage","Page"],"mappings":";;;;;;;;;;kDAAA;AACA;AACA,yG;AACAA,UAAU,CAACC,kBAAD,CAAV,C","file":"pages/party_pay/party_pay.js","sourcesContent":["import 'uni-pages';\nimport Vue from 'vue'\nimport Page from './pages/party_pay/party_pay.vue'\ncreatePage(Page)"],"sourceRoot":""}

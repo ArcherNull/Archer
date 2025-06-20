@@ -1,0 +1,56 @@
+
+.submit{
+	margin-top: 176rpx;
+	padding: 0;
+	width: 80%;
+	border: 0;
+	color: #fff;
+	background: linear-gradient(to bottom, #FF9000, #F64330);
+	border-radius: 68rpx;
+	line-height: 80rpx;
+	font-size: 30rpx;
+}
+.my_update-li-input{
+    float: left;
+    width: 70%;
+}
+.my_update-li-name{
+    float: left;
+    width: 25%;
+}
+.my_update-li{
+    width: 90%;
+    margin: 0 auto;
+    padding: 32rpx 0 32rpx 0;
+    border-bottom: 1rpx solid #E8E8E8;
+    clear: both;
+    overflow: hidden;
+}
+.my_update-top-text{
+    text-align: center;
+    font-size: 24rpx;
+    color: #969696;
+    margin-top: 30rpx;
+}
+.my_update-top-avatar{
+    width: 110rpx;
+    height: 110rpx;
+    border-radius: 70rpx;
+    margin: 0 auto;
+    display: block;
+    margin-top: 100rpx;
+}
+.my_update-top{
+    clear: both;
+    overflow: hidden;
+    width: 90%;
+    margin: 0 auto;
+    padding-bottom: 70rpx;
+    border-bottom: 1rpx solid #E8E8E8;
+}
+.avata_wrap {
+	width: 200rpx;
+	margin: 0 auto;
+}
+
+

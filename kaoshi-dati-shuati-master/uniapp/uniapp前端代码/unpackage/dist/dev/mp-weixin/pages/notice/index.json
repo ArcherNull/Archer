@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "工作提示",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {}
+}

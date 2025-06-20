@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "我发表的",
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#fff",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "think-list": "/components/think-list/think-list"
+  }
+}

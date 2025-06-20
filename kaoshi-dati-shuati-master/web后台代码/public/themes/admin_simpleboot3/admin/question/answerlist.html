@@ -1,0 +1,46 @@
+<include file="public@header" />
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a >列表</a></li>
+    </ul>
+    <form class="well form-inline margin-top-20" method="post" action="{:url('question/index')}">
+
+    </form>
+    <form method="post" class="js-ajax-form" action="">
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>昵称</th>
+                <th>支部</th>
+                <th>职位</th>
+                <th>电话</th>
+                <th>答题时间</th>
+                <th>分数</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            <!-- 昵称、支部、职位、电话、答题时间、答题分数-->
+            <foreach name="list" item="vo">
+                <tr>
+                    <td>{$vo['id']}</td>
+                    <td>{$vo['user_nickname']}</td>
+                    <td>{$vo['zhibu_name']}</td>
+                    <td>{$vo['zhiwei_name']}</td>
+                    <td>{$vo['mobile']}</td>
+                    <td>{$vo['starttime']}</td>
+                    <td>{$vo['score']}</td>
+                </tr>
+            </foreach>
+            </tbody>
+        </table>
+        <div class="pagination">{$page}</div>
+
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

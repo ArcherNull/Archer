@@ -1,0 +1,1 @@
+<view><view class="history-list"><article-list vue-id="2398702e-1" list="{{list}}" bind:__l="__l"></article-list></view><block wx:if="{{list.length>0}}"><view data-event-opts="{{[['tap',[['deleteList',['$event']]]]]}}" class="logout" bindtap="__e">清除记录</view></block></view>
