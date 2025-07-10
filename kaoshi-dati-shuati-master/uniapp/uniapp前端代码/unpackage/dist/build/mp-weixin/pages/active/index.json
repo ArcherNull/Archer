@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "线上活动",
-  "enablePullDownRefresh": false,
-  "navigationBarBackgroundColor": "#fff",
-  "navigationBarTextStyle": "black",
-  "usingComponents": {
-    "article-list": "/components/active-list/active-list"
-  }
-}

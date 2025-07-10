@@ -1,27 +1,39 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2025-04-16 11:40:21
- * @LastEditTime: 2025-06-20 14:25:04
+ * @LastEditTime: 2025-07-10 10:02:05
  * @Description:
 -->
 
 <template>
   <CommonPage>
     <template #action>
-      <NButton type="primary" @click="handleAdd()">
-        <i class="i-material-symbols:add mr-4 text-18" />
-        发送邮件
-      </NButton>
+      <div class="flex items-center">
+        <NButton
+          :disabled="!prIds.length"
+          type="primary" @click="handleReSend(prIds)"
+        >
+          <i
+            v-if="prIds.length"
+            class="i-line-md:confirm-circle mr-4 text-18"
+          />
+          发送邮件
+        </NButton>
+        <NButton class="ml-12" type="primary" @click="handleAdd()">
+          <i class="i-material-symbols:add mr-4 text-18" />
+          新增邮件
+        </NButton>
+      </div>
     </template>
 
     <MeCrud
       ref="$table"
       v-model:query-items="queryItems"
-      :scroll-x="1400"
+      :scroll-x="2600"
       :columns="columns"
       :is-pagination="false"
       :get-data="api.read"
-      :expand="true"
+      @on-checked="onChecked"
     >
       <MeQueryItem label="接收者" :label-width="70">
         <n-input
@@ -109,27 +121,27 @@
             <n-form-item-gi
               :span="12"
               label="接收者名称"
-              path="receivers"
+              path="receiver"
               :rule="{
                 required: true,
                 message: '请输入接收者名称',
                 trigger: ['input', 'blur'],
               }"
             >
-              <n-input v-model:value="modalForm.receivers" placeholder="请输入接收者名称" />
+              <n-input v-model:value="modalForm.receiver" placeholder="请输入接收者名称" />
             </n-form-item-gi>
 
             <n-form-item-gi
               :span="12"
               label="接收者邮箱"
-              path="receiver_emails"
+              path="receiver_email"
               :rule="{
                 required: true,
                 validator: emailValidator,
                 trigger: ['input', 'blur'],
               }"
             >
-              <n-input v-model:value="modalForm.receiver_emails" placeholder="请输入接收者邮箱" />
+              <n-input v-model:value="modalForm.receiver_email" placeholder="请输入接收者邮箱" />
             </n-form-item-gi>
           </n-grid>
 
@@ -202,20 +214,10 @@ onMounted(() => {
 
 const typeOptions = ref([])
 
-// const typeOptions = [
-//   {
-//     label: '流程审批提醒',
-//     value: 'process_approval_reminder',
-//   },
-//   {
-//     label: '自定义',
-//     value: 'custom',
-//   },
-//   {
-//     label: '宣传',
-//     value: 'publicity',
-//   },
-// ]
+const prIds = ref([])
+function onChecked(rowKeys) {
+  prIds.value = rowKeys || []
+}
 
 const stateOptions = [
   {
@@ -289,6 +291,7 @@ const {
 })
 
 const columns = [
+  { type: 'selection', fixed: 'left' },
   { title: '发送者名称', key: 'sender', width: 150 },
   {
     title: '发送者邮箱',
@@ -349,15 +352,20 @@ const columns = [
       }
       const obj = stateProxy[state]
 
-      return h(
-        NTag,
-        {
-          type: obj.type,
-        },
-        {
-          default: obj.text,
-        },
-      )
+      if (obj) {
+        return h(
+          NTag,
+          {
+            type: obj.type,
+          },
+          {
+            default: () => obj.text,
+          },
+        )
+      }
+      else {
+        return ''
+      }
     },
   },
   { title: '发送时间', key: 'send_time', width: 160 },
@@ -365,11 +373,10 @@ const columns = [
   { title: '更新时间', key: 'updated_at', width: 160 },
   { title: '创建人', key: 'created_by', width: 100 },
   { title: '创建时间', key: 'created_at', width: 160 },
-
   {
     title: '操作',
     key: 'actions',
-    width: 180,
+    width: 200,
     align: 'right',
     fixed: 'right',
     hideInExcel: true,
@@ -395,10 +402,10 @@ const columns = [
             type: 'primary',
             secondary: true,
             style: 'margin-left: 12px;',
-            onClick: () => handleReSend(row.id),
+            onClick: () => handleReSend([row.id]),
           },
           {
-            default: () => '重新发送',
+            default: () => '发送邮件',
           },
         ),
 
@@ -420,8 +427,8 @@ const columns = [
 ]
 
 // 重新发送
-function handleReSend(id) {
-  if (id) {
+function handleReSend(idsArr) {
+  if (Array.isArray(idsArr) && idsArr.length > 0) {
     const d = $dialog.warning({
       content: '确定重新发送吗？',
       title: '提示',
@@ -430,15 +437,16 @@ function handleReSend(id) {
       async onPositiveClick() {
         try {
           d.loading = true
-          const refPro = new Promise((resolve) => {
-            setTimeout(() => {
-              resolve(true)
-            }, 250)
-          })
-          await refPro(id)
-          $message.success('删除成功')
+          const ids = idsArr.join(',')
+          const res = await api.send({ ids })
+          if (res?.code === 200) {
+            $message.success('重新发送成功')
+            refreshTable()
+          }
+          else {
+            $message.success(res?.message || '重新发送失败')
+          }
           d.loading = false
-          refreshTable()
         }
         catch (error) {
           console.error(error)
@@ -448,7 +456,7 @@ function handleReSend(id) {
     })
   }
   else {
-    $message.warning('缺少id，重新发送失败')
+    $message.warning('缺少参数，重新发送失败')
   }
 }
 

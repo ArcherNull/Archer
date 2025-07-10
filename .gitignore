@@ -4,4 +4,4 @@
 node_modules
 .history
 *.log
-myenv
+fastapi-demo/myenv

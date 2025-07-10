@@ -12,5 +12,6 @@ export default {
   read: (params = {}) => request.get('/email/list', { params }),
   getSendEmailList: () => request.get('/email/send_email_list'),
   update: data => request.post(`/email/edit`, data),
+  send: data => request.post(`/email/send`, data),
   delete: id => request.delete(`/email/${id}`),
 }

@@ -11,7 +11,7 @@
  Target Server Version : 80028
  File Encoding         : 65001
 
- Date: 05/05/2025 09:08:08
+ Date: 10/07/2025 10:03:36
 */
 
 SET NAMES utf8mb4;
@@ -29,14 +29,12 @@ CREATE TABLE `captcha_code_info`  (
   `updated_at` datetime(0) NULL DEFAULT NULL,
   `created_at` datetime(0) NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 45 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of captcha_code_info
 -- ----------------------------
-INSERT INTO `captcha_code_info` VALUES (28, 'DrIU', 'login', 300, NULL, '2025-04-28 10:45:31');
-INSERT INTO `captcha_code_info` VALUES (29, 'fFLF', 'login', 300, NULL, '2025-04-28 10:45:34');
-INSERT INTO `captcha_code_info` VALUES (30, 'G56t', 'login', 300, NULL, '2025-04-28 10:45:36');
+INSERT INTO `captcha_code_info` VALUES (43, 'BJd9', 'login', 300, NULL, '2025-07-10 09:03:12');
 
 -- ----------------------------
 -- Table structure for process_node
@@ -69,7 +67,7 @@ CREATE TABLE `process_node`  (
   `created_by_id` int(0) NULL DEFAULT NULL,
   `created_at` datetime(0) NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 113 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 140 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of process_node
@@ -106,14 +104,14 @@ INSERT INTO `process_node` VALUES (101, 1, '上门预约测绘', '用户确定�
 INSERT INTO `process_node` VALUES (102, 1, '测绘现场签到', '用于保证测绘师傅按时上门，用于收集相关测绘数据', NULL, '3', '张六', 1, 12, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:37');
 INSERT INTO `process_node` VALUES (103, 1, '测绘完毕', '生成测绘报告与用户确认测绘数据', '额外材料费用，需要向用户按规定标准收取', '2,3', '王五,张六', 1, 12, 0, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:37');
 INSERT INTO `process_node` VALUES (104, 1, '电话回访', '用于收集，用户对测绘师傅的安装过程，安装结果的满意度收集', NULL, '2', '王五', 1, 12, 0, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:37');
-INSERT INTO `process_node` VALUES (105, 2, '上门预约审核', '用户确定上门时间，安装师傅电话/微信语音沟通确定准确时间', NULL, '2', '王五', 1, 11, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:42');
-INSERT INTO `process_node` VALUES (106, 2, '安装前现场签到审核', '用于保留安装前的场地，在安装过程中如果造成对用户原场地损坏作为定损依据；也确保安装师傅能够在约定时间到达安装场地', NULL, '3', '张六', 1, 11, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:42');
-INSERT INTO `process_node` VALUES (107, 2, '安装完毕', '用于收集，安装师傅是否是在在指定时间内安装；用户需缴纳安装额外造成的费用等', NULL, '3', '张六', 1, 11, 0, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:42');
-INSERT INTO `process_node` VALUES (108, 2, '电话回访', '用于收集，用户对安装师傅的安装过程，安装结果的满意度收集', NULL, '2', '王五', 1, 11, 0, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:42');
 INSERT INTO `process_node` VALUES (109, 2, '上门预约审核', '用户确定上门时间，安装师傅电话/微信语音沟通确定准确时间', NULL, '2', '王五', 1, 13, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:53');
 INSERT INTO `process_node` VALUES (110, 2, '安装前现场签到审核', '用于保留安装前的场地，在安装过程中如果造成对用户原场地损坏作为定损依据；也确保安装师傅能够在约定时间到达安装场地', NULL, '3', '张六', 1, 13, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:53');
 INSERT INTO `process_node` VALUES (111, 2, '安装完毕', '用于收集，安装师傅是否是在在指定时间内安装；用户需缴纳安装额外造成的费用等', NULL, '3', '张六', 1, 13, 0, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:53');
 INSERT INTO `process_node` VALUES (112, 2, '电话回访', '用于收集，用户对安装师傅的安装过程，安装结果的满意度收集', NULL, '2', '王五', 1, 13, 0, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:31:53');
+INSERT INTO `process_node` VALUES (137, 2, '上门预约审核', '用户确定上门时间，安装师傅电话/微信语音沟通确定准确时间', NULL, '2', '王五', 1, 11, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-05-06 09:01:45');
+INSERT INTO `process_node` VALUES (138, 2, '安装前现场签到审核', '用于保留安装前的场地，在安装过程中如果造成对用户原场地损坏作为定损依据；也确保安装师傅能够在约定时间到达安装场地', NULL, '3', '张六', 1, 11, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-05-06 09:01:45');
+INSERT INTO `process_node` VALUES (139, 2, '安装完毕', '用于收集，安装师傅是否是在在指定时间内安装；用户需缴纳安装额外造成的费用等', NULL, '3', '张六', 1, 11, 0, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-05-06 09:01:45');
+INSERT INTO `process_node` VALUES (140, 2, '电话回访', '用于收集，用户对安装师傅的安装过程，安装结果的满意度收集', NULL, '2', '王五', 1, 11, 0, 4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-05-06 09:01:45');
 
 -- ----------------------------
 -- Table structure for process_setting
@@ -139,6 +137,37 @@ CREATE TABLE `process_setting`  (
 -- ----------------------------
 INSERT INTO `process_setting` VALUES (1, '上门测绘定制安装', '对于特殊的安装场景以及用户的个性化需求，需要通过准确的测绘报告，制定安装计划', '需要向用户收取额外出差费200元', 1, '李四', 1, '2025-04-24 20:38:38', '李四', 1, '2025-04-23 08:56:40');
 INSERT INTO `process_setting` VALUES (2, '上门安装', '用于用户上门预约安装电器的服务流程', NULL, 1, '李四', 1, '2025-04-23 18:39:26', '李四', 1, '2025-04-23 09:17:42');
+
+-- ----------------------------
+-- Table structure for send_email_record
+-- ----------------------------
+DROP TABLE IF EXISTS `send_email_record`;
+CREATE TABLE `send_email_record`  (
+  `id` bigint(0) NOT NULL AUTO_INCREMENT,
+  `sender` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '发送者名称',
+  `sender_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '发送者邮箱',
+  `receiver` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '接收者名称',
+  `receiver_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '接收者邮箱',
+  `type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '邮箱类型，process_approval_reminder 流程审批提醒；custom 自定义；publicity 宣传 ',
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '主题',
+  `content` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '主要内容',
+  `files` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '附件，可以多个，多个逗号分隔',
+  `remark` varchar(225) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `state` int(0) NOT NULL COMMENT '状态，0 已删除，1，待发送，2，发送成功，3，发送失败',
+  `send_time` datetime(0) NULL DEFAULT NULL COMMENT '发送时间',
+  `updated_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `updated_by_id` int(0) NULL DEFAULT NULL,
+  `updated_at` datetime(0) NULL DEFAULT NULL,
+  `created_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `created_by_id` int(0) NULL DEFAULT NULL,
+  `created_at` datetime(0) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of send_email_record
+-- ----------------------------
+INSERT INTO `send_email_record` VALUES (1, '墨鱼汁人', '779217162@qq.com', '测试', '991584844@qq.com', 'publicity', '测试1', '<p>测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试1</p>', NULL, NULL, 2, '2025-07-10 09:58:39', '李四', 1, '2025-07-10 09:58:38', '李四', 1, '2025-07-10 09:18:07');
 
 -- ----------------------------
 -- Table structure for user
@@ -196,7 +225,7 @@ CREATE TABLE `work_order`  (
   `bind_by_id` int(0) NULL DEFAULT NULL COMMENT '绑定人id',
   `wo_state` int(0) NOT NULL COMMENT '工单状态，0 已删除，1，审批中，2，审批成功，3，审批拒绝',
   `wait_approve_ids` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '待审批人id， 可多个英文逗号分隔',
-  `wait_approve_names` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '待审批人名称集合， 可多个英文逗号分隔',
+  `wait_approve_names` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '待审批人名称集合， 可多个英文逗号分隔',
   `updated_by` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `updated_by_id` int(0) NULL DEFAULT NULL,
   `updated_at` datetime(0) NULL DEFAULT NULL,
@@ -212,7 +241,7 @@ CREATE TABLE `work_order`  (
 INSERT INTO `work_order` VALUES (8, '测试1', '测试1测试1测试1测试1', NULL, 2, '2025-04-24 19:39:10', '张六', 3, 1, NULL, NULL, '张六', 3, '2025-04-24 19:39:09', '张六', 3, '2025-04-24 19:26:40');
 INSERT INTO `work_order` VALUES (9, '测试5', '测试5测试5测试5测试5测试5', '工单备注', 2, '2025-04-24 20:08:07', '李四', 1, 1, NULL, NULL, NULL, NULL, NULL, '李四', 1, '2025-04-24 20:08:06');
 INSERT INTO `work_order` VALUES (10, '测试54', '测试54测试54测试54测试54', '工单备注', 1, '2025-04-24 20:19:35', '李四', 1, 1, '2', '王五', NULL, NULL, '2025-04-24 20:19:46', '李四', 1, '2025-04-24 20:19:34');
-INSERT INTO `work_order` VALUES (11, '测试51', '测试51', NULL, 2, '2025-04-24 20:31:43', '李四', 1, 1, '2', '王五', '李四', 1, '2025-04-24 20:31:42', '李四', 1, '2025-04-24 20:24:32');
+INSERT INTO `work_order` VALUES (11, '测试51', '测试51', NULL, 2, '2025-05-06 09:01:45', '李四', 1, 1, '2', '王五', '李四', 1, '2025-05-06 09:01:45', '李四', 1, '2025-04-24 20:24:32');
 INSERT INTO `work_order` VALUES (12, '测试43', '测试43测试43测试43', NULL, 1, '2025-04-24 20:31:37', '李四', 1, 1, '2', '王五', '李四', 1, '2025-04-24 20:31:37', '李四', 1, '2025-04-24 20:29:26');
 INSERT INTO `work_order` VALUES (13, '测试565', '测试565测试565测试565', '工单备注', 2, '2025-04-24 20:31:54', '李四', 1, 1, '2', '王五', NULL, NULL, '2025-04-24 20:31:53', '李四', 1, '2025-04-24 20:31:53');
 

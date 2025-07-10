@@ -48,6 +48,8 @@ pip freeze > requirements.txt
 
 ```bash
 
+# 去数据库中执行sql文件  example_db.sql
+
 # 创建虚拟环境
 python -m venv myenv
 

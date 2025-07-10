@@ -1,7 +1,0 @@
-{
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "nav-title": "/components/nav-title/nav-title",
-    "article-list": "/components/article-list/article-list"
-  }
-}

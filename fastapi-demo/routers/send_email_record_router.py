@@ -71,6 +71,9 @@ class SendEmailRecordFullModal(SendEmailRecordModal):
     id: int
 
 
+class SendEmailByIdsModel(BaseModel):
+    ids: str
+
 class SoftDelModel(BaseModel):
     ids: str
 
@@ -215,7 +218,7 @@ async def edit_send_email_record(
 
 
 @router.post("/send", response_model=ResponseModel)
-async def send_email(send_ob: SoftDelModel,
+async def send_email(send_ob: SendEmailByIdsModel,
                      current_user=Depends(get_current_user)):
     '''
     description: 批量发送邮件
@@ -225,6 +228,7 @@ async def send_email(send_ob: SoftDelModel,
 
     try:
         if current_user.role == '管理员':
+            print('send_ob.ids', send_ob.ids)
             idsArr = parse_ids(send_ob.ids)
 
             sers = session.query(SendEmailRecord).filter(
