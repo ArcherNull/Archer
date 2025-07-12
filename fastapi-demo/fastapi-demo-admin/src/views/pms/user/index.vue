@@ -1,23 +1,34 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2025-04-16 11:40:21
- * @LastEditTime: 2025-04-29 11:52:27
+ * @LastEditTime: 2025-07-12 16:18:59
  * @Description:
 -->
 
 <template>
   <CommonPage>
     <template #action>
-      <NButton type="primary" @click="handleAdd()">
-        <i class="i-material-symbols:add mr-4 text-18" />
-        创建新用户
-      </NButton>
+      <div class="flex justify-end gap-10">
+        <NButton type="primary" @click="importTemplate()">
+          获取导入模板
+        </NButton>
+        <NButton type="primary" @click="handleImport()">
+          导入
+        </NButton>
+        <NButton type="primary" @click="handleExport()">
+          导出
+        </NButton>
+        <NButton type="primary" @click="handleAdd()">
+          <i class="i-material-symbols:add mr-4 text-18" />
+          创建新用户
+        </NButton>
+      </div>
     </template>
 
     <MeCrud
       ref="$table"
       v-model:query-items="queryItems"
-      :scroll-x="1400"
+      :scroll-x="2000"
       :columns="columns"
       :is-pagination="false"
       :get-data="api.read"
@@ -151,6 +162,26 @@
             filterable
           />
         </n-form-item>
+
+        <n-form-item label="性别" path="sex">
+          <n-select
+            v-model:value="modalForm.sex"
+            :options="sexOptions"
+            clearable
+            filterable
+          />
+        </n-form-item>
+
+        <n-form-item label="用户生日" path="birthday">
+          <n-date-picker
+            v-model:formatted-value="modalForm.birthday"
+            type="date"
+            clearable
+            value-format="yyyy-MM-dd"
+            placeholder="请选择生日"
+          />
+        </n-form-item>
+
         <n-form-item label="状态" path="state">
           <NSwitch
             v-model:value="modalForm.state"
@@ -172,6 +203,7 @@
 </template>
 
 <script setup>
+import { download } from '@/api/public'
 import { MeCrud, MeModal, MeQueryItem } from '@/components'
 import { useCrud } from '@/composables'
 import { NButton, NSwitch, NTag } from 'naive-ui'
@@ -182,6 +214,21 @@ defineOptions({ name: 'UserMgt' })
 const $table = ref(null)
 /** QueryBar筛选参数（可选） */
 const queryItems = ref({})
+
+const sexOptions = [
+  {
+    label: '男',
+    value: '0',
+  },
+  {
+    label: '女',
+    value: '1',
+  },
+  {
+    label: '未知',
+    value: '2',
+  },
+]
 
 onMounted(() => {
   $table.value?.handleSearch()
@@ -245,9 +292,16 @@ const columns = [
   {
     title: '角色',
     key: 'role',
-    width: 200,
+    width: 120,
   },
   { title: '邮箱', key: 'email', width: 150, ellipsis: { tooltip: true } },
+
+  { title: '性别', key: 'sex', width: 120, render: (row) => {
+    const sex = row.sex
+    const findItem = sexOptions.find(item => item.value === sex)
+    return findItem?.label || ''
+  } },
+  { title: '生日', key: 'birthday', width: 150, ellipsis: { tooltip: true } },
   {
     title: '状态',
     key: 'state',
@@ -304,4 +358,24 @@ const columns = [
     },
   },
 ]
+
+// 导出
+function handleExport() {
+  console.log('导出=====>')
+}
+
+// 导入
+function handleImport() {
+  console.log('导入=====>')
+}
+
+// 获取导入模板
+function importTemplate() {
+  console.log('获取导入模板=====>')
+  download(
+    '/user/importTemplate',
+    {},
+    `user_template_${new Date().getTime()}.xlsx`,
+  )
+}
 </script>

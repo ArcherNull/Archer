@@ -75,6 +75,10 @@ pnpm run dev
 [补充]升级 pip
 python -m pip install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
 
+[补充]升级依赖
+pip install -i https://mirrors.aliyun.com/pypi/simple --upgrade openpyxl
+
+
 ## 账号
 
 管理员账号

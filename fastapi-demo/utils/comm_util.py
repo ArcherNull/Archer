@@ -1,7 +1,7 @@
 '''
 Author: junsong Chen 779217162@qq.com
 Date: 2025-02-22 09:49:43
-LastEditTime: 2025-04-23 14:28:01
+LastEditTime: 2025-07-12 15:12:33
 Description: 
 '''
 from fastapi.responses import JSONResponse
@@ -165,3 +165,7 @@ def parse_safe_ids(id_str: str):
             except ValueError:
                 pass  # 跳过非数字的字符串
     return ids
+
+
+def bytes2file_response(bytes_info):
+    yield bytes_info

@@ -1,12 +1,14 @@
 '''
 Author: junsong Chen 779217162@qq.com
 Date: 2025-02-26 19:10:31
-LastEditTime: 2025-04-18 15:24:05
+LastEditTime: 2025-07-12 15:55:03
 Description: 用户管理1
 '''
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
+
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import defer
 from db.db import Database
@@ -14,8 +16,10 @@ from models.model import User
 from models.response import response_builder, ResponseModel
 from typing import Optional, List, Union, Literal
 from utils.jwt_util import verify_auth
-from utils.comm_util import get_current_user
+from utils.comm_util import get_current_user, bytes2file_response
 from utils.pwd_util import PwdUtil
+from utils.excel_util import ExcelUtil
+
 
 router = APIRouter(prefix="/user",
                    tags=["User"],
@@ -43,6 +47,8 @@ class UserModel(BaseModel):
     nick_name: str = Field(description='用户昵称')
     role: str = Field(description='用户角色')
     email: str = Field(description='邮箱')
+    sex: Literal['0', '1', '2'] = Field(description='用户性别，0-男，1-女，2-未知')
+    birthday: Optional[date] = Field(description='用户生日')
     id: int
     state: Literal[0, 1] = Field(description='用户状态，0-禁用，1-启用')
     created_at: datetime
@@ -141,6 +147,8 @@ async def edit_user(updated_user: UserModel):
         user.name = updated_user.name
         user.role = updated_user.role
         user.email = updated_user.email
+        user.sex = updated_user.sex
+        user.birthday = updated_user.birthday
         user.state = updated_user.state
         session.commit()
         return response_builder(None, 200)
@@ -164,6 +172,8 @@ async def get_user_info_by_token(current_user=Depends(get_current_user)):
         nick_name=current_user.nick_name,
         role=current_user.role,
         email=current_user.email,
+        sex=current_user.sex,
+        birthday=current_user.birthday,
         state=current_user.state,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
@@ -195,6 +205,59 @@ async def reset_user_password(reset_pwd_data: ResetPwdModel,
                 return response_builder(None, 500, '原密码错误')
         else:
             return response_builder(None, 500, '新密码和原密码不能一样')
+
+    except Exception as e:
+        session.rollback()
+        return response_builder(None, 500, str(e))
+    finally:
+        session.close()
+        
+        
+@router.post('/importTemplate')
+async def get_user_import_template():
+    '''
+    description: 获取导入模板
+    return {*}
+    '''
+    session = database.get_db_session(engine)
+
+    try:
+        header_list = ['部门编号', '登录名称', '用户名称', '用户邮箱', '手机号码', '用户性别', '帐号状态']
+        selector_header_list = ['用户性别', '帐号状态']
+        option_list = [{'用户性别': ['男', '女', '未知']}, {'帐号状态': ['正常', '停用']}]
+        binary_data = ExcelUtil.get_excel_template(
+            header_list=header_list, selector_header_list=selector_header_list, option_list=option_list
+        )
+        
+        return StreamingResponse(
+            status_code=status.HTTP_200_OK, content=bytes2file_response(binary_data)
+        )
+    except Exception as e:
+        session.rollback()
+        return response_builder(None, 500, str(e))
+    finally:
+        session.close()
+        
+
+@router.post('/importData', response_model=ResponseModel)
+async def get_user_import_data():
+    '''
+    description: 获取导入excel并解析数据
+    return {*}
+    '''
+    session = database.get_db_session(engine)
+
+    try:
+        header_list = ['用户名', '用户昵称', '角色', '邮箱', '用户性别', '用户性别', '状态']
+        selector_header_list = ['用户性别', '帐号状态']
+        option_list = [{'用户性别': ['男', '女', '未知']}, {'状态': ['正常', '停用']}]
+        binary_data = ExcelUtil.get_excel_template(
+            header_list=header_list, selector_header_list=selector_header_list, option_list=option_list
+        )
+        
+        return StreamingResponse(
+            status_code=status.HTTP_200_OK, content=binary_data
+        )
 
     except Exception as e:
         session.rollback()

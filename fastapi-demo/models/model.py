@@ -1,10 +1,10 @@
 '''
 Author: junsong Chen 779217162@qq.com
 Date: 2025-02-26 19:09:37
-LastEditTime: 2025-05-08 12:08:34
+LastEditTime: 2025-07-12 15:56:47
 Description: 
 '''
-from sqlalchemy import Column, INT, BIGINT, DATETIME, String, INTEGER, func
+from sqlalchemy import Column, INT, BIGINT, DATETIME, DATE, String, INTEGER, func
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -20,6 +20,8 @@ class User(Base):
                    nullable=False,
                    unique=True,
                    comment='用户邮箱，用于发送邮箱通知审批节点')
+    sex = Column(String(1), default='0', comment='用户性别（0男 1女 2未知）')
+    birthday = Column(DATE, comment='用户生日')
     password = Column(String(255), nullable=False, comment='用户密码')
     state = Column(INTEGER, nullable=False, default=1, comment='状态，0-禁用，1-启用')
     updated_at = Column(DATETIME, nullable=True, onupdate=func.now())

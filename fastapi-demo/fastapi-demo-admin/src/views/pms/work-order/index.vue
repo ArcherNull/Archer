@@ -11,13 +11,13 @@
     <template #action>
       <div class="flex justify-end gap-10">
         <NButton type="primary" @click="queryApprovalWorkOrder()">
-        <i class="i-material-symbols:add mr-4 text-18" />
-        查看我需要审批的工单
-      </NButton>
-      <NButton type="primary" @click="handleAdd()">
-        <i class="i-material-symbols:add mr-4 text-18" />
-        创建新工单
-      </NButton>
+          <i class="i-material-symbols:add mr-4 text-18" />
+          查看我需要审批的工单
+        </NButton>
+        <NButton type="primary" @click="handleAdd()">
+          <i class="i-material-symbols:add mr-4 text-18" />
+          创建新工单
+        </NButton>
       </div>
     </template>
 
@@ -118,7 +118,7 @@ const queryItems = ref({})
 const availableProcessOptions = ref([])
 const queryProcessModalRef = ref(null)
 
-const refreshTable = ()=>{
+function refreshTable() {
   $table.value?.handleSearch()
 }
 
@@ -225,7 +225,7 @@ async function openModal() {
 }
 
 // 查询审批工单
-async function queryApprovalWorkOrder(){
+async function queryApprovalWorkOrder() {
   console.log('查询审批工单')
   const res = await api.get_work_order_approval_process()
   const resData = res?.data || []
