@@ -2,11 +2,12 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:20:36
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 14:23:52
+ * @LastEditTime: 2025-08-28 20:13:06
  * @FilePath: \Archer\cus-math\js\cusMath.js
  * @Description: 自定义计算类
  */
 export class CusMath {
+    static _precision = 15 // 精度，toPrecision的值，最大21
 
     // 操作记录
     _logs = []
@@ -16,6 +17,8 @@ export class CusMath {
     _original_expression = ''
     // 过程表达式
     _process_expression = ''
+
+
 
     constructor() {
         this.init()
@@ -292,20 +295,13 @@ export class CusMath {
      * ```
      */
     static accAdd(arg1, arg2) {
-        let r1, r2
-        let m = ''
-        try {
-            r1 = arg1.toString().split('.')[1].length
-        } catch (e) {
-            r1 = 0
-        }
-        try {
-            r2 = arg2.toString().split('.')[1].length
-        } catch (e) {
-            r2 = 0
-        }
-        m = Math.pow(10, Math.max(r1, r2))
-        return (arg1 * m + arg2 * m) / m
+        let m = 0;
+        let r1 = CusMath.getPrecision(arg1);
+        let r2 = CusMath.getPrecision(arg2);
+
+        m = Math.pow(10, Math.max(r1, r2));
+        const val = (arg1 * m + arg2 * m) / m || 0;
+        return val ? Number(val.toPrecision(CusMath._precision)) : 0;
     }
 
     /**
@@ -320,24 +316,16 @@ export class CusMath {
      * ```
      */
     static accSub(arg2, arg1) {
-        let r1, r2
-        let m = ''
-        let n = ''
-        try {
-            r1 = arg1.toString().split('.')[1].length
-        } catch (e) {
-            r1 = 0
-        }
-        try {
-            r2 = arg2.toString().split('.')[1].length
-        } catch (e) {
-            r2 = 0
-        }
-        m = Math.pow(10, Math.max(r1, r2))
+        let r1 = CusMath.getPrecision(arg1);
+        let r2 = CusMath.getPrecision(arg2);
+
+        let m = Math.pow(10, Math.max(r1, r2));
         // last modify by deeka
         // 动态控制精度长度
-        n = r1 >= r2 ? r1 : r2
-        return ((arg2 * m - arg1 * m) / m).toFixed(n) - 0
+        let n = r1 >= r2 ? r1 : r2;
+        let mVal = (arg2 * m - arg1 * m) / m || 0;
+        let val = mVal ? Number(mVal.toPrecision(CusMath._precision)) : 0;
+        return Number(val.toFixed(n));
     }
 
     /**
@@ -353,23 +341,21 @@ export class CusMath {
      * ```
      */
     static accMul(arg1, arg2) {
-        let m = 0
-        const s1 = arg1.toString()
-        const s2 = arg2.toString()
-        try {
-            m += s1?.split('.')?.[1]?.length || 0
-        } catch (e) {
-            console.error('accMul小数点调用失败')
-        }
-        try {
-            m += s2?.split('.')?.[1]?.length || 0
-        } catch (e) {
-            console.error('accMul小数点调用失败')
-        }
-        return (
-            (Number(s1.replace('.', '')) * Number(s2.replace('.', ''))) /
-            Math.pow(10, m)
-        )
+        let m = 0;
+        const s1 = arg1.toString();
+        const s2 = arg2.toString();
+
+        m += CusMath.getPrecision(arg1);
+        m += CusMath.getPrecision(arg2);
+
+        let arg1Val = Number(s1.replace(".", ""));
+        let arg2Val = Number(s2.replace(".", ""));
+
+        const val = ((arg1Val * arg2Val) / Math.pow(10, m)).toPrecision(
+            CusMath._precision
+        );
+
+        return Number(val);
     }
 
     /**
@@ -385,23 +371,39 @@ export class CusMath {
      * ```
      */
     static accDiv(arg1, arg2) {
-        let t1 = 0
-        let t2 = 0
-        let r1 = ''
-        let r2 = ''
-        try {
-            t1 = arg1.toString().split('.')[1].length
-        } catch (e) {
-            console.error('accDiv小数点调用失败')
+        let t1 = CusMath.getPrecision(arg1);
+        let t2 = CusMath.getPrecision(arg2);
+        let r1 = CusMath.convertNumber(arg1.toString().replace(".", ""));
+        let r2 = CusMath.convertNumber(arg2.toString().replace(".", ""));
+        return CusMath.accMul(r1 / r2, Math.pow(10, t2 - t1));
+    }
+
+    /**
+     * @description: 获取小数值的精度
+     * @param {string | number} val
+     * @return {number} 精度
+     */
+    static getPrecision(val) {
+        let r = 0;
+        const str = val.toString();
+        if (str.indexOf(".") !== -1) {
+            const arr = str.split(".");
+            const demicalVal = arr[1] || "";
+            if (demicalVal) {
+                return demicalVal.length;
+            }
         }
-        try {
-            t2 = arg2.toString().split('.')[1].length
-        } catch (e) {
-            console.error('accDiv小数点调用失败')
-        }
-        r1 = Number(arg1.toString().replace('.', ''))
-        r2 = Number(arg2.toString().replace('.', ''))
-        return CusMath.accMul(r1 / r2, Math.pow(10, t2 - t1))
+        return r;
+    }
+
+    /**
+     * @description: 转换为数字
+     * @param {unknown} num
+     * @return {number} 数字
+     */
+    static convertNumber(num) {
+        const val = Number(num);
+        return Number.isNaN(val) ? 0 : val;
     }
 
     /**
@@ -467,7 +469,7 @@ export class CusMath {
         const numVal = this.convertNumber(num)
         if (numVal) {
             const accuracyVal = Math.pow(10, this.convertNumber(accuracy))
-            const newVal = this.accMul(numVal, accuracyVal)
+            const newVal = CusMath.accMul(numVal, accuracyVal)
             // 如果精度是3，则下方是对第四位小数进行操作的
             if (type === 'roundUp') {
                 return Math.ceil(newVal) / accuracyVal

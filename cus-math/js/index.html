@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:21:13
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 14:30:43
+ * @LastEditTime: 2025-08-28 20:11:44
  * @FilePath: \Archer\cus-math\js\index.html
  * @Description: js示例
 -->
@@ -19,9 +19,12 @@
     <button id="button3">计算3</button>
     <button id="button4">计算4</button>
     <button id="button5">计算5</button>
+    <button id="button6">计算6</button>
+    <button id="button7">计算7</button>
 
     <script type="module">
       import { CusMath } from "./cusMath.js";
+      import { mockData } from "./testData.js";
 
       const cusMath = new CusMath();
       console.log("cusMath123123123", cusMath);
@@ -77,6 +80,54 @@
         cusMath.end();
       }
 
+      function calcFun61() {
+        const perArr = [];
+        const intArr = [];
+        mockData.forEach((ele) => {
+          const val = convertNumber(ele);
+          if (val) {
+            const arr = String(val)?.split(".");
+            const demicalVal = arr[1] || "";
+            if (demicalVal) {
+              perArr.push(val);
+            } else {
+              intArr.push(val);
+            }
+          }
+        });
+
+        console.log("intArr===>", intArr);
+        console.log("perArr===>", perArr);
+        const calcInstance = cusMath
+          .operation("add", ...intArr)
+          .operation("add", ...perArr);
+        const totalLogs = calcInstance._logs;
+        const totalVal = calcInstance.end();
+        // console.log("totalLogs=====>", totalLogs); // 方法链式调用日志
+        console.log("totalVal=====>", totalVal);
+      }
+
+      function calcFun6() {
+        const calcInstance = cusMath.operation("add", ...mockData);
+        const totalLogs = calcInstance._logs;
+        const totalVal = calcInstance.end();
+        console.log("totalLogs=====>", totalLogs); // 方法链式调用日志
+        console.log("totalVal=====>", totalVal);
+      }
+
+      function convertNumber(num) {
+        const val = Number(num);
+        return Number.isNaN(val) ? 0 : val;
+      }
+
+      function calcFun7() {
+        const mockDataStr = mockData.join("+");
+        const result = cusMath.expression(mockDataStr);
+        const logs = cusMath._logs;
+        console.log("运算公式演变logs=====>", logs);
+        cusMath.end();
+      }
+
       function loadEvent() {
         const button1 = document.getElementById("button1");
         button1.addEventListener("click", calcFun1);
@@ -92,10 +143,16 @@
 
         const button5 = document.getElementById("button5");
         button5.addEventListener("click", calcFun5);
+
+        const button6 = document.getElementById("button6");
+        button6.addEventListener("click", calcFun6);
+
+        const button7 = document.getElementById("button7");
+        button7.addEventListener("click", calcFun7);
       }
 
       window.onload = function () {
-        loadEvent()
+        loadEvent();
       };
     </script>
   </body>

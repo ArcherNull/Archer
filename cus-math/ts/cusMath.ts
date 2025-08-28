@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:06:07
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 14:32:36
+ * @LastEditTime: 2025-08-28 20:07:51
  * @FilePath: \Archer\cus-math\ts\cusMath.ts
  * @Description: 自定义计算类
  */
@@ -40,6 +40,9 @@ type OperaArrItemType = {
 
 export class CusMath {
   [key: string]: any;
+
+  static _precision = 10; // 精度，toPrecision的值，最大21
+
   // 操作记录
   _logs: unknown[] = [];
   // 过程值
@@ -363,7 +366,8 @@ export class CusMath {
     let r2: number = CusMath.getPrecision(arg2);
 
     m = Math.pow(10, Math.max(r1, r2));
-    return (arg1 * m + arg2 * m) / m;
+    const val = (arg1 * m + arg2 * m) / m || 0;
+    return val ? Number(val.toPrecision(CusMath._precision)) : 0;
   }
 
   /**
@@ -386,7 +390,8 @@ export class CusMath {
     // 动态控制精度长度
     let n: number = r1 >= r2 ? r1 : r2;
     let mVal: number = (arg2 * m - arg1 * m) / m || 0;
-    return CusMath.convertNumber(mVal!.toFixed(n)) - 0;
+    let val = mVal ? Number(mVal.toPrecision(CusMath._precision)) : 0;
+    return Number(val!.toFixed(n));
   }
 
   /**
@@ -409,11 +414,14 @@ export class CusMath {
     m += CusMath.getPrecision(arg1);
     m += CusMath.getPrecision(arg2);
 
-    return (
-      (CusMath.convertNumber(s1.replace(".", "")) *
-        CusMath.convertNumber(s2.replace(".", ""))) /
-      Math.pow(10, m)
+    let arg1Val: number = Number(s1.replace(".", ""));
+    let arg2Val: number = Number(s2.replace(".", ""));
+
+    const val = ((arg1Val * arg2Val) / Math.pow(10, m)).toPrecision(
+      CusMath._precision
     );
+
+    return Number(val);
   }
 
   /**
