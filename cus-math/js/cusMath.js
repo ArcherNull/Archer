@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:20:36
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 20:13:06
+ * @LastEditTime: 2025-08-28 20:15:10
  * @FilePath: \Archer\cus-math\js\cusMath.js
  * @Description: 自定义计算类
  */

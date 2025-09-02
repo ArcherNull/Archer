@@ -2,22 +2,22 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:06:07
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 20:07:51
+ * @LastEditTime: 2025-09-02 20:50:42
  * @FilePath: \Archer\cus-math\ts\cusMath.ts
  * @Description: 自定义计算类
  */
 type OperationProxyType = {
-  add: Function;
-  sub: Function;
-  mul: Function;
-  div: Function;
+  add: (arg1: number, arg2: number) => number;
+  div: (arg1: number, arg2: number) => number;
+  mul: (arg1: number, arg2: number) => number;
+  sub: (arg1: number, arg2: number) => number;
 };
 
 type ExpressionOperationProxyType = {
-  "+": Function;
-  "-": Function;
-  "*": Function;
-  "/": Function;
+  '*': (arg1: number, arg2: number) => number;
+  '+': (arg1: number, arg2: number) => number;
+  '/': (arg1: number, arg2: number) => number;
+  '-': (arg1: number, arg2: number) => number;
 };
 
 type OperationLogType = {
@@ -34,7 +34,7 @@ type MulOrDivArrType = {
 
 type OperaArrItemType = {
   operationName: string;
-  operaFun: Function;
+  operaFun: (arg1: number, arg2: number) => number;
   index: number;
 };
 
@@ -298,9 +298,11 @@ export class CusMath {
       ) {
         while (operaArr.length) {
           const arg1 = operaArrLen === operaArr.length ? numArr.shift() : val;
+           const arg1Num = CusMath.convertNumber(arg1);
           const operaFunObj = operaArr.shift();
           const arg2 = numArr.shift();
-          val = operaFunObj!.operaFun(arg1, arg2);
+          const arg2Num = CusMath.convertNumber(arg2);
+          val = operaFunObj!.operaFun(arg1Num, arg2Num);
         }
       } else {
         throw new Error(`逻辑错误`);
