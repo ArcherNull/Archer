@@ -1,0 +1,331 @@
+/* 行为相关颜色 */
+$uni-color-primary: var(--uni-color-primary);
+$uni-color-success: var(--uni-color-success);
+$uni-color-warning: var(--uni-color-warning);
+$uni-color-error: var(--uni-color-error);
+
+/* 文字基本颜色 */
+$uni-text-color: var(--uni-text-color);
+$uni-text-color-inverse: var(--uni-text-color-inverse);
+$uni-text-color-grey: var(--uni-text-color-grey);
+$uni-text-color-placeholder: var(--uni-text-color-placeholder);
+$uni-text-color-disable: var(--uni-text-color-disable);
+
+$uni-button-color: var(--uni-button-color);
+$uni-button-bg-color: var( --uni-button-bg-color);
+
+/* 背景颜色 */
+$uni-bg-color: var(--uni-bg-color);
+$uni-bg-color-grey: var(--uni-bg-color-grey);
+$uni-bg-color-hover: var(--uni-bg-color-hover);
+$uni-bg-color-mask: var(--uni-bg-color-mask);
+
+/* 边框颜色 */
+$uni-border-color: var(--uni-border-color);
+
+/* 尺寸变量 */
+
+/* 文字尺寸 */
+$uni-font-size-m: var(--uni-font-size-m);
+$uni-font-size-sm: var(--uni-font-size-sm);
+$uni-font-size-base: var(--uni-font-size-base);
+$uni-font-size-lg: var(--uni-font-size-lg);
+
+/* 图片尺寸 */
+$uni-img-size-sm: var(--uni-img-size-sm);
+$uni-img-size-base: var(--uni-img-size-base);
+$uni-img-size-lg: var(--uni-img-size-lg);
+
+/* Border Radius */
+$uni-border-radius-sm: var(--uni-border-radius-sm);
+$uni-border-radius-base: var(--uni-border-radius-base);
+$uni-border-radius-lg: var(--uni-border-radius-lg);
+$uni-border-radius-circle: var(--uni-border-radius-circle);
+
+/* 水平间距 */
+$uni-spacing-row-sm: var(--uni-spacing-row-sm);
+$uni-spacing-row-base: var(--uni-spacing-row-base);
+$uni-spacing-row-lg: var(--uni-spacing-row-lg);
+
+/* 垂直间距 */
+$uni-spacing-col-sm: var(--uni-spacing-col-sm);
+$uni-spacing-col-base: var(--uni-spacing-col-base);
+$uni-spacing-col-lg: var(--uni-spacing-col-lg);
+
+/* 透明度 */
+$uni-opacity-disabled: var(--uni-opacity-disabled);
+
+/* 文章场景相关 */
+$uni-color-title: var(--uni-color-title);
+$uni-font-size-title: var(--uni-font-size-title);
+$uni-color-subtitle: var(--uni-color-subtitle);
+$uni-font-size-subtitle: var(--uni-font-size-subtitle);
+$uni-color-paragraph: var(--uni-color-paragraph);
+$uni-font-size-paragraph: var(--uni-font-size-paragraph);
+
+
+
+.page-container {
+	background-color: $uni-bg-color;
+	color: $uni-text-color ;
+	min-height: 100vh;
+}
+
+.btn {
+	background-color: $uni-bg-color;
+	color: $uni-color-primary;
+}
+	
+.extraPage {
+	width: 100%;
+	height: 100vw;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.pageStatusImg {
+	width: 350rpx;
+	height: 350rpx;
+
+	&_text {
+		margin-top: 32rpx;
+		font-size: $uni-font-size-lg;
+		color: $uni-color-primary;
+	}
+}
+
+.flex {
+	display: flex;
+}
+
+.flex-column {
+	display: flex;
+	flex-direction: column;
+}
+
+.flex-colbetSta {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.flex-colcencen {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.flex-colbetcen {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.flex-colcensta {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+.border-Btmline {
+	border-bottom: 2rpx solid #eeeeee;
+}
+
+.border-DouBtmline {
+	border-color: #d3d3d3;
+	border-bottom-width: 2rpx;
+	border-bottom-style: solid;
+}
+
+.flex-stasta {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+.flex-stacen {
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+}
+.flex-staend {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+}
+.flex-censta {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+.flex-cencen {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.flex-cenend {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+.flex-endsta {
+	display: flex;
+	align-items: flex-end;
+	justify-content: flex-start;
+}
+.flex-endcen {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+.flex-endend {
+	display: flex;
+	align-items: flex-end;
+	justify-content: flex-end;
+}
+
+.flex-stabet {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+}
+.flex-cenbet {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.flex-endbet {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+}
+
+.hidden_text {
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+}
+.hidden_text2 {
+	text-overflow: -o-ellipsis-lastline;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+.hidden_text1 {
+	text-overflow: -o-ellipsis-lastline;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 1;
+	-webkit-box-orient: vertical;
+}
+.textSta {
+	text-align: start;
+}
+
+.textCen {
+	text-align: center;
+}
+
+.textEnd {
+	text-align: end;
+}
+
+::-webkit-scrollbar {
+	width: 0 !important;
+	height: 0 !important;
+	color: transparent !important;
+	display: none;
+}
+
+.grid3 {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	column-gap: 50rpx;
+	row-gap: 30rpx;
+	align-items: center;
+	justify-items: space-between;
+}
+
+.font-14 {
+	font-size: 28rpx;
+	line-height: 38rpx;
+}
+
+.font-16 {
+	font-size: 32rpx;
+	line-height: 42rpx;
+}
+
+.borderRed {
+	border: solid 1rpx #f00;
+}
+
+.border_shadow {
+	background-color: #fff;
+	box-shadow: 0px 10rpx 32rpx 0px rgba(0, 26, 17, 0.04);
+	border-radius: 20rpx;
+}
+
+
+.fixedHead {
+	background-color: #ffffff;
+	position: fixed;
+	top: 0;
+	z-index: 200;
+	width: 100vw;
+}
+
+.footerBtn {
+	position: fixed;
+	z-index: 101;
+	bottom: 0;
+	padding: 0rpx 32rpx 40rpx;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+// 单价
+.RMBMoney {
+	font-size: 32rpx;
+	color: #f00000;
+	font-weight: bold;
+	&::before {
+		content: '￥';
+		font-size: 24rpx;
+	}
+}
+
+// 总价
+.RMBMoney-big {
+	font-size: 38rpx;
+	color: #f00000;
+	font-weight: bold;
+	&::before {
+		content: '￥';
+		font-size: 24rpx;
+	}
+}
+
+// 白色阴影
+.box_shadow {
+	background: #ffffff;
+	box-shadow: -8rpx 6rpx 28rpx 0rpx rgba(46, 128, 84, 0.1);
+	border-radius: 16rpx;
+}
+
+.text1 {
+	color: $uni-color-primary;
+	font-size: $uni-font-size-base;
+}
+
+
+
