@@ -1,0 +1,82 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/store/index",
+			"style": {
+				"navigationBarTitleText": "蓝牙测试"
+			}
+		},
+		{
+			"path": "pages/mine/index",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationStyle": "custom"
+			}
+		}
+	],
+	"easycom": {
+		// npm安装的方式不需要前面的"@/"，下载安装的方式需要"@/"
+		// npm安装方式
+		// "^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
+		// 下载安装方式
+		// "^u-(.*)": "@/uni_modules/uview-ui/components/u-$1/u-$1.vue"
+	},
+	"requiredPrivateInfos": [
+		"getFuzzyLocation",
+		"getLocation",
+		"chooseLocation"
+	],
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#F6AB00",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "white",
+		"iconWidth": "28px",
+		"spacing": "0px",
+		"fontSize": "10px",
+		"height": "50px",
+		"list": [{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/images/tabbar/order.png",
+				"selectedIconPath": "static/images/tabbar/order-active.png"
+
+			},
+			{
+				"pagePath": "pages/store/index",
+				"text": "蓝牙测试",
+				"iconPath": "static/images/tabbar/waybill.png",
+				"selectedIconPath": "static/images/tabbar/waybill-active.png"
+			},
+			{
+				"pagePath": "pages/mine/index",
+				"text": "我的",
+				"iconPath": "static/images/tabbar/mine.png",
+				"selectedIconPath": "static/images/tabbar/mine-active.png"
+			}
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"subPackages": [{
+		"root": "subPagesA",
+		"name": "subPagesA",
+		"pages": [{
+			"path": "store/storeDetail/index",
+			"style": {
+				"navigationBarTitleText": "商铺详情"
+			}
+		}]
+	}]
+}
