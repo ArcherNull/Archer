@@ -47,16 +47,16 @@
 				<view class="main">
 					<LabelBox label="打印份数" :checked="labelPrintChecked"
 						@checked="labelPrintChecked = !labelPrintChecked">
-						<NumberBox v-model="bqValue"></NumberBox>
+						<NumberBox v-model="plValue"></NumberBox>
 					</LabelBox>
 					<LabelBox label="打印指定页码" :checked="!labelPrintChecked"
 						@checked="labelPrintChecked = !labelPrintChecked">
 						<view class="pBox" v-if="!labelPrintChecked">
-							<NumberBox v-model="assignBqValueStart"></NumberBox>
+							<NumberBox v-model="plStart"></NumberBox>
 							<view>
 								至
 							</view>
-							<NumberBox v-model="assignBqValueEnd"></NumberBox>
+							<NumberBox v-model="plEnd"></NumberBox>
 						</view>
 					</LabelBox>
 				</view>
@@ -116,7 +116,8 @@
 	import {
 		ref,
 		getCurrentInstance,
-		computed
+		computed,
+		toRaw
 	} from 'vue'
 	import {
 		onLoad,
@@ -136,12 +137,16 @@
 		convertNumber,
 		isNotEmptyArr
 	} from './comm/cusBluetooth.js'
+	import {
+		template1
+	} from './comm/template.js'
+
 	const loadingType = ref('normal')
 	const labelPrintChecked = ref(true)
-	const bqValue = ref(0)
-	const assignBqValueStart = ref(0)
-	const assignBqValueEnd = ref(1)
-	const ydValue = ref(0)
+	const plValue = ref(1)
+	const plStart = ref(0)
+	const plEnd = ref(1)
+	const ydValue = ref(1)
 	const openPrintListPop = ref(false)
 
 	const printLoading = ref(false)
@@ -208,8 +213,6 @@
 		cusBModuleInstance.value = null
 	})
 
-
-
 	function initPage(options) {
 		if (options?.wayBillCode) {
 			this.getWaybillInfo(options?.wayBillCode)
@@ -268,15 +271,15 @@
 			// 打印标签
 			if (labelPrinter.deviceId) {
 				if (labelPrintChecked.value) {
-					const bqValueVal = convertNumber(bqValue.value)
-					if (bqValueVal < 1) {
+					const plValueVal = convertNumber(plValue.value)
+					if (plValueVal < 1) {
 						errLog.push('打印标签打印份数至少为1张')
 					}
 				} else {
-					const assignBqValueStartVal = convertNumber(assignBqValueStart.value)
-					const assignBqValueEndVal = convertNumber(assignBqValueEnd.value)
+					const plStartVal = convertNumber(plStart.value)
+					const plEndVal = convertNumber(plEnd.value)
 
-					if (assignBqValueEndVal < assignBqValueStartVal) {
+					if (plEndVal < plStartVal) {
 						errLog.push("打印标签结束份数不能小于开始份数");
 					}
 				}
@@ -287,13 +290,6 @@
 				const ydValueVal = convertNumber(ydValue.value)
 				if (ydValueVal < 1) {
 					errLog.push('打印运单打印份数至少为1张')
-				}
-				if (that.parameterO097 == "1") {
-					let multiSelect = multiList.value.filter((item) => item.checked).map((item) => item.value);
-
-					if (!multiSelect.length) {
-						errLog.push('打印运单请勾选要打印的多联单')
-					}
 				}
 			}
 		} else {
@@ -318,26 +314,48 @@
 		const {
 			labelPrinter,
 			waybillPrinter
-		} = connectedPrinter.value
+		} = toRaw(connectedPrinter.value)
 		const osName = cusBModuleInstance.value._osName
+		const printTaskList = []
+
 		if (labelPrinter.deviceId) {
-			const printData = {
-				labelPrintChecked: labelPrintChecked.value,
-				labelCopies: bqValue.value,
-				assignBqValueStartValue: assignBqValueStart.value,
-				assignBqValueEndValue: assignBqValueEnd.value,
-				waybillInfo: waybillInfo.value,
+			let pCount
+			if (labelPrintChecked.value) {
+				pCount = plValue.value
+			} else {
+				pCount = convertNumber(plEnd.value - plStart.value)
 			}
-			await that.$Common.print(labelPrinter, printData, osName)
+
+			if (pCount > 0) {
+				const pData = {
+					deviceId: labelPrinter.deviceId,
+					serviceId: labelPrinter.serviceId,
+					characteristicId: labelPrinter.characteristicId,
+					printDataStr: template1
+				}
+				for (let i = 0; i < pCount; i++) {
+					printTaskList.push(pData)
+				}
+			}
 		}
+
 		if (waybillPrinter.deviceId) {
-			const printData = {
-				waybillCopies: ydValue.value,
-				waybillInfo: waybillInfo.value,
-				multiSelectList: that.multiSelectList.value || [],
+			let ydCount
+			if (ydCount > 0) {
+				const pData = {
+					deviceId: waybillPrinter.deviceId,
+					serviceId: waybillPrinter.serviceId,
+					characteristicId: waybillPrinter.characteristicId,
+					printDataStr: template1
+				}
+				for (let i = 0; i < ydCount; i++) {
+					printTaskList.push(pData)
+				}
 			}
-			await that.$Common.print(waybillPrinter, printData, osName)
 		}
+		
+		console.log('printTaskList=====>', printTaskList)
+		await cusBModuleInstance.value.print(printTaskList)
 	}
 
 	// 选择标签打印机 / 运单打印机

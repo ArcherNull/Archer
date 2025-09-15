@@ -1,4 +1,5 @@
 // 当蓝牙模块通过后，才是蓝牙设备， 一个蓝牙模块对应多个蓝牙设备，并且启动心跳检测每个设备的连接状态
+import * as gbk from './printUtil-GBK.js';
 
 // 是非空数组
 export function isNotEmptyArr(arr) {
@@ -79,6 +80,8 @@ const ERROR_CODE = {
 export class CusBluetoothModuleClass {
 	// 区分苹果 / 安卓
 	_osName
+	// 设置蓝牙最大传输单元
+	_mtu = 512
 
 	// 重启蓝牙模块次数
 	_restartBlueToothCount = 0
@@ -539,7 +542,7 @@ export class CusBluetoothModuleClass {
 			})
 			const cListJson = JSON.stringify(cNList)
 			uni.setStorageSync(this._storageKey, cListJson)
-		}else{
+		} else {
 			uni.setStorageSync(this._storageKey, "")
 		}
 	}
@@ -970,5 +973,175 @@ export class CusBluetoothModuleClass {
 				reject(new Error(`取蓝牙设备【${name}】缺失服务ID和设备ID`))
 			}
 		})
+	}
+
+	// 校验打印任务
+	validatePrintTask(pTask) {
+		const {
+			deviceId,
+			serviceId,
+			characteristicId,
+			printDataStr
+		} = pTask || {}
+
+		const errLog = []
+		if (!printDataStr) {
+			errLog.push('打印数据不能为空')
+		}
+
+		if (!deviceId) {
+			errLog.push('打印设备ID不能为空')
+		}
+
+		if (!serviceId) {
+			errLog.push('打印设备服务ID不能为空')
+		}
+
+		if (!characteristicId) {
+			errLog.push('打印设备特征值ID不能为空')
+		}
+
+		return errLog
+	}
+
+	// 打印， printTaskList 打印任务列表
+	async print(printTaskList) {
+		const that = this
+		try {
+			if (isNotEmptyArr(printTaskList)) {
+				that._osName === 'ios' && (await that.setBLEMTU())
+				for (let i = 0; i < printTaskList.length; i++) {
+					const pTask = printTaskList[i]
+					const errLog = that.validatePrintTask(pTask)
+					if (errLog.length) {
+						throw new Error(`第【${i + 1}】打印任务，${errLog.join(';')}`)
+					} else {
+						await that.printTaskItem(pTask)
+					}
+				}
+			} else {
+				showMsg('打印任务列表不能为空')
+			}
+		} catch (err) {
+			showMsg(err?.message || '打印失败')
+		}
+	}
+
+	// 打印任务项
+	async printTaskItem(pTask) {
+		const that = this
+		try {
+			const {
+				deviceId,
+				serviceId,
+				characteristicId,
+				printDataStr
+			} = pTask
+			const buffer = that.getBuffer(printDataStr)
+			console.log('buffer', buffer)
+			const dpData = {
+				deviceId,
+				serviceId,
+				characteristicId,
+			}
+			if (that._osName === 'ios') {
+				await that.writeBLECharacteristicValue({
+					deviceId,
+					serviceId,
+					characteristicId,
+					buffer: buffer
+				})
+			} else {
+				console.log('进入=====>')
+				var length = buffer.byteLength;
+				const mtu = that._mtu
+				var count = Math.ceil(length / mtu); //最多执行 count 次
+				for (let i = 0; i < count; i++) {
+					let tempBuffer = "";
+					if (((i + 1) * mtu) < length) {
+						tempBuffer = buffer.slice(i * mtu, (i + 1) * mtu);
+						await that.writeBLECharacteristicValue({
+							deviceId,
+							serviceId,
+							characteristicId,
+							buffer: tempBuffer
+						})
+					} else {
+						tempBuffer = buffer.slice(i * mtu, length);
+						await that.writeBLECharacteristicValue({
+							deviceId,
+							serviceId,
+							characteristicId,
+							buffer: tempBuffer
+						})
+					}
+					this.sleep(i * 0.02); //延迟 i*200ms  
+				}
+			}
+		} catch (err) {
+			showMsg(err?.message || '打印任务执行失败')
+		}
+	}
+
+	// 获取buffer,二进制数据
+	getBuffer(templateStr) {
+		let buffer = gbk.strToGBKByte(templateStr);
+		return buffer
+	}
+
+	// 设置蓝牙最大传输单元。需在 uni.createBLEConnection调用成功后调用，mtu 设置范围 (22,512)。安卓5.1以上有效。
+	setBLEMTU() {
+		const that = this
+		return new Promise((resolve, reject) => {
+			uni.setBLEMTU({
+				deviceId: deviceId,
+				mtu: that._mtu,
+				success(res) {
+					console.log('setBLEMTU-success======>', res)
+					resolve(true)
+				},
+				fail(res) {
+					console.log('setBLEMTU-fail======>', res)
+					reject(new Error(res?.errMsg || '设置最大传输单元失败'))
+				}
+			})
+		})
+	}
+
+	// 向打印机设备写入二进制数据，这里需要区分ios和android平台，android需要分片，每次传输都有最大限制，ios不用
+	writeBLECharacteristicValue(options) {
+		const that = this
+		return new Promise((resolve, reject) => {
+			const {
+				deviceId,
+				serviceId,
+				characteristicId,
+				buffer
+			} = options
+			setTimeout(() => {
+				uni.writeBLECharacteristicValue({
+					deviceId,
+					serviceId,
+					characteristicId,
+					value: buffer,
+					success(res) {
+						console.log('writeBLECharacteristicValue-success======>', res)
+						resolve(true)
+					},
+					fail(res) {
+						console.log('writeBLECharacteristicValue-fail======>', res)
+						reject(new Error(res?.errMsg || '写入失败'))
+					}
+				})
+			}, 300)
+		})
+	}
+
+	// 延时函数
+	sleep(delay) {
+		var start = (new Date()).getTime();
+		while ((new Date()).getTime() - start < delay) {
+			continue;
+		}
 	}
 }
