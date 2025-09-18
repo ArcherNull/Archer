@@ -10,6 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "deep-pick-omit": "^1.2.1",
+    "destr": "^2.0.5",
     "lodash-es": "^4.17.21",
     "pinia-plugin-persistedstate": "^4.5.0"
   },

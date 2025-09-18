@@ -3,7 +3,7 @@
 		<view class="print">
 			<!-- 手机蓝牙模块 -->
 			<PrintItemBox title="手机蓝牙模块" :isShowBottomLine="true">
-				<view slot="right">
+				<template #right>
 					<view class="btBox" v-if="cusBModuleInstance">
 						<view @click="cusBModuleInstance.restartOpenBluetoothAdapter()"
 							:class="['btBox-start', cusBModuleInstance._bluetoothModuleState === 'started' ? 'activeCss' : cusBModuleInstance._bluetoothModuleState === 'starting' ? 'activeingCss' : 'unactiveCss']">
@@ -21,7 +21,7 @@
 					<view class="unactiveCss" v-else @click="initBlueTooth()">
 						未启动
 					</view>
-				</view>
+				</template>
 
 				<view class="cPBox">
 					<view class="cPList"
@@ -39,11 +39,11 @@
 
 			<!-- 打印标签 -->
 			<PrintItemBox title="打印标签" :isShowBottomLine="true">
-				<view class="" slot="right">
+				<template #right>
 					<SelectPrinter :selectedPrinter="connectedPrinter.labelPrinter"
 						@selected="selectedBTPrinter(connectedPrinter.labelPrinter, 'label')">
 					</SelectPrinter>
-				</view>
+				</template>
 				<view class="main">
 					<LabelBox label="打印份数" :checked="labelPrintChecked"
 						@checked="labelPrintChecked = !labelPrintChecked">
@@ -64,11 +64,11 @@
 
 			<!-- 打印运单 -->
 			<PrintItemBox title="打印运单" :isShowBottomLine="true">
-				<view class="" slot="right">
+				<template #right>
 					<SelectPrinter :selectedPrinter="connectedPrinter.waybillPrinter"
 						@selected="selectedBTPrinter(connectedPrinter.waybillPrinter, 'waybill')">
 					</SelectPrinter>
-				</view>
+				</template>
 				<view class="main">
 					<LabelBox label="打印份数">
 						<NumberBox v-model="ydValue"></NumberBox>
@@ -318,6 +318,7 @@
 		const osName = cusBModuleInstance.value._osName
 		const printTaskList = []
 
+		console.log('labelPrinter', labelPrinter)
 		if (labelPrinter.deviceId) {
 			let pCount
 			if (labelPrintChecked.value) {
@@ -338,9 +339,10 @@
 				}
 			}
 		}
-
+		
+		console.log('waybillPrinter', waybillPrinter)
 		if (waybillPrinter.deviceId) {
-			let ydCount
+			let ydCount = ydValue.value
 			if (ydCount > 0) {
 				const pData = {
 					deviceId: waybillPrinter.deviceId,
@@ -494,6 +496,7 @@
 	}
 
 	.noMoreBox {
+		height: 120rpx;
 		display: flex;
 		align-items: center;
 		color: #999;

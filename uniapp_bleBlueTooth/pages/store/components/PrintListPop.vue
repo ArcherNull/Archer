@@ -41,7 +41,7 @@
 						</view>
 					</scroll-view>
 					<view v-else class="noData">
-						暂无数据 {{ cusBModuleInstance._bluetoothModuleState }}
+						暂无数据
 					</view>
 				</view>
 

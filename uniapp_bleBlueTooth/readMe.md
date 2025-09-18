@@ -33,3 +33,6 @@ vue3.4 + uni-app x + pinia + lodash-es
 ├─store 状态管理
 ```
 
+
+## CC3芝柯打印机资料
+[CC3芝柯打印机资料](https://9139df.link.yunpan.360.cn/lk/surl_y8rP2LzwaHG#/-0)

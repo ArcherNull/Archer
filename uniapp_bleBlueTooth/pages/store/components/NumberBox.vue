@@ -3,7 +3,7 @@
 		<!-- 加 图片 -->
 		<image v-if="modelValue > min" class="imgNumCss" src="/static/images/numCle.png" @click="operation('sub')">
 		</image>
-		<image wx:else class="imgNumCss" src="/static/images/numCle1.png"></image>
+		<image v-else class="imgNumCss" src="/static/images/numCle1.png"></image>
 		<input class="numBox_input" type="number" :value="modelValue" placeholder-style="color: #1E1E1E;"
 			placeholder-class="input-css" @input="$emit('update:modelValue', $event.target.value)" />
 		<!-- 减 图片 -->
