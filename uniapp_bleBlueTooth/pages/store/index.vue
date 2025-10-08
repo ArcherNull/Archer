@@ -214,10 +214,11 @@
 	})
 
 	function initPage(options) {
-		if (options?.wayBillCode) {
-			this.getWaybillInfo(options?.wayBillCode)
+		const code = options?.wayBillCode || '123456'
+		if (code) {
+			getWaybillInfo(code)
 		} else {
-			this.goBack('未获取到运单参数')
+			goBack('未获取到运单参数')
 		}
 	}
 

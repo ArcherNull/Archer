@@ -173,6 +173,7 @@ export class CusBluetoothModuleClass {
 		const eMsg = errCode !== undefined ? (ERROR_CODE[errCode] || errMsg) :
 			errMsg
 		console.log('错误提示=====>', eMsg)
+		showMsg(eMsg)
 		reject(new Error(eMsg || text))
 	}
 
@@ -1110,6 +1111,7 @@ export class CusBluetoothModuleClass {
 		return buffer
 	}
 
+	// oppo 手机设置可能会存在失败的情况
 	// 设置蓝牙最大传输单元。需在 uni.createBLEConnection调用成功后调用，mtu 设置范围 (22,512)。安卓5.1以上有效。
 	setBLEMTU() {
 		const that = this
