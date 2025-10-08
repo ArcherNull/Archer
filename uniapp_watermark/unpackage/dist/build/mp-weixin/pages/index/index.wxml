@@ -1,0 +1,1 @@
+<view class="data-v-93d13bc6"><view class="navigator data-v-93d13bc6"><block wx:for="{{navigatorList}}" wx:for-item="item" wx:for-index="index" wx:key="index"><view data-event-opts="{{[['tap',[['jumpPage',['$0'],[[['navigatorList','',index]]]]]]]}}" class="navigator_item borderRed data-v-93d13bc6" bindtap="__e">{{''+item.name+''}}</view></block></view></view>
