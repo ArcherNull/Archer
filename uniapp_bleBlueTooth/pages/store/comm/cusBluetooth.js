@@ -272,7 +272,14 @@ export class CusBluetoothModuleClass {
 				dList.forEach(item => {
 					const name = item?.name || item?.localName
 					const deviceId = item?.deviceId
-					if (name && deviceId && item.connectable && isNotEmptyArr(item?.advertisServiceUUIDs)) {
+					let bool = false
+					// #ifdef MP-WEIXIN
+					bool = name && deviceId && item.connectable && isNotEmptyArr(item?.advertisServiceUUIDs)
+					// #endif
+					// #ifndef MP-WEIXIN
+					bool = name && deviceId && isNotEmptyArr(item?.advertisServiceUUIDs)
+					// #endif
+					if (bool) {
 						const findItem = that._connectedDevicesList.find(ele => ele.deviceId === item
 							.deviceId)
 
@@ -346,7 +353,7 @@ export class CusBluetoothModuleClass {
 	checkAndRequestPermissions() {
 		return new Promise((resolve, reject) => {
 			if (this._isAuthSettingBluetooth === true) {
-				// #ifndef APP-PLUS || H5
+				// #ifndef APP || H5
 				const that = this
 				uni.getSetting({
 					success: (res) => {
@@ -393,7 +400,22 @@ export class CusBluetoothModuleClass {
 					}
 				})
 				// #endif
-				// #ifdef APP-PLUS || H5
+				// #ifdef APP
+				const permissions = ["android.permission.BLUETOOTH", "android.permission.BLUETOOTH_ADMIN"];
+				uni.requestAndroidPermissions({
+					permissions,
+					success(res) {
+						if (res.all === true) {
+							// 权限请求成功，可以调用蓝牙相关API
+							resolve(true)
+						} else {
+							// 权限请求失败
+							reject(new Error('蓝牙授权失败'))
+						}
+					}
+				});
+				// #endif
+				// #ifdef  H5
 				resolve(true)
 				// #endif
 			} else {
@@ -584,8 +606,7 @@ export class CusBluetoothModuleClass {
 				powerLevel: "high",
 				success: function(res) {
 					console.log('startBluetoothDevicesDiscovery-success=====>', res)
-					if (res?.errMsg === 'startBluetoothDevicesDiscovery:ok' && res
-						?.isDiscovering === true) {
+					if (res?.errMsg === 'startBluetoothDevicesDiscovery:ok') {
 						resolve(true)
 					} else {
 						reject(new Error('搜索附近蓝牙设备失败，请检查蓝牙模块是否开启检测蓝牙设备功能'))
@@ -1075,7 +1096,7 @@ export class CusBluetoothModuleClass {
 							buffer: tempBuffer
 						})
 					}
-					that.sleep(i * 0.02); //延迟 i*200ms  
+					// this.sleep(i * 0.02); //延迟 i*200ms  
 				}
 			}
 		} catch (err) {
@@ -1118,20 +1139,20 @@ export class CusBluetoothModuleClass {
 				characteristicId,
 				buffer
 			} = options
-			console.log('writeBLECharacteristissscValue-options=====>', options)
 			uni.writeBLECharacteristicValue({
 				deviceId,
 				serviceId,
 				characteristicId,
 				value: buffer,
 				success(res) {
-					uni.hideNavigationBarLoading() //关闭加载动画
 					console.log('writeBLECharacteristicValue-success======>', res)
 					resolve(true)
 				},
 				fail(res) {
-					console.log('writeBLECsssharacteristicValue-fail======>', res)
-					reject(new Error(res?.errMsg || '写入失败'))
+					// 这个地方就算错误了也不要reject
+					console.log('writeBLECharacteristicValue-fail======>', res)
+					// reject(new Error(res?.errMsg || '写入失败'))
+					resolve(true)
 				}
 			})
 		})
