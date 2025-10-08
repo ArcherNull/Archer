@@ -1052,8 +1052,8 @@ export class CusBluetoothModuleClass {
 					buffer: buffer
 				})
 			} else {
-				console.log('进入=====>')
 				var length = buffer.byteLength;
+				console.log('进入=====>', length)
 				const mtu = that._mtu
 				var count = Math.ceil(length / mtu); //最多执行 count 次
 				for (let i = 0; i < count; i++) {
@@ -1067,7 +1067,7 @@ export class CusBluetoothModuleClass {
 							buffer: tempBuffer
 						})
 					} else {
-						tempBuffer = buffer.slice(i * mtu, length);
+						tempBuffer = buffer.slice(i * mtu, lengtsh);
 						await that.writeBLECharacteristicValue({
 							deviceId,
 							serviceId,
@@ -1075,7 +1075,7 @@ export class CusBluetoothModuleClass {
 							buffer: tempBuffer
 						})
 					}
-					this.sleep(i * 0.02); //延迟 i*200ms  
+					that.sleep(i * 0.02); //延迟 i*200ms  
 				}
 			}
 		} catch (err) {
@@ -1118,22 +1118,22 @@ export class CusBluetoothModuleClass {
 				characteristicId,
 				buffer
 			} = options
-			setTimeout(() => {
-				uni.writeBLECharacteristicValue({
-					deviceId,
-					serviceId,
-					characteristicId,
-					value: buffer,
-					success(res) {
-						console.log('writeBLECharacteristicValue-success======>', res)
-						resolve(true)
-					},
-					fail(res) {
-						console.log('writeBLECharacteristicValue-fail======>', res)
-						reject(new Error(res?.errMsg || '写入失败'))
-					}
-				})
-			}, 300)
+			console.log('writeBLECharacteristissscValue-options=====>', options)
+			uni.writeBLECharacteristicValue({
+				deviceId,
+				serviceId,
+				characteristicId,
+				value: buffer,
+				success(res) {
+					uni.hideNavigationBarLoading() //关闭加载动画
+					console.log('writeBLECharacteristicValue-success======>', res)
+					resolve(true)
+				},
+				fail(res) {
+					console.log('writeBLECsssharacteristicValue-fail======>', res)
+					reject(new Error(res?.errMsg || '写入失败'))
+				}
+			})
 		})
 	}
 
