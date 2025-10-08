@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:06:07
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-09-02 20:50:42
+ * @LastEditTime: 2025-10-08 16:48:51
  * @FilePath: \Archer\cus-math\ts\cusMath.ts
  * @Description: 自定义计算类
  */
@@ -139,7 +139,8 @@ export class CusMath {
         try {
           const result = this.dealAndCalcFirstBracketArr();
           this.expLogPush(result);
-          return result;
+ 					this._processValue = result
+          return this
         } catch (err) {
           console.log((err as Error)?.message);
         }

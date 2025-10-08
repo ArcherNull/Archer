@@ -7,19 +7,19 @@
  * @Description: ts示例
 -->
 <script lang="ts" setup name="Build">
-import { CusMath } from './cusMath';
+import { CusMath } from "./cusMath";
 
 const cusMath = new CusMath();
-console.log('cusMath123123123', cusMath)
+console.log("cusMath123123123", cusMath);
 
 function calcFun1() {
   const calcInstance = cusMath
-    .operation('add', 3.251, 253.635, 1.25, 42)
-    .operation('sub', 63.652, 4.952);
+    .operation("add", 3.251, 253.635, 1.25, 42)
+    .operation("sub", 63.652, 4.952);
   const totalLogs = calcInstance._logs;
   const totalVal = calcInstance.end();
-  console.log('totalLogs=====>', totalLogs); // 方法链式调用日志
-  console.log('totalVal=====>', totalVal);
+  console.log("totalLogs=====>", totalLogs); // 方法链式调用日志
+  console.log("totalVal=====>", totalVal);
 }
 
 function calcFun2() {
@@ -28,39 +28,39 @@ function calcFun2() {
     .sub(63.652, 4.952);
   const otherLogs = otherInstance._logs;
   const otherVal = otherInstance.end();
-  console.log('otherLogs=====>', otherLogs); // 方法链式调用日志
-  console.log('otherVal=====>', otherVal);
+  console.log("otherLogs=====>", otherLogs); // 方法链式调用日志
+  console.log("otherVal=====>", otherVal);
 }
 
 function calcFun3() {
   const str =
-    '((20.124 * 2.35 / 5.96 + 20.124 * 65 / 3 - 20.124 + 2.35 * 5.96) / 2.36) * 3.241 + 2.53 * 5.96';
+    "((20.124 * 2.35 / 5.96 + 20.124 * 65 / 3 - 20.124 + 2.35 * 5.96) / 2.36) * 3.241 + 2.53 * 5.96";
   // const str = '5 * 2 - 3 + 5 * 6 / 3 + 6 - 8 + 41'
   // const str = '5 * 2 - (3 * (5 * 6 / 3 + 6) ) * 12 - 8 + 41'
   // const str = '0.1+0.2'
-  const result = cusMath.expression(str);
-  console.log('resultexpression=====>', result);
+  cusMath.expression(str);
   const logs = cusMath._logs;
-  console.log('运算公式演变logs=====>', logs);
-  cusMath.end()
+  console.log("运算公式演变logs=====>", logs);
+  const result = cusMath.end();
+  console.log("resultexpression=====>", result);
 }
 
 function calcFun4() {
-  const str = '0.1+0.2';
-  const result = cusMath.expression(str);
-  console.log('resultexpression=====>', result);
+  const str = "0.1+0.2";
+  cusMath.expression(str);
   const logs = cusMath._logs;
-  console.log('运算公式演变logs=====>', logs);
-  cusMath.end()
+  console.log("运算公式演变logs=====>", logs);
+  const result = cusMath.end();
+  console.log("resultexpression=====>", result);
 }
 
 function calcFun5() {
-  const str = '0.3/2';
-  const result = cusMath.expression(str);
-  console.log('resultexpression=====>', result);
+  const str = "0.3/2";
+  cusMath.expression(str);
   const logs = cusMath._logs;
-  console.log('运算公式演变logs=====>', logs);
-  cusMath.end()
+  console.log("运算公式演变logs=====>", logs);
+  const result = cusMath.end();
+  console.log("resultexpression=====>", result);
 }
 </script>
 

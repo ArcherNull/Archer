@@ -31,9 +31,9 @@ const str = '((20.124 * 2.35 / 5.96 + 20.124 * 65 / 3 - 20.124 + 2.35 * 5.96) / 
 // const str = '5 * 2 - 3 + 5 * 6 / 3 + 6 - 8 + 41'
 // const str = '5 * 2 - (3 * (5 * 6 / 3 + 6) ) * 12 - 8 + 41'
 // const str = '0.1+0.2'
-const result = cusMath.expression(str)
-console.log('resultexpression=====>', result)
+cusMath.expression(str)
 const logs = cusMath._logs
 console.log('运算公式演变logs=====>', logs)
-
+const result = cusMath.end()
+console.log('resultexpression=====>', result)
 ```

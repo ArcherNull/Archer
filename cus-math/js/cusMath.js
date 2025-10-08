@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:20:36
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 20:15:10
+ * @LastEditTime: 2025-10-08 16:55:40
  * @FilePath: \Archer\cus-math\js\cusMath.js
  * @Description: 自定义计算类
  */
@@ -17,8 +17,6 @@ export class CusMath {
     _original_expression = ''
     // 过程表达式
     _process_expression = ''
-
-
 
     constructor() {
         this.init()
@@ -105,7 +103,8 @@ export class CusMath {
                 try {
                     const result = this.dealAndCalcFirstBracketArr()
                     this.expLogPush(result)
-                    return result
+					this._processValue = result
+                    return this
                 } catch (err) {
                     console.log(err?.message)
                 }
@@ -511,30 +510,3 @@ export class CusMath {
         return !Number.isNaN(val)
     }
 }
-
-// const cusMath = new CusMath()
-// 第一种方式
-// const calcInstance = cusMath.operation('add', 3.251, 253.635, 1.25, 42).operation('sub', 63.652, 4.952)
-// const totalLogs = calcInstance._logs
-// const totalVal = calcInstance.end()
-
-// // console.log('totalLogs=====>', totalLogs) // 方法链式调用日志
-// console.log('totalVal=====>', totalVal)
-
-// 第二种方式
-// const otherInstance = cusMath.add(3.251, 253.635, 1.25, 42).sub(63.652, 4.952)
-// const otherLogs = otherInstance._logs
-// const otherVal = otherInstance.end()
-// // console.log('otherLogs=====>', otherLogs) // 方法链式调用日志
-// console.log('otherVal=====>', otherVal)
-
-
-// 第三种方式，接受表达式
-// const str = '((20.124 * 2.35 / 5.96 + 20.124 * 65 / 3 - 20.124 + 2.35 * 5.96) / 2.36) * 3.241 + 2.53 * 5.96'
-// // const str = '5 * 2 - 3 + 5 * 6 / 3 + 6 - 8 + 41'
-// // const str = '5 * 2 - (3 * (5 * 6 / 3 + 6) ) * 12 - 8 + 41'
-// // const str = '0.1+0.2'
-// const result = cusMath.expression(str)
-// console.log('resultexpression=====>', result)
-// const logs = cusMath._logs
-// console.log('运算公式演变logs=====>', logs)

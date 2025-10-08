@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:21:13
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-08-28 20:11:44
+ * @LastEditTime: 2025-10-08 17:06:50
  * @FilePath: \Archer\cus-math\js\index.html
  * @Description: js示例
 -->
@@ -21,10 +21,12 @@
     <button id="button5">计算5</button>
     <button id="button6">计算6</button>
     <button id="button7">计算7</button>
+    <button id="button8">计算8</button>
 
     <script type="module">
       import { CusMath } from "./cusMath.js";
       import { mockData } from "./testData.js";
+      import { testFun } from "./testFun.js";
 
       const cusMath = new CusMath();
       console.log("cusMath123123123", cusMath);
@@ -55,29 +57,29 @@
         // const str = '5 * 2 - 3 + 5 * 6 / 3 + 6 - 8 + 41'
         // const str = '5 * 2 - (3 * (5 * 6 / 3 + 6) ) * 12 - 8 + 41'
         // const str = '0.1+0.2'
-        const result = cusMath.expression(str);
-        console.log("resultexpression=====>", result);
+        cusMath.expression(str);
         const logs = cusMath._logs;
         console.log("运算公式演变logs=====>", logs);
-        cusMath.end();
+        const result = cusMath.end();
+        console.log("resultexpression=====>", result);
       }
 
       function calcFun4() {
         const str = "0.1+0.2";
-        const result = cusMath.expression(str);
-        console.log("resultexpression=====>", result);
+        cusMath.expression(str);
         const logs = cusMath._logs;
         console.log("运算公式演变logs=====>", logs);
-        cusMath.end();
+        const result = cusMath.end();
+        console.log("resultexpression=====>", result);
       }
 
       function calcFun5() {
         const str = "0.3/2";
-        const result = cusMath.expression(str);
-        console.log("resultexpression=====>", result);
+        cusMath.expression(str);
         const logs = cusMath._logs;
         console.log("运算公式演变logs=====>", logs);
-        cusMath.end();
+        const result = cusMath.end();
+        console.log("resultexpression=====>", result);
       }
 
       function calcFun61() {
@@ -122,10 +124,15 @@
 
       function calcFun7() {
         const mockDataStr = mockData.join("+");
-        const result = cusMath.expression(mockDataStr);
+        cusMath.expression(mockDataStr);
         const logs = cusMath._logs;
         console.log("运算公式演变logs=====>", logs);
-        cusMath.end();
+        const result = cusMath.end();
+        console.log("运算公式计算结果=====>", result);
+      }
+
+      function calcFun8() {
+        testFun();
       }
 
       function loadEvent() {
@@ -149,6 +156,9 @@
 
         const button7 = document.getElementById("button7");
         button7.addEventListener("click", calcFun7);
+
+        const button8 = document.getElementById("button8");
+        button8.addEventListener("click", calcFun8);
       }
 
       window.onload = function () {
