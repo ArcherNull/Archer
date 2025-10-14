@@ -1,0 +1,21 @@
+{
+  "name": "uniapp_template",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "deep-pick-omit": "^1.2.1",
+    "destr": "^2.0.5",
+    "lodash-es": "^4.17.21",
+    "pinia-plugin-persistedstate": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12"
+  }
+}

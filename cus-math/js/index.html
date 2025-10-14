@@ -1,0 +1,169 @@
+<!--
+ * @Author: Null 779217162@qq.com
+ * @Date: 2025-08-28 14:21:13
+ * @LastEditors: Null 779217162@qq.com
+ * @LastEditTime: 2025-10-08 17:06:50
+ * @FilePath: \Archer\cus-math\js\index.html
+ * @Description: js示例
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="button1">计算1</button>
+    <button id="button2">计算2</button>
+    <button id="button3">计算3</button>
+    <button id="button4">计算4</button>
+    <button id="button5">计算5</button>
+    <button id="button6">计算6</button>
+    <button id="button7">计算7</button>
+    <button id="button8">计算8</button>
+
+    <script type="module">
+      import { CusMath } from "./cusMath.js";
+      import { mockData } from "./testData.js";
+      import { testFun } from "./testFun.js";
+
+      const cusMath = new CusMath();
+      console.log("cusMath123123123", cusMath);
+
+      function calcFun1() {
+        const calcInstance = cusMath
+          .operation("add", 3.251, 253.635, 1.25, 42)
+          .operation("sub", 63.652, 4.952);
+        const totalLogs = calcInstance._logs;
+        const totalVal = calcInstance.end();
+        console.log("totalLogs=====>", totalLogs); // 方法链式调用日志
+        console.log("totalVal=====>", totalVal);
+      }
+
+      function calcFun2() {
+        const otherInstance = cusMath
+          .add(3.251, 253.635, 1.25, 42)
+          .sub(63.652, 4.952);
+        const otherLogs = otherInstance._logs;
+        const otherVal = otherInstance.end();
+        console.log("otherLogs=====>", otherLogs); // 方法链式调用日志
+        console.log("otherVal=====>", otherVal);
+      }
+
+      function calcFun3() {
+        const str =
+          "((20.124 * 2.35 / 5.96 + 20.124 * 65 / 3 - 20.124 + 2.35 * 5.96) / 2.36) * 3.241 + 2.53 * 5.96";
+        // const str = '5 * 2 - 3 + 5 * 6 / 3 + 6 - 8 + 41'
+        // const str = '5 * 2 - (3 * (5 * 6 / 3 + 6) ) * 12 - 8 + 41'
+        // const str = '0.1+0.2'
+        cusMath.expression(str);
+        const logs = cusMath._logs;
+        console.log("运算公式演变logs=====>", logs);
+        const result = cusMath.end();
+        console.log("resultexpression=====>", result);
+      }
+
+      function calcFun4() {
+        const str = "0.1+0.2";
+        cusMath.expression(str);
+        const logs = cusMath._logs;
+        console.log("运算公式演变logs=====>", logs);
+        const result = cusMath.end();
+        console.log("resultexpression=====>", result);
+      }
+
+      function calcFun5() {
+        const str = "0.3/2";
+        cusMath.expression(str);
+        const logs = cusMath._logs;
+        console.log("运算公式演变logs=====>", logs);
+        const result = cusMath.end();
+        console.log("resultexpression=====>", result);
+      }
+
+      function calcFun61() {
+        const perArr = [];
+        const intArr = [];
+        mockData.forEach((ele) => {
+          const val = convertNumber(ele);
+          if (val) {
+            const arr = String(val)?.split(".");
+            const demicalVal = arr[1] || "";
+            if (demicalVal) {
+              perArr.push(val);
+            } else {
+              intArr.push(val);
+            }
+          }
+        });
+
+        console.log("intArr===>", intArr);
+        console.log("perArr===>", perArr);
+        const calcInstance = cusMath
+          .operation("add", ...intArr)
+          .operation("add", ...perArr);
+        const totalLogs = calcInstance._logs;
+        const totalVal = calcInstance.end();
+        // console.log("totalLogs=====>", totalLogs); // 方法链式调用日志
+        console.log("totalVal=====>", totalVal);
+      }
+
+      function calcFun6() {
+        const calcInstance = cusMath.operation("add", ...mockData);
+        const totalLogs = calcInstance._logs;
+        const totalVal = calcInstance.end();
+        console.log("totalLogs=====>", totalLogs); // 方法链式调用日志
+        console.log("totalVal=====>", totalVal);
+      }
+
+      function convertNumber(num) {
+        const val = Number(num);
+        return Number.isNaN(val) ? 0 : val;
+      }
+
+      function calcFun7() {
+        const mockDataStr = mockData.join("+");
+        cusMath.expression(mockDataStr);
+        const logs = cusMath._logs;
+        console.log("运算公式演变logs=====>", logs);
+        const result = cusMath.end();
+        console.log("运算公式计算结果=====>", result);
+      }
+
+      function calcFun8() {
+        testFun();
+      }
+
+      function loadEvent() {
+        const button1 = document.getElementById("button1");
+        button1.addEventListener("click", calcFun1);
+
+        const button2 = document.getElementById("button2");
+        button2.addEventListener("click", calcFun2);
+
+        const button3 = document.getElementById("button3");
+        button3.addEventListener("click", calcFun3);
+
+        const button4 = document.getElementById("button4");
+        button4.addEventListener("click", calcFun4);
+
+        const button5 = document.getElementById("button5");
+        button5.addEventListener("click", calcFun5);
+
+        const button6 = document.getElementById("button6");
+        button6.addEventListener("click", calcFun6);
+
+        const button7 = document.getElementById("button7");
+        button7.addEventListener("click", calcFun7);
+
+        const button8 = document.getElementById("button8");
+        button8.addEventListener("click", calcFun8);
+      }
+
+      window.onload = function () {
+        loadEvent();
+      };
+    </script>
+  </body>
+</html>

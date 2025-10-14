@@ -225,8 +225,14 @@ python -m venv ruoyienv
 # 激活环境
 ruoyienv\Scripts\activate
 
+# 升级pip
+python -m pip install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/
+
 # 安装项目依赖
-pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+
+# 阿里： https://mirrors.aliyun.com/pypi/simple/
+# 清华： https://pypi.tuna.tsinghua.edu.cn/simple/
 
 # 执行启动命令
 python app.py --env=dev

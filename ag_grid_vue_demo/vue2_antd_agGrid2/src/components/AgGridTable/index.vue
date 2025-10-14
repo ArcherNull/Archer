@@ -77,6 +77,17 @@
           @change="paginationChange"
         />
 
+        
+        <!-- 设置 -->
+        <div v-if="showFieldsSet" class="AgGridTable-pagation-fieldsSet">
+          <SettingPanel
+            :agTableOptions="agTableOptions"
+            :fields-set-id="agGridId"
+            :init-column-defs="agTableOptions.initColumnDefs"
+            @success="setFieldsSuccess"
+          />
+        </div>
+
         <!-- 设置 -->
         <div v-if="showFieldsSet" class="AgGridTable-pagation-fieldsSet">
           <FieldsSet
@@ -212,6 +223,8 @@ import { isObject } from "lodash";
 import MyFieldsTagList from "./components/MyFieldsTagList/index.vue";
 import FieldsSet from "./components/FieldsSet/index.vue";
 import ParsingExcelModel from "./components/ParsingExcelModel/index.vue";
+import SettingPanel from './components/SettingPanel/index.vue'
+
 import { AgGridVue } from "ag-grid-vue";
 import agGridMixins from "./common/agGrid-mixins";
 import { EXCEL } from "./common/EXCEL/index";
@@ -241,6 +254,7 @@ export default {
     MyFieldsTagList,
     FieldsSet,
     ParsingExcelModel,
+    SettingPanel
   },
   mixins: [agGridMixins],
   props: {

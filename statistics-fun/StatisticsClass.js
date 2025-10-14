@@ -1,7 +1,7 @@
 /*
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2023-04-13 17:27:53
- * @LastEditTime: 2025-03-22 16:09:07
+ * @LastEditTime: 2025-09-05 10:46:30
  * @Description:
  */
 
@@ -192,8 +192,6 @@ export class ParentStatisticsClass extends BaseStatisticsClass {
       throw new Error(`参数[type]不满足【${typeList.join("/")}】`);
     }
   }
-
-  // 子进程
 
   // 界面点击事件记录
   recordPageClickEvent(message) {

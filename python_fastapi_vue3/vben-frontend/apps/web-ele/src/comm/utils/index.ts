@@ -4,24 +4,13 @@
  * @LastEditTime: 2025-06-10 14:08:11
  * @Description:
  */
-import type {
-  MessageBoxData,
-  MessageProps,
-  NotificationProps,
-} from 'element-plus';
+import type { MessageBoxData, MessageProps, NotificationProps } from 'element-plus';
 
 import type { FieldNamesProps } from '#/components/ProTable/interface';
 
 import dayjs from 'dayjs';
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus';
-import {
-  cloneDeep,
-  isArray,
-  isEmpty,
-  isFunction,
-  isObject,
-  uniq,
-} from 'lodash-es';
+import { cloneDeep, isArray, isEmpty, isFunction, isObject, uniq } from 'lodash-es';
 
 import { convertNumber, numberRoundUp } from '#/comm/math/index';
 
@@ -117,10 +106,7 @@ export function generateUUID() {
  * @param {object} b 要比较的对象二
  * @returns {boolean} 相同返回 true，反之 false
  */
-export function isObjectValueEqual(
-  a: { [key: string]: any },
-  b: { [key: string]: any },
-) {
+export function isObjectValueEqual(a: { [key: string]: any }, b: { [key: string]: any }) {
   if (!a || !b) return false;
   const aProps = Object.getOwnPropertyNames(a);
   const bProps = Object.getOwnPropertyNames(b);
@@ -169,9 +155,7 @@ export function getTimeState() {
 export function getBrowserLang() {
   const browserLang = navigator?.language;
   let defaultBrowserLang = '';
-  defaultBrowserLang = ['cn', 'zh', 'zh-cn'].includes(browserLang.toLowerCase())
-    ? 'zh'
-    : 'en';
+  defaultBrowserLang = ['cn', 'zh', 'zh-cn'].includes(browserLang.toLowerCase()) ? 'zh' : 'en';
   return defaultBrowserLang;
 }
 
@@ -184,8 +168,7 @@ export function getBrowserLang() {
  */
 export function formatTableColumn(_row: number, _col: number, callValue: any) {
   // 如果当前值为数组，使用 / 拼接（根据需求自定义）
-  if (isArray(callValue))
-    return callValue.length > 0 ? callValue.join(' / ') : '--';
+  if (isArray(callValue)) return callValue.length > 0 ? callValue.join(' / ') : '--';
   return callValue ?? '--';
 }
 
@@ -196,8 +179,7 @@ export function formatTableColumn(_row: number, _col: number, callValue: any) {
  */
 export function formatValue(callValue: any) {
   // 如果当前值为数组，使用 / 拼接（根据需求自定义）
-  if (isArray(callValue))
-    return callValue.length > 0 ? callValue.join(' / ') : '--';
+  if (isArray(callValue)) return callValue.length > 0 ? callValue.join(' / ') : '--';
   return callValue ?? '--';
 }
 
@@ -207,10 +189,7 @@ export function formatValue(callValue: any) {
  * @param {string} prop 当前 prop
  * @returns {*} 1
  */
-export function handleRowAccordingToProp(
-  row: { [key: string]: any },
-  prop: string,
-) {
+export function handleRowAccordingToProp(row: { [key: string]: any }, prop: string) {
   if (!prop.includes('.')) return row[prop] ?? '--';
   prop.split('.').forEach((item) => (row = row[item] ?? '--'));
   return row;
@@ -239,7 +218,7 @@ export function filterEnum(
   callValue: any,
   enumData?: any,
   fieldNames?: FieldNamesProps,
-  type?: 'tag',
+  type?: 'tag'
 ) {
   const value = fieldNames?.value ?? 'value';
   const label = fieldNames?.label ?? 'label';
@@ -249,8 +228,7 @@ export function filterEnum(
     tagType?: any;
   } = {};
   // 判断 enumData 是否为数组
-  if (Array.isArray(enumData))
-    filterData = findItemNested(enumData, callValue, value, children);
+  if (Array.isArray(enumData)) filterData = findItemNested(enumData, callValue, value, children);
   // 判断是否输出的结果为 tag 类型
   if (type === 'tag') {
     return filterData?.tagType || '';
@@ -262,17 +240,11 @@ export function filterEnum(
 /**
  * @description 递归查找 callValue 对应的 enum 值
  */
-export function findItemNested(
-  enumData: any,
-  callValue: any,
-  value: string,
-  children: string,
-) {
+export function findItemNested(enumData: any, callValue: any, value: string, children: string) {
   return enumData.reduce((accumulator: any, current: any) => {
     if (accumulator) return accumulator;
     if (current[value] === callValue) return current;
-    if (current[children])
-      return findItemNested(current[children], callValue, value, children);
+    if (current[children]) return findItemNested(current[children], callValue, value, children);
   }, null);
 }
 
@@ -392,7 +364,7 @@ type TreeChangeOptionsType = {
 export function changeTreeDataProp(
   treeData: any[],
   options: TreeChangeOptionsType = {},
-  gOprions: TreeChangeOptionsType = {},
+  gOprions: TreeChangeOptionsType = {}
 ): any[] {
   const defaultOptions = {
     label: options?.label || 'label',
@@ -444,7 +416,7 @@ export function changeTreeDataProp(
 export function sepcChangeTreeDataProp(
   treeData: any[],
   options: TreeChangeOptionsType = {},
-  gOprions: TreeChangeOptionsType = {},
+  gOprions: TreeChangeOptionsType = {}
 ): any[] {
   const defaultOptions = {
     label: options?.label || 'label',
@@ -458,12 +430,7 @@ export function sepcChangeTreeDataProp(
     children: gOprions?.children || 'children',
   };
   const { label, value, children } = defaultOptions;
-  const {
-    cusId,
-    label: gLabel,
-    value: gValue,
-    children: gChildren,
-  } = defaultGOptions;
+  const { cusId, label: gLabel, value: gValue, children: gChildren } = defaultGOptions;
 
   const recFun = (tData: any[], pItem?: any) => {
     let nTData = [];
@@ -501,9 +468,7 @@ export function getViewVuePathList() {
   const pageObj = import.meta.glob('../../views/**/index.vue', {
     eager: true,
   });
-  const list = Object.keys(pageObj).map((item) =>
-    item.replaceAll('../../', '/'),
-  );
+  const list = Object.keys(pageObj).map((item) => item.replaceAll('../../', '/'));
   return list;
 }
 
@@ -626,7 +591,7 @@ export function getTreeObject(
   array: any[],
   key: any,
   value: any,
-  children: string = 'children',
+  children: string = 'children'
 ): any {
   let o;
   array.some(function iter(a) {
@@ -644,10 +609,7 @@ export function getTreeObject(
  * @description: 树转数组
  * @return {*}
  */
-export function convertTreeDataToArray(
-  treeData: any[],
-  options: TreeChangeOptionsType = {},
-): any {
+export function convertTreeDataToArray(treeData: any[], options: TreeChangeOptionsType = {}): any {
   const result: any[] = [];
   const lastLevelData: any[] = [];
   const lastLevelIdData: any[] = [];
@@ -810,17 +772,12 @@ export function getCurDay(query: string) {
   const datetime = new Date();
   const year = datetime.getFullYear();
   const month =
-    datetime.getMonth() + 1 < 10
-      ? `0${datetime.getMonth() + 1}`
-      : datetime.getMonth() + 1;
+    datetime.getMonth() + 1 < 10 ? `0${datetime.getMonth() + 1}` : datetime.getMonth() + 1;
   let date = '';
   if (query) {
     date = query;
   } else {
-    date =
-      datetime.getDate() < 10
-        ? `0${datetime.getDate()}`
-        : datetime.getDate().toString();
+    date = datetime.getDate() < 10 ? `0${datetime.getDate()}` : datetime.getDate().toString();
   }
   return `${year}-${month}-${date}`;
 }
@@ -940,10 +897,7 @@ export function calcSum(list: any[], field: string | Function): number {
   let sumVal: number = 0;
   if (field) {
     list.forEach((ele) => {
-      const val =
-        typeof field === 'function'
-          ? field(ele)
-          : getNestedProperty(ele, field);
+      const val = typeof field === 'function' ? field(ele) : getNestedProperty(ele, field);
       sumVal += convertNumber(val);
     });
   }
@@ -1040,8 +994,7 @@ export function getTableAgSummaries(options: any): any[] {
             sums[property] = calcSum(data, property);
           } else if (specColumns.includes(property)) {
             const sFun = specSasColumns[property];
-            sums[property] =
-              typeof sFun === 'function' ? sFun(data, property) : '';
+            sums[property] = typeof sFun === 'function' ? sFun(data, property) : '';
           }
         }
       }
@@ -1055,7 +1008,7 @@ export function getTableAgSummaries(options: any): any[] {
 export const showMessage = (
   obj: MessageProps | string,
   type?: MessageProps['type'],
-  duration?: MessageProps['duration'],
+  duration?: MessageProps['duration']
 ) => {
   let msgObj = {
     duration: duration || 2000,
@@ -1075,7 +1028,7 @@ export const showNotification = (
   obj: NotificationProps | string,
   type?: NotificationProps['type'],
   title?: NotificationProps['title'],
-  duration?: NotificationProps['duration'],
+  duration?: NotificationProps['duration']
 ) => {
   let msgObj = {
     duration: duration || 2000,
@@ -1095,10 +1048,7 @@ export const showNotification = (
  * @description: 确认弹窗
  * @return {*}
  */
-export function showConfirm(
-  obj: MessageProps,
-  callback?: (res: MessageBoxData) => void,
-) {
+export function showConfirm(obj: MessageProps, callback?: (res: MessageBoxData) => void) {
   const msgObj = {
     cancelButtonText: '取消',
     confirmButtonText: '确定',
@@ -1120,10 +1070,7 @@ export function showConfirm(
  * @description: 提交内容弹窗
  * @return {*}
  */
-export function showPrompt(
-  obj: MessageProps,
-  callback?: (res: MessageBoxData) => void,
-) {
+export function showPrompt(obj: MessageProps, callback?: (res: MessageBoxData) => void) {
   const msgObj = {
     cancelButtonText: '取消',
     confirmButtonText: '确定',
@@ -1174,7 +1121,7 @@ type TreeDataItem = {
  */
 export function disabledTreeData(
   treeData: TreeDataItem[],
-  diusabledIdList: (number | string)[],
+  diusabledIdList: (number | string)[]
 ): TreeDataItem[] {
   if (isNotEmptyArr(diusabledIdList)) {
     const recFun = (tData: any) => {
