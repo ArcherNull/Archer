@@ -1,0 +1,1 @@
+(this["webpackJsonp"]=this["webpackJsonp"]||[]).push([["chunk-2d0a3574"],{"0284":function(e,t,a){"use strict";a.r(t),t["default"]={beforeRouteEnter(e,t,a){t.meta["__stamp-"+t.path]=Date.now(),a(e=>e.$router.replace({path:t.fullPath,meta:t.meta}))},render:e=>e()}}}]);

@@ -1,0 +1,46 @@
+菜单：【财务中心应付管理-应付台账】，操作：【承运方tab-生成账单btn】
+业务逻辑：
+
+*【基础数据校验】每条数据都需满足 【项目部ID [prodivisionId] / 项目部名称 [prodivisionName] / 运输类型 [transitType] / 合同主体ID [mainId] / 合同主体 [invoiceMain] / 承运商类型 [supplierType]】有值
+不存在，则数据错误
+
+1）单条账单数据， 满足【基础数据校验】直接通过
+
+2）多体合并条数
+
+2.1）其中某条数据不满足【基础数据校验】，不通过
+
+2.2）其中某条数据满足【基础数据校验】
+
+*【多条合并条件】：
+【条件一】：【承运商类型 supplierType】，先对第一条账单数据分组【承运商，车队】/【合同车，临时车】，
+当此账单满足其中一组时，后续的账单数据，也同样满足第一条的分组
+
+【条件二】：第一条账单【付款平台 platformName ， 付款平台ID latformId 】同时存在或不存在时， 
+
+**条件二 ，同时存在，后续所有账单数据需与第一条账单数据一致，则通过
+分组为【承运商，车队】
+【 运输类型 [transitType] / 合同主体ID [mainId] / 合同主体 [invoiceMain] / 付款平台 [platformName] / 付款平台ID [platformId] / 承运商名称 [supplierName] / 承运商id [supplierId]】一致，项目开关控制【项目部ID [prodivisionId] / 项目部名称 [prodivisionName]】是否一致
+
+分组为【合同车，临时车】
+【 运输类型 [transitType] / 合同主体ID [mainId] / 合同主体 [invoiceMain] / 付款平台 [platformName] / 付款平台ID [platformId] / 司机名称[driverName1] / 收款开户人[userName] / 收款开户银行[bankName] / 收款银行账号[bankName]   】一致，项目开关控制【项目部ID [prodivisionId] / 项目部名称 [prodivisionName]】是否一致
+
+
+
+**条件二 ，同时不存在，后续所有账单数据需与第一条账单数据一致，则通过
+分组为【承运商，车队】
+【 运输类型 [transitType] / 合同主体ID [mainId] / 合同主体 [invoiceMain]  / 承运商名称 [supplierName] / 承运商id [supplierId]】一致，项目开关控制【项目部ID [prodivisionId] / 项目部名称 [prodivisionName]】是否一致
+
+分组为【合同车，临时车】
+【 运输类型 [transitType] / 合同主体ID [mainId] / 合同主体 [invoiceMain] / 司机名称[driverName1] / 收款开户人[userName] / 收款开户银行[bankName] / 收款银行账号[bankName]   】一致，项目开关控制【项目部ID [prodivisionId] / 项目部名称 [prodivisionName]】是否一致
+
+
+2.2.1）当合并账单条数大于9条时，合并失败，需要导出【错误excel】，以便准确告诉用户那条数据出错了，为什么出错
+
+2.2.2）当合并账单条数大于1条，并且小于等于9条时，
+
+
+
+
+
+

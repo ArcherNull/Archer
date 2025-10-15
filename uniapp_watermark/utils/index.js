@@ -208,9 +208,11 @@ export function getLocation() {
 /**
  * @description: 微信小程序的选择附近的地址
  */
-export function chooseLocation() {
+export function chooseLocation(options) {
 	return new Promise((resolve, reject) => {
 		uni.chooseLocation({
+			latitude: options.latitude,
+            longitude: options.longitude,
 			success: function(res) {
 				resolve(res)
 			},
