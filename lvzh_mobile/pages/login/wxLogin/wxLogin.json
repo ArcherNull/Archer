@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "微信一键登录",
+  "usingComponents": {
+    "popMask" : "../../../components/popMask/popMask"
+  }
+}

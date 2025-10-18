@@ -1,0 +1,22 @@
+<view class="upLoad grid3">
+
+    <!-- 展示已上传图片 -->
+    <view class="upLoad_1" wx:for="{{ imgList }}" wx:key='index'>
+        <image src="{{item}}" mode="aspectFill" bindtap="previewImg" mode="aspectFill"></image>
+        <!-- 删除图片 -->
+        <view class="delete" bindtap="deleteImage" data-index="{{index}}">
+            <image src="/static/login-del.png" mode="widthFix"></image>
+        </view>
+    </view>
+
+    <!-- 上传图片 -->
+    <view class="upLoad_2 flex-column-center-center" wx:if="{{ imgList.length < limitNum }}" bindtap="chooseImage">
+        <view class="upLoad_2_1">
+            <image src="/static/add.png" mode="widthFix"></image>
+        </view>
+        <view class="upLoad_2_2">上传图片</view>
+    </view>
+</view>
+
+<!-- 水印转换 -->
+<canvas class="watermark" canvas-id="watermarkCanvas" style="width:{{windowWidth}}px; height:{{windowHeight}}px;"></canvas>

@@ -1,0 +1,111 @@
+<!-- 底部选择按钮 -->
+<view class="content1-position">
+  <view class="content1">
+    <view class="content1-box flex-box-between">
+      <view class="font-14-thin content1-box1">
+        <!-- checkbox -->
+        <checkBox1 type="circle" class="checkbox-position" checkBool="{{chooseAll}}" bindclickCheck="clickCheck">
+        </checkBox1>
+        全选
+      </view>
+      <view class="font-14-thin content1-box1" bindtap="changeDel">{{delDom?'取消':'管理'}}</view>
+    </view>
+  </view>
+</view>
+
+
+<!-- 订单列表 -->
+<view class="shopCar-list">
+  <view class="list-position" wx:for="{{shopCarList}}" wx:key="index">
+    <view class="content2 margin-top">
+      <view class="list-box flex-box-between-start">
+        <view class="list-box1">
+          <image src="{{item.img}}" class="img-buy-css"></image>
+        </view>
+        <view class="list-box2 flex-column-between">
+          <view class="font-14-thin list-main1 hidden-text2">{{item.title}}</view>
+          <view class="list-main2 flex-box-start" bindtap="openPop">
+            <view class="font-14-thin list-main2-box1">
+              请选择规格
+            </view>
+            <image class="list-img-css" src="../../../../static/down.png"></image>
+          </view>
+          <!-- 价格 -->
+          <view class="list-main3">
+            <span wx:if="{{item.choose}}" class="font-12-thin price-css1">￥<span
+                class="font-18-blod  price-css1">28.8</span></span>
+            <span wx:else class="font-12-thin rule-text">请选择商品规格</span>
+          </view>
+        </view>
+      </view>
+      <view class="numBox-css">
+        <numBox wx:if="{{item.choose}}" inputValue="{{item.number}}"></numBox>
+        <view class="font-14-thin choose-btn" wx:else>选择</view>
+      </view>
+    </view>
+    <!-- checkbox -->
+    <checkBox1 type="circle" class="checkbox-position" data-index="{{index}}" bindclickCheck="clickCheck1"
+      checkBool="{{item.active}}"></checkBox1>
+  </view>
+</view>
+
+
+<!-- 底部操作按钮 -->
+<view class="content3">
+  <view class="content3-bmainox padding flex-box-between">
+    <view class="content3-box1">
+      <span wx:if="{{!delDom}}" class="font-14-thin price-heji">合计：
+        <span class="font-12-thin price-css1">￥<span class="font-20-blod  price-css1">28.8</span></span></span>
+    </view>
+    <view class="font-16-thin padding-btn {{delDom?'del-css':'content3-box2'}}" bindtap="submit">
+      {{!delDom?("去结算(" + 1 + ")"):"删除"}}
+    </view>
+  </view>
+</view>
+
+<!-- 弹窗 -->
+<pop wx:if="{{openPop}}" search="{{search}}" bindclosePop="openPop" bindsibmit="submitPop">
+  <block>
+    <view class="padding footer-position ">
+      <!-- 订单列表 -->
+      <view class="flex-box-start-start list-pop-padding">
+        <view class="list-box1">
+          <image src="../../../../static/checkbox1.png" class="img-pop-css"></image>
+        </view>
+        <view class="list-pop-box2 ">
+          <!-- 价格 -->
+          <view class="list-pop-main3">
+            <span class="font-12-thin price-css1">￥<span class="font-20-blod  price-css1">28.8</span></span>
+          </view>
+          <view class="font-12-thin list-pop-main2 price-heji">
+            库存2000袋
+          </view>
+          <view class="font-12-thin list-pop-rlue list-pop-main2">
+            {{(rlueList[0].choose !='' || rlueList[1].choose !='')?('已选择：' + rlueList[0].choose + rlueList[1].choose):'请选择规格和编号'}}
+          </view>
+        </view>
+      </view>
+
+      <!-- 规格选择 -->
+      <view class="footer-box2">
+        <view class="rlue-box">
+          <view class="rlue-item" wx:for="{{rlueList}}" wx:key="index">
+            <view class="font-14-thin rule-text">{{item.name}}</view>
+            <view class="flex-box-start rlue-item-box flex-warp">
+              <view class="font-14-thin rule-item-box pop-maegin-left {{curr.active?'rlue-item-arr1':'rlue-item-arr'}}"
+                wx:for="{{item.rlues}}" bindtap="chooseRlue" wx:key="index" wx:for-index="cIndex" wx:for-item="curr"
+                data-item="{{curr}}" data-index="{{cIndex}}" data-pIndex="{{index}}">{{curr.text}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 关闭弹窗 -->
+      <view class="close-Position">
+        <view class="close-pop" bindtap="openPop">
+          <image class="img-close-css" src="../../../../static/login-del.png"></image>
+        </view>
+      </view>
+    </view>
+  </block>
+</pop>

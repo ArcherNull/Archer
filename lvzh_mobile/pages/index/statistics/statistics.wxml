@@ -1,0 +1,90 @@
+    <view class="content1">
+    	<view class="content1-box1  padding flex-box-start">
+    		<view class="content1-box1-main1 flex-box-start" bindtap="openPop">
+    			<view class="font-14-thin content1-bmain1 ">门店分类</view>
+    			<view class="content1-bmain2">
+    				<image src="../../../static/device_1.png" class="img-css1"></image>
+    			</view>
+    		</view>
+    		<view class="content1-box1-main2">
+    			<search type="static" value="{{value}}" bindsearch="search" placeholder="请输入设备编号或备注"></search>
+    		</view>
+    	</view>
+    	<view class="content1-box2">
+    		<nav type="statistic" tags="{{tagsList}}" tagIndex="{{tagIndex}}" bindclickTag="clickTag">
+    			<view class="nav-content margin-top flex-box-between">
+    				<view class="nav-box1 flex-box-start">
+    					<view class="nav-box1-box1 ">
+    						<image src="../../../static/forward.png" class="img-css2"></image>
+    					</view>
+    					<view class="font-12-thin nav-box1-box1 " bindtap="opeartion" data-index="0">前{{dayText}}</view>
+    				</view>
+    				<view class="font-12-thin nav-box2">{{today}}</view>
+    				<view class="nav-box1 flex-box-start">
+    					<view class="font-12-thin nav-box1-box2 " bindtap="opeartion" data-index="1">后{{dayText}}</view>
+    					<view class="nav-box1-box1 ">
+    						<image src="../../../static/forward1.png" class="img-css2"></image>
+    					</view>
+    				</view>
+    			</view>
+    		</nav>
+    	</view>
+    </view>
+    <view class="content2 flex-centent-box margin-top">
+    	<view class="content2-box1">
+    		营收总额(元)
+    	</view>
+    	<view class="content2-box2">2187.90</view>
+    </view>
+    <view class="content3 margin-top">
+    	<view class="content3-box1 flex-box-start padding">
+    		<view class="content3-box1-text1"></view>
+    		<view class="font-16-blod content3-box1-text2">阳江人民医院</view>
+    		<view class="content3-box1-text3 content3-box1-text2">
+    			<view class="content3-box1-tmain">6台</view>
+    		</view>
+    	</view>
+    	<view class="content3-box2 flex-box-between">
+    		<view class="content3-box2-main1 flex-box-start">
+    			<view class="font-12-thin content3-box2-bmain1">营收总额：¥</view>
+    			<view class="content3-box2-bmain2">395.80</view>
+    		</view>
+    		<view class="content3-box2-main2 flex-box-start">
+    			<view class="font-12-thin content3-box2-bmain1">成交笔数：</view>
+    			<view class="content3-box2-bmain2">39<text class="font-12-thin content3-box2-bmain1">(笔)</text></view>
+    		</view>
+    	</view>
+    	<view class=" flex-box-start  content3-flexbox">
+    		<view class="content3-boxain  flex-centent-box" wx:for="{{proDetail}}" wx:key="index">
+    			<view class="font-16-blod">{{item.num}}</view>
+    			<view class="content3-box1-tmain content3-boxmain2">{{item.name}}</view>
+    		</view>
+    	</view>
+
+    	<view class="content3-box4 margin-top flex-box-center">
+    		<view class="flex-box-center content3-box1-text3 content-btn" bindtap="clickJump" data-index="0">
+    			<view class="  font-14-thin btn-content">门店收益趋势</view>
+    		</view>
+    	</view>
+    </view>
+
+    <view class="position-box2">
+    	<view class="footer-btn flex-box-between">
+    		<view class="font-16-thin footer-btn1 flex-box-center" bindtap="clickBtn" data-index="0">返回首页</view>
+    		<view class="font-16-thin footer-btn1 flex-box-center" bindtap="clickBtn" data-index="1">数据分析</view>
+    	</view>
+		</view>
+		
+		<!-- 弹窗pop -->
+		<pop wx:if="{{openPop}}" search="{{search}}" bindclosePop="openPop">
+			<!-- 标题 -->
+			<view class="font-16-blod footer-box-box1 ">
+				门店分类选择
+			</view>
+			<view class="footer-box2">
+				<view class="footer-box2-main flex-box-between padding-box" wx:for="{{typeList}}" wx:key='index' bindtap="clickSearch" data-index="{{index}}">
+					<view class="font-14-thin footer-main2-title1">{{item.name}}</view>
+					<checkBox1 checkBool="{{item.active}}" type="circle"></checkBox1>
+				</view>
+			</view>
+		</pop>

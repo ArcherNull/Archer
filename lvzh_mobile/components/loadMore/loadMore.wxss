@@ -1,0 +1,33 @@
+.loadMore {
+  height: 80rpx;
+  color: #999999;
+  font-size: 24rpx;
+}
+
+/* 旋转loading */
+.s-pull-loading-icon {
+  width: 30rpx;
+  height: 30rpx;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 50%;
+  border: 2rpx solid #1575F6;
+  border-bottom-color: transparent;
+  box-sizing: border-box;
+  margin-right: 16rpx;
+}
+
+/* 旋转动画 */
+.s-pull-loading-rotate {
+  animation: s-pull-loading-rotate 0.6s linear infinite;
+}
+
+@keyframes s-pull-loading-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}

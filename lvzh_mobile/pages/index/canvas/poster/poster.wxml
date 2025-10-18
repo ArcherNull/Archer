@@ -1,0 +1,40 @@
+<view class="bg"></view>
+<view class="PageCen">
+    <view class="tit">海报分享</view>
+    <view class="flex-box-center">
+        <view class="yellowLine"></view>
+    </view>
+    <view class="main">
+        <swiper class="gundong" circular bindchange="changeHB" previous-margin="100rpx" next-margin="100rpx">
+            <block wx:for="{{ shareImgs }}" wx:for-item="item" wx:key="index">
+                <swiper-item class="gundongItem">
+                    <view class="Item {{currentIndex == index ? '' : 'smItem'}}">
+                        <!-- 海报分享 -->
+                        <view class="shareImg">
+                            <image style="width:100%;height:100%" src="{{item.img_url}}" />
+                        </view>
+                        <!-- 二维码 -->
+                        <view class="code">
+                            <view class="img">
+                                <image style="width: 100rpx;height:100rpx;" class="{{currentIndex == index ? '' : 'smCode'}}" src="{{item.code_url}}" />
+                            </view>
+                            <view class="code_txt">
+                                <text>长按扫码</text>
+                                <text style="font-weight:bold">J1ay ' blogs</text>
+                                <text style="font-size: 14rpx;color: #999999;line-height: 20rpx;">每一個想要學習的念頭，那有可能是未來的你在向你求救。</text>
+                            </view>
+                        </view>
+                    </view>
+                </swiper-item>
+            </block>
+        </swiper>
+    </view>
+
+    <!-- 保存按钮 -->
+    <button class="btn green" bindtap="saveHaiBao">
+        <view class="btnTxt">保存海报</view>
+    </button>
+</view>
+
+<!-- canvas绘制海报 -->
+<canvas type="2d" class="hide" id="share"></canvas>

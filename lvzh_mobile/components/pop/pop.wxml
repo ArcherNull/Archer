@@ -1,0 +1,15 @@
+<!--  -->
+<view class="position-box">
+	<view class="pop-bg" bindtap="closePop"></view>
+	<view class="footer-bg">
+		<search wx:if="{{search}}" value="{{value}}" bindsearch="search"></search>
+		<slot></slot>
+		<view class="footer-bottom">
+			<view class="footer-bottom-bg"></view>
+			<view class="footer-content">
+			<button wx:if="{{type == 'order'}}" style="width:33%;padding:20rpx 0;background: #F5F6F7;color: #626869;" bindtap="clear">取消</button>
+				<button style="width:{{type == 'order'?'52%':'90%'}};padding:20rpx 0;background: #1575F6;color:#ffffff;" bindtap="submit">确定</button>
+			</view>
+		</view>
+	</view>
+</view>

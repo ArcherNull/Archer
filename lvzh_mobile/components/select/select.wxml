@@ -1,0 +1,15 @@
+<view class="com-selectBox {{css =='detail'?'detail_css2':''}}">
+	<view class="com-sContent {{css =='detail'?'detail_css':''}} flex-box-between" bindtap='selectToggle'>
+		<view class="com-sTxt">{{nowText}}</view>
+		<image src='../../static/down.png' class="com-sImg  {{css =='detail'?'detail_css1':''}}"
+			animation="{{animationData}}"></image>
+	</view>
+	<view class='com-sList' wx:if="{{selectShow}}">
+		<view wx:for="{{propArray}}" data-index="{{index}}" wx:key='index' class='com-sItem' bindtap="setText">
+			<!-- 默认下拉选项 -->
+			<view wx:if="{{type == 'text'}}">{{item.text}}</view>
+		</view>
+		<!-- 关闭下拉框的透明遮罩层 -->
+		<view class="close-select" bindtap='selectToggle'></view>
+	</view>
+</view>

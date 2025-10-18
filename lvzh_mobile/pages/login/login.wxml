@@ -1,0 +1,152 @@
+<view class="header-bg"></view>
+<view class="content">
+	<view class="content-box1 flex-box-center">
+		<image src="../../static/userImg.png" style="width:168rpx;height:168rpx"></image>
+	</view>
+	<view class="content-box2 flex-box-center">
+		<view class=" content-box2-text ">XX系统管理后台</view>
+	</view>
+	<view class="content-box3">
+		<tags tags="{{tags}}" bindclickTag="clickTag">
+			<!-- 登录界面 -->
+			<block wx:if="{{tags[0].active}}">
+				<view class="content3-box2 margin-top flex-box-start">
+					<view class="content3-box2-text1">
+						<image class="image-box" src="../../static/login-my.png"></image>
+					</view>
+					<view class="content3-box2-text2">
+						<input class="input-css" type="number" value="{{myValue}}" bindinput="inputMyValue" placeholder="请输入登录账号"
+							placeholder-class="placeholder-color" placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="input-box1 flex-box-center" wx:if="{{myValue.length != 0?true:false}}" data-index="0" catchtap="clickImg">
+						<image 
+							class="input-img" src="../../static/login-del.png"></image>
+					</view>
+				</view>
+				<view class="content3-box2 flex-box-start margin">
+					<view class="content3-box2-text1">
+						<image class="image-box" src="../../static/login-pass.png"></image>
+					</view>
+					<view class="content3-box2-text2">
+						<input class="input-css" value="{{myPassword}}" bindinput="inputMyPassword" type="{{isPassword}}"
+							placeholder="请输入登录密码" placeholder-class="placeholder-color" placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="password-box">
+						<view class="input-box1 flex-box-center" data-index="1" wx:if="{{(myPassword.length != 0?true:false)&&!seeBool}}" catchtap="clickImg">
+							<image class="input-img1 "
+								src="../../static/login-nosee.png"></image>
+						</view>
+						<view class="input-box1 flex-box-center" data-index="1"  wx:if="{{seeBool}}" catchtap="clickImg">
+							<image class="input-img2 " data-index="2" catchtap="clickImg"
+								src="../../static/login-see.png"></image>
+						</view>
+					</view>
+				</view>
+				<view class="content3-box4 flex-box-between">
+					<view class="content3-box2-text1">
+						<checkBox1 checkBool="{{checkBool}}" bindclickCheck="clickCheck"></checkBox1>
+					</view>
+					<view class="content3-box2-title" bindtap="jumpForget">忘记密码？</view>
+				</view>
+				<view class="content3-box5">
+					<button style="background: #1575F6;color:#ffffff;width:100%;margin:40rpx 0;"
+						bindtap="clickLogin">立即登录</button>
+				</view>
+			</block>
+			<!-- 注册 -->
+			<block wx:else>
+				<view class="content3-box2 margin-top flex-box-start">
+					<view class="content3-res1 font-14-thin">
+						姓名
+					</view>
+					<view class="content3-res2 content3-box2-text2">
+						<input class="input-res" type="text" value="{{myName}}" bindinput="inputMyName" placeholder="请输入汉字或字母"
+							placeholder-class="placeholder-color" placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="content3-res3">
+						<image wx:if="{{myName.length != 0?true:false}}" data-index="3" catchtap="clickImg"
+							class="input-img margin-left" src="../../static/login-del.png"></image>
+					</view>
+				</view>
+				<view class="content3-box2 margin-top1 flex-box-start">
+					<view class="content3-res1 font-14-thin">
+						电话
+					</view>
+					<view class="content3-res2 content3-box2-text2">
+						<input class="input-res" type="number" maxlength="11" value="{{myTel}}" bindinput="inputMyTel"
+							placeholder="请输入11位的数字" placeholder-class="placeholder-color"
+							placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="content3-res3">
+						<image wx:if="{{myTel.length != 0?true:false}}" data-index="4" catchtap="clickImg"
+							class="input-img margin-left" src="../../static/login-del.png"></image>
+					</view>
+				</view>
+				<view class="content3-box2 margin-top1 flex-box-start">
+					<view class="content3-res1 font-14-thin">
+						短信验证码
+					</view>
+					<view class="content3-res2-info content3-box2-text2">
+						<input class="input-res" type="number" maxlength="6" value="{{myInfo}}" bindinput="inputMyInfo"
+							placeholder="请输入短信验证码" placeholder-class="placeholder-color"
+							placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="content3-res3-info ">
+						<view wx:if="{{sendInfo}}" class="info-title flex-box-end">获取短信验证码</view>
+						<view wx:else class="info-title">60秒后可重发</view>
+					</view>
+				</view>
+
+				<view class="content3-box2 margin-top1 flex-box-start">
+					<view class="content3-res1 font-14-thin">
+						登录密码
+					</view>
+					<view class="content3-res2 content3-box2-text2">
+						<input class="input-res" type="number" maxlength="12" value="{{myPassword}}" bindinput="inputMyPassword"
+							placeholder="请输入1-12位的数字和字母" placeholder-class="placeholder-color"
+							placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="content3-res3">
+						<image wx:if="{{myPassword.length != 0?true:false}}" data-index="5" catchtap="clickImg"
+							class="input-img margin-left" src="../../static/login-del.png"></image>
+					</view>
+				</view>
+				<view class="content3-box2 flex-box-start margin-top1 padding-box">
+					<view class="content3-res1 font-14-thin">
+						行业类别
+					</view>
+					<view class="content3-res2-role content3-box2-text2">
+						<select propArray="{{arrayList1}}" nowText="{{arrayList1[0].text}}"></select>
+					</view>
+
+				</view>
+				<view class="content3-box2 flex-box-start  padding-box margin-top1">
+					<view class="content3-res1 font-14-thin">
+						账号角色
+					</view>
+					<view class="content3-res2-role content3-box2-text2">
+						<select propArray="{{arrayList2}}" nowText="{{arrayList2[0].text}}"></select>
+					</view>
+				</view>
+				<view class="content3-box2 margin-top1 flex-box-start">
+					<view class="content3-res1 font-14-thin">
+						推荐人电话
+					</view>
+					<view class="content3-res2 content3-box2-text2">
+						<input class="input-res" type="number" value="{{myPerTel}}" bindinput="inputMyPerTel" placeholder="请输入汉字或字母"
+							placeholder-class="placeholder-color" placeholder-style="placeholder-class"></input>
+					</view>
+					<view class="content3-res3">
+						<image wx:if="{{myPerTel.length != 0?true:false}}" data-index="6" catchtap="clickImg"
+							class="input-img margin-left" src="../../static/login-del.png"></image>
+					</view>
+				</view>
+				<view class="content3-box5">
+					<button style="background: #1575F6;color:#ffffff;width:100%;margin:40rpx 0;"
+						bindtap="clickSubmit">提交审核</button>
+				</view>
+			</block>
+		</tags>
+		<!-- 蒙层提示 -->
+	</view>
+</view>

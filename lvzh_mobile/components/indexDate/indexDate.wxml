@@ -1,0 +1,12 @@
+		<!-- 日期选择弹窗 -->
+		<viwe class="indexDate" wx:if="{{showDom}}">
+    <view class="index-bg">
+    	<image src="./../../static/index_bg.png" class="img-css4"></image>
+    	<view class="position-scroll">
+    		<scroll-view class="scroll-css" scroll-y="true">
+    			<view wx:for="{{tagsList}}" wx:key="index" data-item="{{item}}" data-index='{{index}}' bindtap="clickTag" class="scroll-item {{index == clickIndex?'font-16-blod active':''}}">{{item.text}}</view>
+    		</scroll-view>
+			</view>
+		</view>
+	<!-- 	<view class="close_bg" bindtap="closeIndexDate"></view> -->
+	</viwe>

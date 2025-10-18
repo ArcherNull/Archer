@@ -1,0 +1,71 @@
+.content1 {
+  padding: 28rpx 32rpx;
+  background: #ffffff;
+  box-shadow: 0px 2rpx 10rpx 0px rgba(0, 0, 0, 0.1);
+}
+
+.content1-box2 {
+  flex: 7;
+}
+
+.head-text1 {
+  color: #333333;
+}
+
+.content1-boxtexxt1 {
+  width: 80%;
+}
+
+.head-text2 {
+  color: #969696;
+}
+
+.goto-box {
+  flex: 1.5;
+  display: flex;
+  justify-content: flex-end;
+  color: #BEBEBE;
+}
+
+.address-tag {
+  padding: 2rpx 16rpx;
+  background: #E2FFEB;
+  font-size: 20rpx;
+  color: #28CA5E;
+}
+
+.content1-position {
+  position: relative;
+}
+
+.address-tag {
+  position: absolute;
+  top: 32rpx;
+  left: 140rpx;
+  z-index: 10;
+}
+
+.btn-position {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 20rpx 32rpx;
+}
+
+.btn-img-css {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.btn-text {
+  margin-left: 20rpx;
+  color: #1575F6;
+}
+
+.btn-flex-box {
+  padding: 22rpx 0;
+  border-radius: 4rpx;
+  border: 2rpx solid #1575F6;
+}

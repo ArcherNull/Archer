@@ -1,0 +1,24 @@
+{
+  "name": "my-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "bin": {
+    "my": "bin/my",
+    "my-add": "bin/my-add",
+    "my-delete": "bin/my-delete",
+    "my-list": "bin/my-list",
+    "my-init": "bin/my-init"
+  },
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "commander": "^2.19.0",
+    "download-git-repo": "^1.1.0",
+    "inquirer": "^6.2.2",
+    "minimist": "^1.2.7",
+    "ora": "^3.2.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

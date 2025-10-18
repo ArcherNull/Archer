@@ -1,0 +1,16 @@
+<view class="bigTitle padding">
+  图形验证码
+</view>
+
+<headTitle title='前端验证码'>
+  <view slot='titleRight'>
+    <view class="outPutBtn" bindtap="checkValidate">确定</view>
+  </view>
+  <view class="paddingLeftRight16 paddingBtm16" slot='content'>
+    <inputBox inputTitle='验证码' value="{{ validateCode }}" showRight="slot" placeholder='请输入验证码' bindinputVal='inputValFun' data-index='0'>
+      <view slot='right'>
+        <validateCode></validateCode>
+      </view>
+    </inputBox>
+  </view>
+</headTitle>

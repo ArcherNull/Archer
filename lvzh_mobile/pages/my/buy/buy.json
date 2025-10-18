@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "采购",
+  "usingComponents": {
+    "swiper" : "../../../components/swiper/swiper",
+    "numBox" : "../../../components/numBox/numBox"
+  }
+}

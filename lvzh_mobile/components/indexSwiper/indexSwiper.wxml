@@ -1,0 +1,9 @@
+		<!-- 轮播消息 -->
+    <view class="content2 flex-box-start">
+    	<view class="content2-box1">
+    		<image src="../../static/index_2.png" class="img-css2"></image>
+    	</view>
+    	<swiper class="swiper-box flex-box-start" interval="3000" autoplay='true' vertical='true' >
+				<swiper-item class="hidden-text1 content2-box2" wx:for="{{indexSwiper}}" wx:key='index' bindtap="clickSwiper" data-item="{{item}}">{{item[languageType]}}</swiper-item>
+			</swiper>
+    </view>

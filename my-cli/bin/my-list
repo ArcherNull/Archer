@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+
+const templateList = require(`${__dirname}/../template`)
+console.log(templateList)

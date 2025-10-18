@@ -1,0 +1,124 @@
+    <view class="content-bg header-bg"></view>
+    <view class="content1">
+    	<view class="content1-box1 flex-box-between">
+    		<view class="font-18-blod content1-box1-text1">GBCB-04C</view>
+    		<view class="content1-box1-text2">
+    			<image class="img-css" src="../../../../static/detail_1.png"></image>
+    		</view>
+    	</view>
+    	<view class="content1-box2 margin-top flex-box-start">
+    		<view class="font-14-thin content1-box2-text1 color">门店：江苏儿童医院</view>
+    		<view class="font-14-thin content1-box2-text2 color">标签：医院</view>
+    	</view>
+    	<view class="content1-box3">
+    		<view class="content1-box3-text1 flex-box-start">
+    			<view class="content1-box3-main1">
+    				<image class="img-css2" src="../../../../static/detail_7.png"></image>
+    			</view>
+    			<view class="content1-box3-main2">江苏省常州市丁香路16号(妇幼保健院一楼急诊)</view>
+    		</view>
+    		<view class="content1-box3-text1 flex-box-start">
+    			<view class=" flex-box-start">
+    				<view class="content1-box3-main1">
+    					<image class="img-css3" src="../../../../static/detail_2.png"></image>
+    				</view>
+    				<view class="content1-box3-main2">投放时间：2020-08-16</view>
+    			</view>
+    			<view class="content1-box3-text content1-box3-main2">
+    				设备编号：S014
+    			</view>
+    		</view>
+    		<view class="content1-box3-text1 flex-box-start">
+    			<view class=" flex-box-start">
+    				<view class="content1-box3-main1">
+    					<image class="img-css3" src="../../../../static/detail_3.png"></image>
+    				</view>
+    				<view class="content1-box3-main2">环保袋设备</view>
+    			</view>
+    			<view class="content1-box3-text content1-box3-main2">
+    				袋子数：100个
+    			</view>
+    		</view>
+    		<view class="content1-box3-text1 flex-box-start">
+    			<view class=" flex-box-start">
+    				<view class="content1-box3-main1">
+    					<image class="img-css4" src="../../../../static/detail_4.png"></image>
+    				</view>
+    				<view class="content1-box3-main2">893743294374639373927</view>
+    			</view>
+    		</view>
+    		<view class="content1-box3-text1 flex-box-start">
+    			<view class=" flex-box-start">
+    				<view class="content1-box3-main1">
+    					<image class="img-css5" src="../../../../static/detail_5.png"></image>
+    				</view>
+    				<view class="content1-box3-main2">常州代理</view>
+    			</view>
+    		</view>
+    	</view>
+
+    	<view class="header-img">
+    		<image class="img-css6" src="{{img[0]}}" bindtap="clickPreview"></image>
+    	</view>
+    </view>
+    <view class="content2">
+    	<nav type="detail" tags="{{tags}}" bindclickTag="clickTag">
+    		<block wx:if="{{tags[0].active}}">
+    			<view class="content2-box">
+    				<view class="flex-box-start content2-box1 ">
+    					<view class="font-14-thin content2-box1-main1 ">设备地址：</view>
+    					<view class="content2-box1-main2 margin-left">
+    						<textarea class="textarea-css font-14-thin" placeholder="请输入设备地址" value="{{textarea}}"></textarea>
+    					</view>
+    				</view>
+    				<view class="flex-box-start content2-box2 margin-top">
+    					<view class="font-14-thin content2-box1-main1 ">所在门店：</view>
+    					<view class="select-box margin-left">
+    						<select propArray="{{arrayList1}}" css="detail" nowText="{{arrayList1[0].text}}"></select>
+    					</view>
+    				</view>
+    				<view class="flex-box-start content2-box2 margin-top">
+    					<view class="font-14-thin content2-box1-main1 ">所在标签：</view>
+    					<view class="select-box margin-left">
+    						<select propArray="{{arrayList2}}" css="detail" nowText="{{arrayList2[0].text}}"></select>
+    					</view>
+    				</view>
+    				<view class="flex-box-start content2-box2 margin-top">
+    					<view class="font-14-thin content2-box1-main1 ">设备类型：</view>
+    					<view class="select-box margin-left">
+    						<select propArray="{{arrayList3}}" css="detail" nowText="{{arrayList3[0].text}}"></select>
+    					</view>
+    				</view>
+    				<view class="flex-box-start content2-box2 margin-top">
+    					<view class="font-14-thin content2-box1-main1 ">投放时间：</view>
+    					<view class="select-box margin-left">
+    						<select propArray="{{arrayList4}}" css="detail" nowText="{{arrayList4[0].text}}"></select>
+    					</view>
+    				</view>
+    				<view class="footer-btn-box">
+    					<button style="background: #1575F6;color:#ffffff;width:100%;margin:40rpx 0;" data-index="0" bindtap="clickSubmit">保存</button>
+    				</view>
+    			</view>
+    		</block>
+    		<block wx:if="{{tags[1].active}}">
+    			<view class="content3-box">
+    				<view class="content3-box1 flex-box-between" wx:for="{{lineList}}" wx:key="index">
+    					<view class="font-14-thin content3-box1-text1 "><text class="{{item.line =='离线'?'line-color':''}}">{{item.line}}</text>
+    					</view>
+    					<view class="content1-box3-main2 content3-box1-text2 ">{{item.line =='离线'?'下线：':'上线：'}}{{item.time}}</view>
+    				</view>
+    			</view>
+    		</block>
+    		<block wx:if="{{tags[2].active}}">
+    			<view class="content2-box">
+    				<view class="flex-box-start content2-box1 ">
+    					<view class="font-14-thin content2-box1-main1 ">袋子复位：</view>
+							<image src="../../../../static/detail_6.png" class="img-css7"></image>
+    					<view class="margin-left1">
+    						<view class="content1-box3-main2 flex-box-center do-btn" style="" data-index="1" bindtap="clickSubmit">确定</view>
+    					</view>
+    				</view>
+    			</view>
+    		</block>
+    	</nav>
+    </view>

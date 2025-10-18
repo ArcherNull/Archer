@@ -1,0 +1,86 @@
+<!-- 这是地图部分 -->
+<view class="map_container">
+  <map class='map' longitude='{{longitude}}' latitude='{{latitude}}' scale='{{scale}}' show-location='true' subkey="CATBZ-K5KK3-DPY3Q-3YIBL-NI4KH-5VBN4" bindtap='getLonAndLat'></map>
+</view>
+
+<!-- JSSDK核心类操作 -->
+<view class="location-operation padding">
+  <!-- 获取当前位置信息 -->
+  <view>
+    <view class="font-12-thin">
+      经度：{{longitude}}； 纬度：{{latitude}}；
+    </view>
+    <view class="font-12-thin">
+      地址：{{address}}； <text wx:if="{{name !=''}}">店名：{{name}}；</text>
+    </view>
+  </view>
+  <!-- 输入经纬度获取当前位置信息 -->
+  <view class="flex-box-start margin-top">
+    <view>
+      经纬度：
+    </view>
+    <view>
+      <input placeholder="经度" class="latlon-input" type="number" placeholder-class="placeholder-class" value="{{lonValue}}" bindinput="inputLon" />
+    </view>
+    <view>
+      <input placeholder="纬度" class="latlon-input" type="number" placeholder-class="placeholder-class" value="{{latValue}}" bindinput="inputLat" />
+    </view>
+    <view class="location-btn" bindtap="lonLatBtn">
+      搜索
+    </view>
+  </view>
+  <!-- 获取当前定位 -->
+  <view class="flex-box-start margin-top">
+    <view class="location-text">
+      地图位置：{{province}}-{{city}}-{{district}}
+    </view>
+    <view class="location-btn" bindtap="getLocation">
+      定位
+    </view>
+  </view>
+  <!-- 搜索框输入搜索 -->
+  <view class="flex-box-start margin-top">
+    <view>
+      搜索框搜索：
+    </view>
+    <view class="search-input">
+      <input placeholder="请输入搜索值" class="input-css" type="text" placeholder-class="placeholder-class" value="{{searchValue}}" bindinput="searchInput" />
+    </view>
+    <view class="location-btn" bindtap="searchBtn">
+      搜索
+    </view>
+  </view>
+  <!-- 搜索周边信息 -->
+  <view class="flex-box-start margin-top">
+    <view>
+      快捷周边搜索：
+    </view>
+    <view class="{{ searchIndex == index?'choose-search-text':'unchoose-search-text'}} search-text" wx:for="{{shopsAroundList}}" wx:key='index' data-item='{{item}}' bindtap="clickSearchText" data-index="{{index}}">
+      {{item.text}}
+    </view>
+  </view>
+
+  <!-- 搜索框输入搜索 -->
+  <view class="flex-box-start margin-top">
+    <view>
+      搜索框下拉框：
+    </view>
+    <view class="search-input">
+      <input placeholder="请输入搜索值" class="input-css" type="text" placeholder-class="placeholder-class" value="{{searchValue}}" bindinput="inputSearch" />
+    </view>
+  </view>
+
+  <!-- 计算两点之间的距离 -->
+  <view class="flex-box-start margin-top">
+    <view>
+      计算两点之间的距离:
+    </view>
+    <view class="search-input">
+    {{ distance }}km
+    </view>
+
+    <view class="location-btn" bindtap="calculateDistance">
+      计算
+    </view>
+  </view>
+</view>

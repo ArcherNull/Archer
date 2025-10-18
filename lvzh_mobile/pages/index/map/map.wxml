@@ -1,0 +1,1 @@
+<funItem btnList="{{btnList}}" bindclickItem='clickItemFun'></funItem>

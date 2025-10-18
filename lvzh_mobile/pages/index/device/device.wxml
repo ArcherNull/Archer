@@ -1,0 +1,121 @@
+<view class="content1">
+	<view class="flex-box-between">
+		<view class="content1-box1 flex-box-start">
+			<view class="content1-box1-main"></view>
+			<view class="content1-box2-main font-16-blod">统计</view>
+			<view class="content1-box1-text1 content3-box3-main">(在线<text class="text-css">5/8</text>)</view>
+		</view>
+		<view class="content1-box1-box flex-box-start">
+			<view class="font-14-thin content1-box1-title1">门店分类</view>
+			<view class="content1-box1-title2">
+				<image class="img-css1" src="../../../static/device_1.png"></image>
+			</view>
+		</view>
+	</view>
+	<view class="content1-box2">
+		<search value="{{value}}" bindsearch="search"></search>
+	</view>
+	<view class="content1-box3 flex-box-between">
+		<view class="content1-box3-main1 flex-box-start" bindtap="clickTag" data-index="0">
+			<view class="font-15-thin">全部门店</view>
+			<image class="img-css2" src="../../../static/device_6.png"></image>
+		</view>
+		<view class="content1-box3-main1 flex-box-start" bindtap="clickTag" data-index="1">
+			<view class="font-15-thin">全部标签</view>
+			<image class="img-css2" src="../../../static/device_6.png"></image>
+		</view>
+		<view class="content1-box3-main1 flex-box-start" bindtap="clickTag" data-index="2">
+			<view class="font-15-thin">设备状态</view>
+			<image class="img-css2" src="../../../static/device_6.png"></image>
+		</view>
+	</view>
+</view>
+<view class="content1 margin-top">
+	<view class="flex-box-between">
+		<view class="content1-box1 flex-box-start">
+			<view class="content1-box1-main"></view>
+			<view class="content1-box2-main font-16-blod">阳江人民医院</view>
+		</view>
+		<view class="content1-box1-box flex-box-start">
+			<view class="content1-box1-text1 content3-box3-main">在线<text class="text-css">5/8</text></view>
+		</view>
+	</view>
+	<view class="content2-box2-mainbox">
+		<view wx:for="{{deviceList}}" wx:key="index" bindtap="clickDev" data-index="{{index}}" class="content2-box2 flex-box-between padding">
+			<view class="content2-box2-main1 flex-box-start">
+				<view class="content2-main1-box1">
+					<image class="img-css4" src="../../../static/device_4.png"></image>
+				</view>
+				<view class="content2-main1-box2">
+					<view class=" font-15-thin content2-mainbox-title1">{{item.name}}</view>
+					<view class="content2-mainbox-title2 flex-box-start">
+						<view class="font-15-thin content2-mainbox-tbox1">{{item.title}}</view>
+						<view class="font-15-thin content2-mainbox-tbox2 ">袋子库存{{item.storage}}</view>
+					</view>
+				</view>
+			</view>
+			<view class="content2-box2-main2">
+				<image class="img-css3" src="../../../static/go.png"></image>
+			</view>
+		</view>
+	</view>
+</view>
+<view class="content1 margin-top">
+	<view class="flex-box-between">
+		<view class="content1-box1 flex-box-start">
+			<view class="content1-box1-main"></view>
+			<view class="content1-box2-main font-16-blod">阳江人民医院</view>
+		</view>
+		<view class="content1-box1-box flex-box-start">
+			<view class="content1-box1-text1 content3-box3-main">在线<text class="text-css">1/1</text></view>
+		</view>
+	</view>
+	<view class="content2-box2-mainbox">
+		<view wx:for="{{deviceList1}}" wx:key="index" bindtap="clickDev" data-index="{{index}}" class="content2-box2 flex-box-between padding">
+			<view class="content2-box2-main1 flex-box-start">
+				<view class="content2-main1-box1">
+					<image class="img-css4" src="../../../static/device_4.png"></image>
+				</view>
+				<view class="content2-main1-box2">
+					<view class=" font-15-thin content2-mainbox-title1">{{item.name}}</view>
+					<view class="content2-mainbox-title2 flex-box-start">
+						<view class="font-15-thin content2-mainbox-tbox1">{{item.title}}</view>
+						<view class="font-15-thin content2-mainbox-tbox2 ">袋子库存{{item.storage}}</view>
+					</view>
+				</view>
+			</view>
+			<view class="content2-box2-main2">
+				<image class="img-css3" src="../../../static/go.png"></image>
+			</view>
+		</view>
+	</view>
+</view>
+
+<pop wx:if="{{popDom}}" bindclosePop="closePop">
+	<block>
+		<view class="footer-box">
+			<view wx:if="{{popHeader}}" class="footer-box1 flex-box-between margin-top padding-box">
+				<view class="footer-box1-main1 flex-box-start">
+					<view class="footer-main1-text1">
+						<image wx:if="{{clickType == '0'}}" src="../../../static/device_pop1.png" class="img-css5"></image>
+						<image wx:else src="../../../static/device_pop2.png" class="img-css5"></image>
+					</view>
+					<view class="footer-main1-text2 font-14-thin flex-box-start">
+					<view wx:if="{{clickType == '0'}}">已选门店</view>
+					<view wx:else>已选标签</view>
+					<text class="text-number">{{clickNum}}</text>个</view>
+				</view>
+				<view class="footer-box1-main2" bindtap="chooseAll">
+					<view wx:if="{{chooseAll}}" class="content1-box1-text1 footer-main2-text1">取消</view>
+					<view wx:else class="content1-box1-text1 footer-main2-text1">全选</view>
+				</view>
+			</view>
+			<view class="footer-box2">
+				<view class="footer-box2-main flex-box-between padding-box" wx:for="{{clickType == '0'?searchList:(popHeader?tagsList:lineList)}}" wx:key='index' bindtap="clickSearch" data-index="{{index}}">
+					<view class="font-14-thin footer-main2-title1">{{item.name}}</view>
+					<checkBox1 checkBool="{{item.active}}" type="circle"></checkBox1>
+				</view>
+			</view>
+		</view>
+	</block>
+</pop>

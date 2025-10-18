@@ -1,0 +1,20 @@
+<view class="content3-box2 margin-top flex-box-start">
+  <view class="content3-res1 font-14-thin">
+    {{inputTitle}}
+  </view>
+  <view class="content3-res2 content3-box2-text2">
+    <view wx:if="{{ type == 'input' && placeholder !='' }}">
+      <input class="input-res" type="text" value="{{value}}" bindinput="inputVal" placeholder="{{placeholder}}" placeholder-class="placeholder-color" placeholder-style="placeholder-class"></input>
+    </view>
+    <slot name='content'></slot>
+  </view>
+  <view class="content3-res3">
+    <view class="imgBox flex-box-end" wx:if="{{ showRight!=='slot' }}">
+      <image wx:if="{{showRight=='clear' && value.length != 0?true:false}}" catchtap="clickImg" class="input-img margin-left" src="../../static/login-del.png"></image>
+      <image wx:if="{{showRight=='arrow'}}" class="arrow-img margin-left" src="../../static/go.png"></image>
+    </view>
+    <view wx:else>
+      <slot name='right'></slot>
+    </view>
+  </view>
+</view>

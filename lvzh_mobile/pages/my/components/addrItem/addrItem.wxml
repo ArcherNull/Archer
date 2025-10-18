@@ -1,0 +1,20 @@
+<!-- 头部地址 -->
+<view wx:for="{{addrList}}" wx:key='index'>
+  <view class="content1-position">
+    <view class="content1 flex-box-between">
+      <view class="content1-box2 flex-column-start-start">
+        <view class="content1-boxtexxt1 flex-box-between">
+          <view class="font-14-thin head-text1">{{ item.name }}</view>
+          <view class="font-14-thin head-text2">{{ item.phone }}</view>
+        </view>
+        <view class="font-12-thin hidden-text2">{{ item.addr }}</view>
+      </view>
+      <view class="font-12-thin goto-box flex-box-end" wx:if="{{ item.idEdit }}" bindtap="clickTag" data-item="{{ item }}">
+        编辑
+      </view>
+    </view>
+    <view class="address-tag" wx:if="{{item.isDefault}}">
+      默认
+    </view>
+  </view>
+</view>

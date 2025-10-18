@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "账单",
+  "usingComponents": {
+    "search" : "../../../components/search/search"
+  }
+}

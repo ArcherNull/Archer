@@ -1,0 +1,61 @@
+.grid3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    column-gap: 20rpx;
+    row-gap: 20rpx;
+}
+
+
+.delete {
+    position: absolute;
+    top: 10rpx;
+    right: 10rpx;
+    z-index: 10;
+}
+
+.delete>image {
+    width: 48rpx;
+    height: 48rpx;
+}
+
+.upLoad_1 {
+    border: solid 2rpx #d999;
+    width: 200rpx;
+    height: 200rpx;
+    position: relative;
+    box-sizing: border-box;
+    border-radius: 10rpx;
+    overflow: hidden;
+    text-align: center;
+}
+
+.upLoad_1>image {
+    width: inherit;
+    height: inherit;
+}
+
+.upLoad_2 {
+    width: 200rpx;
+    height: 200rpx;
+    background: #eeeeee;
+    border-radius: 10rpx;
+}
+
+
+.upLoad_2_1>image {
+    width: 62rpx;
+    height: 62rpx;
+}
+
+.upLoad_2_2 {
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    color: #999999;
+}
+
+.watermark {
+    position: absolute;
+    z-index: -1;
+    border: solid 2rpx #f00;
+    right: 9999px; 
+}

@@ -1,0 +1,18 @@
+<!-- 提示 -->
+<view class="signTips">
+    请清晰书写您的中文签名:
+</view>
+
+<canvas class="sign" canvas-id="sign" bindtouchmove="move" bindtouchstart="start" bindtouchend="end" bindtouchcancel="cancel" bindlongtap="tap" disable-scroll="true" binderror="error">
+</canvas>
+
+<view class="sign-btnBox flex-box-end">
+    <button bindtap="clearClick" style="border: solid 1rpx #999;" plain>
+        <view class="reSignBtn">
+            重新签名
+        </view>
+    </button>
+    <button style="background-color: #1575F6;margin: 0px 0px 0px 20rpx;" bindtap="saveClick">
+        <view class="confirm">确定</view>
+    </button>
+</view>

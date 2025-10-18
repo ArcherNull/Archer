@@ -1,0 +1,5 @@
+<!-- 这是地图部分 -->
+<view class="map_container">
+123123
+  <!-- <map class='map' longitude='{{longitude}}' latitude='{{latitude}}' scale='{{scale}}' show-location></map> -->
+</view>

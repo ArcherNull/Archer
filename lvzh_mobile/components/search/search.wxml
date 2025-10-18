@@ -1,0 +1,18 @@
+<view class="position-box">
+	<view class="search-position">
+		<view class="search flex-box-center {{type =='static'?'width-box':''}}">
+			<view class="search-box flex-box-start {{type =='static'?'width-box1':''}}">
+				<image class="img-css1 img-css-left " src="../../static/search.png"></image>
+				<input class="{{type =='static'?'input-css1':'input-css'}}" type="text" value="{{value}}" placeholder-class="{{type =='static'?'font-12-thin text-colotr':'placeholder-class'}}"
+					placeholder-style="placeholder-color" placeholder="{{placeholder}}" bindinput="inputValue"></input>
+			</view>
+			<view class="font-14-thin search-button " bindtap="search">搜索</view>
+		</view>
+
+		<!-- 清空按钮 -->
+		<view class="{{type =='static'?'clear-right-box1':'clear-right-box'}} clear-box">
+			<image wx:if="{{value.length !=0?true:false}}" class="img-css1 img-css1-left" src="../../static/login-del.png"
+				catchtap="delValue"></image>
+		</view>
+	</view>
+</view>

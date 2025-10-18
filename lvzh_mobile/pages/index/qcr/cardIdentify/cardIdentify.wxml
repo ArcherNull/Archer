@@ -1,0 +1,182 @@
+<view class="paddingBtm100">
+    <view class="bigTitle padding">
+        证件识别
+    </view>
+
+    <headTitle title='证件识别概述'>
+        <view class="paddingLeftRight16 paddingBtm16 font-14-thin" slot='content'>
+            <view class="title">小程序证件识别具有两种方式：</view>
+            <view class="content">
+                <view class="content-title">1）通过QCR实现身份证件识别【种类少，识别度低】</view>
+                <view>
+                    每天可免费识别100次，识别证件包括身份证(正反面)/行驶证/驾驶证/银行卡/营业执照等
+                </view>
+                <view class="textRed">
+                    【注意】：img_url只接受http图片，不接受https图片；微信小程序没有FormData对象,img参数传递存在问题；并且在设置request合法域名的时候，https://api.weixin.qq.com不允许添加，所以此接口最好是后端做
+                </view>
+
+                <view>
+                    开发者文档：<text data-copyData='{{miniDocHref}}' bindtap="copyAiText" class="hrefCss">{{ miniDocHref }}</text></view>
+            </view>
+
+            <view class="content">
+                <view class="content-title">
+                    2）腾讯云AI开放平台实现证件识别【种类多，识别度高】
+                </view>
+                <view>
+                    识别种类多，包括人脸识别，肢体识别等，需要企业级认证的开发者才可以开发
+                </view>
+                <view>
+                    开发者文档：<text bindtap="copyAiText" data-copyData='{{aiDocHref}}' class="hrefCss">{{ aiDocHref }}</text></view>
+            </view>
+
+            <view class="content">
+                <view class="content-title">
+                    3）使用小程序的"QCR支持"插件
+                </view>
+                <view>
+                    对前端较为友好的证件识别与上传插件【企业级认证的小程序可用】，首先需要调用摄像头，没有摄像头无法调用
+                </view>
+                <view>
+                    开发者文档：<text bindtap="copyAiText" data-copyData='{{QCRPluginsDoc}}' class="hrefCss">{{ QCRPluginsDoc }}</text></view>
+            </view>
+
+            <view class="content">
+                <view class="content-title">
+                    4）通过云函数处理QCR识别的图片
+                </view>
+                <view>
+                    对前端较为友好的证件识别与上传插件
+                </view>
+                <view>
+                    开发者文档：<text bindtap="copyAiText" data-copyData='{{QCRPluginsDoc}}' class="hrefCss">{{ QCRPluginsDoc }}</text></view>
+            </view>
+        </view>
+    </headTitle>
+
+    <headTitle title='证件识别(AppID+AppSecret)【不推荐】'>
+        <view class="paddingLeftRight16 paddingBtm16 " slot='content'>
+           <view>位于common.js文件中getAccessToken / QCRCheckImg</view>
+            <inputBox inputTitle='证件识别类型' showRight='arrow'>
+                <picker range="{{ cardTypeList }}" slot='content' wx:key='index' range-key='name' value="{{ cardTypeIndex }}" bindchange='inputValFun' data-index='2'>
+                    <view>
+                        {{ cardTypeList[cardTypeIndex].name? cardTypeList[cardTypeIndex].name :'请输入证件识别类型'}}
+                    </view>
+                </picker>
+            </inputBox>
+            <view class="margin-top">
+                <view class="content-title">
+                    请上传图片
+                </view>
+                <upLoadFile limitNum="{{ limitNum }}" data-index='0' imgList="{{ icCardList }}" bindupdateImage='updateImage' binddeleteImg='deleteImg'></upLoadFile>
+            </view>
+
+            <view class="margin-top">
+                <view class="content-title">
+                    选择示例图片识别<text class="alert-msg">[示例图片不可外传]</text>
+                </view>
+                <view class="identify-imgbox flex-warp flex-box-start">
+                    <view class="identify-item" wx:for="{{ exampleImgList }}" wx:key="index">
+                        <view class="content-subTitle" data-name="{{ item.name }}" bindtap="QCRCheckFun">
+                            {{ item.name }}
+                        </view>
+                        <image bindtap="previewImg" class="example-img" mode="aspectFill" src="{{ item.img }}"></image>
+                    </view>
+                </view>
+            </view>
+            <view class="margin-top">
+                <view class="content-title">
+                    请核对信息：
+                </view>
+                <view class="font-14-thin">
+                    123
+                </view>
+            </view>
+        </view>
+    </headTitle>
+
+    <!-- 证件识别(AI) -->
+    <headTitle title='证件识别(AI)【开发中...】'>
+        <view class="paddingLeftRight16 paddingBtm16 " slot='content'>
+            <inputBox inputTitle='证件识别类型' showRight='arrow'>
+                <picker range="{{ cardTypeList }}" slot='content' wx:key='index' range-key='name' value="{{ cardTypeIndex }}" bindchange='inputValFun' data-index='2'>
+                    <view>
+                        {{ cardTypeList[cardTypeIndex].name? cardTypeList[cardTypeIndex].name :'请输入证件识别类型'}}
+                    </view>
+                </picker>
+            </inputBox>
+            <view class="margin-top">
+                <view class="content-title">
+                    请上传图片
+                </view>
+                <upLoadFile limitNum="{{ limitNum }}" data-index='0' imgList="{{ icCardList }}" bindupdateImage='updateImage' binddeleteImg='deleteImg'></upLoadFile>
+            </view>
+            <view class="margin-top">
+                <view class="content-title">
+                    请核对信息：
+                </view>
+                <view class="font-14-thin">
+                    123
+                </view>
+            </view>
+        </view>
+    </headTitle>
+
+    <!-- 小程序QCR插件 -->
+    <headTitle title='小程序QCR插件【推荐】'>
+        <view class="paddingLeftRight16 paddingBtm16 " slot='content'>
+            <view class="content-title">
+                插件文档：<text data-copyData='{{QCRPluginDoc}}' bindtap="copyAiText" class="hrefCss">{{ QCRPluginDoc }}</text>
+            </view>
+            
+            <view class="content-title">
+                通用印刷体QCR，此插件不支持。可以使用云函数开发
+            </view>
+            <view class="margin-top">
+                <ocr-navigator bind:onSuccess="QCRFontIdCard" certificateType="idCard" opposite="{{false}}">
+                    <button type="primary" class="marginBtm5">身份证正面识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRBackIdCard" certificateType="idCard" opposite="{{true}}">
+                    <button type="primary" class="marginBtm5">身份证反面识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRBanksuccess" certificateType="bankCard">
+                    <button type="primary" class="marginBtm5">银行卡识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRDriverSuccess" certificateType="drivingLicense" selectedOptions="{{['plateNum','vehicleType','owner']}}">
+                    <button type="primary" class="marginBtm5">行驶证识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRDriverLicenseSuccess" certificateType="driverslicense">
+                    <button type="primary" class="marginBtm5">驾驶证识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRBusinessSuccess" certificateType="businessLicense">
+                    <button type="primary" class="marginBtm5">营业执照识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRPlatenumSuccess" certificateType="platenum">
+                    <button type="primary" class="marginBtm5">车牌识别</button>
+                </ocr-navigator>
+
+                <ocr-navigator bind:onSuccess="QCRMenuSuccess" certificateType="menu">
+                    <button type="primary" class="marginBtm5">菜单</button>
+                </ocr-navigator>
+
+                <!-- <ocr-navigator bind:onSuccess="QCRPrintedFontSuccess" certificateType="print">
+                    <button type="primary">通用印刷体QCR</button>
+                </ocr-navigator> -->
+            </view>
+            <view class="margin-top">
+                <view class="content-title">
+                    注意：
+                </view>
+                <view class="font-14-thin">
+                    识别完图片之后，可以通过该插件回调返回的img_path的路径作为上传路径传给后台
+                </view>
+            </view>
+        </view>
+    </headTitle>
+</view>

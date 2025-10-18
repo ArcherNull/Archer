@@ -1,0 +1,101 @@
+<!-- 头部地址 -->
+<view class="content1 flex-box-between" bindtap="clickJump">
+  <view class=" img-location ">
+    <view class="content1-box1 flex-column-center-center">
+      <image class="img-detail-css" src="../../../../../static/location.png"></image>
+      <view class="img-detail-text">收货地址</view>
+    </view>
+  </view>
+  <view class="content1-box2 flex-column-start-start">
+    <view class="content1-boxtexxt1"><span class="font-14-thin head-text1">陈治军</span><span
+        class="font-14-thin head-text2">17688939971</span></view>
+    <view class="font-12-thin content1-boxtexxt2 hidden-text2">深圳市 福田区 上梅林卓悦城1圳市 福田区 上梅林卓悦城1圳市 福田区 上梅林卓悦城1期铁口1圳市 福田区
+      上梅林卓悦城1期</view>
+  </view>
+  <view class="goto-box">
+    <image src="../../../../../static/go.png" class="goto-css"></image>
+  </view>
+</view>
+
+<!-- 订单列表 -->
+<view class="content2 margin-top">
+  <!-- 单个订单 -->
+  <view class="list-box flex-box-between-start">
+    <view class="list-box1">
+      <image src="../../../../../static/checkbox1.png" class="img-detailCss"></image>
+    </view>
+    <view class="list-box2 flex-column-between">
+      <view class="font-14-thin list-main1 hidden-text2">医医用外科口罩，超级便宜用外科口罩，超级便宜的医用外科口罩，划算便宜</view>
+      <view class="list-main2 flex-box-start">
+        <view class="font-12-thin list-main2-text1">
+          已售170袋
+        </view>
+        <view class="font-12-thin list-main2-text1 margin-left">
+          库存2000袋
+        </view>
+      </view>
+      <!-- 价格 -->
+      <view class="list-main3 flex-box-between">
+        <view class="font-12-thin price-css1">￥<span class="font-18-blod  price-css1">28.8</span></view>
+        <view class="font-14-thin number-box">X1</view>
+      </view>
+    </view>
+  </view>
+  <!-- 单个订单 -->
+  <view class="list-box flex-box-between-start">
+    <view class="list-box1">
+      <image src="../../../../../static/checkbox1.png" class="img-detailCss"></image>
+    </view>
+    <view class="list-box2 flex-column-between">
+      <view class="font-14-thin list-main1 hidden-text2">医医用外科口罩，超级便宜用外科口罩，超级便宜的医用外科口罩，划算便宜</view>
+      <view class="list-main2 flex-box-start">
+        <view class="font-12-thin list-main2-text1">
+          已售170袋
+        </view>
+        <view class="font-12-thin list-main2-text1 margin-left">
+          库存2000袋
+        </view>
+      </view>
+      <!-- 价格 -->
+      <view class="list-main3 flex-box-between">
+        <view class="font-12-thin price-css1">￥<span class="font-18-blod  price-css1">28.8</span></view>
+        <view class="font-14-thin number-box">X1</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作界面 -->
+  <view class="btn-box">
+    <view class="btn-box1 flex-box-between">
+      <view class="font-14-thin btn-box1-text">配送方式</view>
+      <view class="btn-box1-btn"><select propArray="{{propArray}}" nowText="{{propArray[0].text}}"></select></view>
+    </view>
+    <view class="btn-box1 flex-box-between">
+      <view class="font-14-thin btn-box1-text">付款方式</view>
+      <view class="font-12-thin btn-box1-btn1">到付</view>
+    </view>
+    <view class="btn-box1 flex-box-between">
+      <view class="font-14-thin btn-box1-text1">买家留言</view>
+      <view class="font-12-thin btn-box1-btn2"><input placeholder="选填，请输入您的备注留言"
+          placeholder-class="font-12-thin input-color" /></view>
+    </view>
+    <!-- 价格 -->
+    <view class="btn-box4 margin-top">
+      <span class="font-12-thin prices-box">共1件，<span class="font-14-thin prices-box1">小计：<span
+            class="prices-box2">￥<span class="font-18-blod prices-box3">57.60</span></span></span></span>
+    </view>
+  </view>
+</view>
+
+<!-- 底部按钮 -->
+<view class="btn-position">
+  <view class="btn-flex-box ">
+    <view class="price-total btn-flex-box">
+      <span class="font-12-thin prices-box">共1件，<span class="font-14-thin prices-box1">合计：<span
+            class="prices-box2">￥<span class="font-18-blod prices-box3">57.60</span></span></span></span>
+    </view>
+    <view class="font-16-blod flex-box-center confirm-box">
+      提交订单
+    </view>
+  </view>
+</view>

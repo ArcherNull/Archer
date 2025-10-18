@@ -1,0 +1,17 @@
+<view class="headTitle margin-top">
+  <view class="title flex-box-between">
+    <view class="flex-box-start">
+      <view class="title_1"></view>
+      <view class="marginLeft10 font-16-blod">{{ title }}</view>
+      <view class="flex-box-start-end font-12-thin">
+        <slot name='subTitle'></slot>
+      </view>
+    </view>
+    <view class="flex-box-end">
+      <slot name='titleRight'></slot>
+    </view>
+  </view>
+  <view>
+    <slot name='content'></slot>
+  </view>
+</view>

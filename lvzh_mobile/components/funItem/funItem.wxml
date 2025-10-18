@@ -1,0 +1,17 @@
+<!-- 底部操作栏 -->
+<view class="my_content flex-box-between" bindtap="clickOperation" data-item='{{item}}' wx:for="{{btnList}}" wx:key='index'>
+    <view class="my_content_left flex-box-start">
+        <image class="my_content_left_icon" mode="widthFix" src="{{ item.src }} ">
+        </image>
+        <view class="my_content_left_text">
+            {{ item.title }}</view>
+    </view>
+    <view class="my_content_right flex-box-end">
+        <view class="my_content_right_msg" wx:if="{{ item.alertInfo !== 0 }}">
+            <view class="my_content_right_msg_num flex-box-center">
+                {{ item.alertInfo }}
+            </view>
+        </view>
+        <image class="my_content_right_icon" mode="widthFix" src="../../static/go.png"></image>
+    </view>
+</view>

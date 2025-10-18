@@ -1,0 +1,44 @@
+page {
+  font-size: 32rpx;
+}
+
+.map_container {
+  height: 50vh;
+  width: 100%;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.location-btn {
+  margin-left: 20rpx;
+  padding: 4rpx 12rpx;
+  border: solid 1rpx rgb(255, 179, 26);
+  color: rgb(255, 179, 26);
+  border-radius: 8rpx;
+}
+
+.input-css {
+  padding: 4rpx 10rpx;
+  background: #DCDCDC;
+}
+
+.search-text {
+  margin-right: 20rpx;
+}
+
+.choose-search-text {
+  color: rgb(255, 179, 26);
+}
+
+.unchoose-search-text {
+  color: #333333;
+}
+
+.latlon-input {
+  width: 180rpx;
+  border-bottom: solid 1rpx #999999;
+  margin-right: 20rpx;
+}

@@ -1,0 +1,48 @@
+.sign {
+    width: 94vw;
+    margin: 3vw;
+    height: 40vh;
+    border: dashed 2rpx #333;
+    border-radius: 20rpx;
+    box-sizing: border-box;
+    position: relative;
+    background-color: rgba(220, 220, 220, 0.4);
+}
+
+.sign::after {
+    content: '签名区';
+    font-size: 120rpx;
+    letter-spacing: 2vh;
+    width: 96vw;
+    height: 40vh;
+    position: absolute;
+    text-align: center;
+    line-height: 40vh;
+    color: rgba(211, 211, 211, 0.7);
+    z-index: -1;
+}
+
+.sign-btnBox {
+    margin-top: 20rpx;
+    padding: 0 3vw;
+}
+
+.signTips {
+    padding: 32rpx 3vw 0rpx 3vw;
+    color: #333;
+    font-weight: bold;
+}
+
+.reSignBtn {
+    color: #999;
+    font-size: 28rpx;
+}
+
+.confirm {
+    font-size: 28rpx;
+    color: #fff;
+}
+
+.operation{
+    margin: none;
+}

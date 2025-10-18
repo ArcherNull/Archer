@@ -1,0 +1,25 @@
+<view class="search-cbox">
+	<search value="{{value}}" bindsearch="search"></search>
+</view>
+
+<view class="content-box1 flex-box-start" bindtap="clickPop">
+	<view class="font-14-thin content-box1-text1">全部门店</view>
+	<view class="content-box1-text2 flex-box-center">
+		<image class="img-css" src="../../../static/device_6.png"></image>
+	</view>
+</view>
+
+<view class="content-box2">
+	<view class="content-boxitem flex-box-between" wx:for="{{acountList}}" wx:key="index" bindtap="clickAcount" data-index="{{index}}" bindtap="clickJump" data-index="{{index}}">
+		<view class="content-boxitem-box1 flex-box-start">
+			<view class="img-box">
+				<image src="../../../static/acount.png" class="img-css2"></image>
+        <view wx:if="{{!item.read}}" class="alert"></view>
+			</view>
+			<view class="font-16-thin content-boxitem-box2">{{item.name}}</view>
+		</view>
+		<view class="content-boxitem-box3">
+			<image src="../../../static/go.png" class="img-css3"></image>
+		</view>
+	</view>
+</view>

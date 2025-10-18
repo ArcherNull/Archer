@@ -1,0 +1,17 @@
+<view class='audiosBox'>
+      <view class="audioOpen" bindtap="listenerButtonPlay" wx:if="{{!isOpen}}">
+        <image style="width: 70rpx;height: 70rpx;" src="/static/cur_play.png" />
+      </view>
+      <view class="audioOpen" bindtap="listenerButtonPause" wx:if="{{isOpen}}">
+        <image style="width: 70rpx;height: 70rpx;" src="/static/cur_pause.png" />
+      </view>
+      <view class='slid'>
+        <slider bindchange="sliderChange" block-size="12px" step="2" value="{{offset}}" max="{{max}}" selected-color="#4c9dee" />
+        <view>
+          <text class='times'>{{starttime}}</text>
+          <!-- 进度时长 -->
+          <!-- <text class='times'>{{duration}}</text> -->
+          <!-- 总时长 -->
+        </view>
+      </view>
+    </view>

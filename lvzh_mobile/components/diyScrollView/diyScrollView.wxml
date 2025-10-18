@@ -1,0 +1,16 @@
+<view style="height:{{ boxHeight }}; width:{{ boxWidth }}">
+  <scroll-view scroll-y="true" style="height:100%; border: solid 2rpx #f00;" refresher-enabled="true" refresher-triggered="{{ isTopUpdate }}" refresher-default-style="none" bindrefresherpulling="handleRefresherpulling" bindrefresherrefresh="handleRefresherrefresh" 
+  bindrefresherrestore='bindrefresherrestore'
+  bindscrolltolower="handleToBottom">
+    <!-- 自定义下拉刷新 -->
+    <view slot="refresher" style="width:100%">
+      <view class="slot_refresher">{{ topTip }}</view>
+    </view>
+    <!-- 插槽 -->
+    <slot name="arrListSlot"></slot>
+    <!-- 底部 -->
+    <view hidden="{{showBtmTips}}">
+      <loadMore loading="{{isEnd}}"></loadMore>
+    </view>
+  </scroll-view>
+</view>

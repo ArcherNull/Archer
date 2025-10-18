@@ -1,0 +1,15 @@
+<view class="bigTitle padding">
+    用户加密模块
+</view>
+
+<headTitle title='用户加密模块概述'>
+    <view class="headTitle" slot='content'>
+        <view class="content">
+            <view class="content-title">1）用途</view>
+            <view class="content-text">
+                为了避免小程序与开发者后台通信时数据被截取和篡改,微信侧维护了一个用户维度的可靠key,用于小程序和后台通信时进行加密和签名。
+                开发者可以分别通过小程序前端和微信后台提供的接口,获取用户的加密key。
+            </view>
+        </view>
+    </view>
+</headTitle>

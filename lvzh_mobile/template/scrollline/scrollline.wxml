@@ -1,0 +1,6 @@
+<!-- 统计图模板 -->
+<view class="container-box">
+	<canvas canvas-id="lineCanvas" wx:if="{{!radarImg}}" disable-scroll="true" class="canvas"
+		bindtouchstart="touchHandler" bindtouchmove="moveHandler" bindtouchend="touchEndHandler"></canvas>
+	<image class="canvas-css" wx:else src="{{radarImg}}"></image>
+</view>

@@ -1,0 +1,208 @@
+<!-- 头部地址 -->
+<view class="content1 flex-box-between">
+  <view class=" img-location ">
+    <view class="content1-box1 flex-column-center-center">
+      <image class="img-detail-css" src="../../../../static/location.png"></image>
+      <view class="img-detail-text">收货地址</view>
+    </view>
+  </view>
+  <view class="content1-box2 flex-column-start-start">
+    <view class="content1-boxtexxt1"><span class="font-14-thin head-text1">陈治军</span><span
+        class="font-14-thin head-text2">17688939971</span></view>
+    <view class="font-12-thin content1-boxtexxt2 hidden-text2">深圳市 福田区 上梅林卓悦城1圳市 福田区 上梅林卓悦城1圳市 福田区 上梅林卓悦城1期D地铁口</view>
+  </view>
+</view>
+
+
+<!-- 订单列表 -->
+<view class="content2 margin-top">
+  <!-- 单个订单 -->
+  <view class="list-box flex-box-between-start">
+    <view class="list-box1">
+      <image src="../../../../static/checkbox1.png" class="img-detailCss"></image>
+    </view>
+    <view class="list-box2 flex-column-between">
+      <view class="font-14-thin list-main1 hidden-text2">医医用外科口罩，超级便宜用外科口罩，超级便宜的医用外科口罩，划算便宜</view>
+      <view class="list-main2 flex-box-start">
+        <view class="font-12-thin list-main2-text1">
+          已售170袋
+        </view>
+        <view class="font-12-thin list-main2-text1 margin-left">
+          库存2000袋
+        </view>
+      </view>
+      <!-- 价格 -->
+      <view class="list-main3 flex-box-between">
+        <view class="font-12-thin price-css1">￥<span class="font-18-blod  price-css1">28.8</span></view>
+        <view class="font-14-thin number-box">X1</view>
+      </view>
+    </view>
+  </view>
+  <!-- 单个订单 -->
+  <view class="list-box flex-box-between-start">
+    <view class="list-box1">
+      <image src="../../../../static/checkbox1.png" class="img-detailCss"></image>
+    </view>
+    <view class="list-box2 flex-column-between">
+      <view class="font-14-thin list-main1 hidden-text2">医医用外科口罩，超级便宜用外科口罩，超级便宜的医用外科口罩，划算便宜</view>
+      <view class="list-main2 flex-box-start">
+        <view class="font-12-thin list-main2-text1">
+          已售170袋
+        </view>
+        <view class="font-12-thin list-main2-text1 margin-left">
+          库存2000袋
+        </view>
+      </view>
+      <!-- 价格 -->
+      <view class="list-main3 flex-box-between">
+        <view class="font-12-thin price-css1">￥<span class="font-18-blod  price-css1">28.8</span></view>
+        <view class="font-14-thin number-box">X1</view>
+      </view>
+    </view>
+  </view>
+
+
+</view>
+<!-- 留言备注 -->
+<view class="content3 margin-top flex-box-start">
+  <view class="font-14-thin content3-box1">买家留言</view>
+  <view class="content3-box2 ">
+    <input placeholder="买家留言，选填" placeholder-class="font-14-thin" />
+  </view>
+</view>
+<!-- 订单信息 -->
+<view class="content4 padding margin-top">
+  <view class="content4-box1 flex-box-start">
+    <view class="font-14-thin text-box1">订单单号：</view>
+    <view class="font-14-thin text-box2">DH123434499</view>
+  </view>
+  <view class="content4-box1 flex-box-start margin-top">
+    <view class="font-14-thin text-box1">下单时间：</view>
+    <view class="font-14-thin text-box2">2020-10-19 16:00:00</view>
+  </view>
+  <view class="content4-box1 flex-box-start margin-top">
+    <view class="font-14-thin text-box1">订单状态：</view>
+    <view class="font-14-thin  {{status_text =='审核中'?'check-css':(status_text =='未通过'?'text-box4':'text-box3')}}">
+      {{status_text}}</view>
+  </view>
+  <!-- 订单审核流程 -->
+  <view class="content4-box4">
+    <!-- 创建订单 -->
+    <view class="content4-proList ">
+      <view class="flex-box-between">
+        <view class="process-box flex-box-start">
+          <view class="img-box flex-box-center">
+            <image wx:if="{{order_status=='通过'}}" class="process-goDown-fin" src="../../../../static/over.png">
+            </image>
+            <image wx:else class="process-goDown-fin" src="../../../../static/warn.png"></image>
+          </view>
+          <view class="font-14-thin process-text">创建订单</view>
+          <view class="font-14-thin process-time">2020-10-15 16:00:00</view>
+        </view>
+        <view class="flex-box-center goDown-box">
+          <image class="process-goDown" bindtap="showClose" src="../../../../static/down.png"></image>
+        </view>
+      </view>
+
+      <view class="showDom-process" wx:if="{{showProcess}}">
+        <!-- 采购审核-->
+        <view class="process-check-box">
+          <view class="margin-process flex-box-between">
+            <view class="process-box flex-box-start">
+              <view class="img-box flex-box-center">
+                <image wx:if="{{order_status=='通过'}}" class="process-goDown-fin" src="../../../../static/over.png">
+                </image>
+                <image wx:else class="process-goDown-fin" src="../../../../static/warn.png"></image>
+              </view>
+              <view class="font-14-thin process-text">采购审核</view>
+              <view class="font-14-thin process-time">2020-10-15 16:00:00</view>
+            </view>
+            <view class="font-12-thin {{order_status == '通过'?'alert-text':'alert-text1'}} ">{{order_status}}</view>
+          </view>
+          <view class="font-12-thin check-text">原因：前天就发了袋子</view>
+        </view>
+
+        <!-- 采购审核-->
+        <view class="process-check-box">
+          <view class="margin-process flex-box-between">
+            <view class="process-box flex-box-start">
+              <view class="img-box flex-box-center">
+                <image wx:if="{{order_status=='通过'}}" class="process-goDown-fin" src="../../../../static/over.png">
+                </image>
+                <image wx:else class="process-goDown-fin" src="../../../../static/warn.png"></image>
+              </view>
+              <view class="font-14-thin process-text">采购审核</view>
+              <view class="font-14-thin process-time">2020-10-15 16:00:00</view>
+            </view>
+            <view class="font-12-thin {{order_status == '通过'?'alert-text':'alert-text1'}} ">{{order_status}}</view>
+          </view>
+          <view class="font-12-thin check-text">
+            原因：前天就发了袋子前天就发了袋子前天就发了袋子前天就发了袋子前天就发了袋子前天就发了袋子前天就发了前天就发了袋子前天就发了袋子前天就发了袋子袋子袋子前天就发了前天就发了袋子前天就发了袋子前天就发了袋子袋
+          </view>
+        </view>
+
+        <!-- 发货-->
+        <view class="process-check-box">
+          <view class="margin-process flex-box-between">
+            <view class="process-box flex-box-start">
+              <view class="img-box flex-box-center">
+                <image wx:if="{{order_status=='通过'}}" class="process-goDown-fin" src="../../../../static/over.png">
+                </image>
+                <image wx:else class="process-goDown-fin" src="../../../../static/warn.png"></image>
+              </view>
+              <view class="font-14-thin process-text"><text decode="{{true}}">发货</text></view>
+              <view class="font-14-thin process-time">2020-10-15 16:00:00</view>
+              <view class="font-12-thin {{order_status == '通过'?'alert-text':'alert-text1'}} ">{{order_status}}</view>
+            </view>
+          </view>
+          <view class="check-box flex-box-between">
+            <view class="font-12-thin check-text">单号：123456789415525</view>
+            <view class="font-12-thin copy-acount" bindtap="copyText">复制单号</view>
+          </view>
+        </view>
+
+
+        <!-- 交易完成-->
+        <view class="process-check-box">
+          <view class="margin-process flex-box-between">
+            <view class="process-box flex-box-start">
+              <view class="img-box flex-box-center">
+                <image wx:if="{{order_status=='通过'}}" class="process-goDown-fin" src="../../../../static/over.png">
+                </image>
+                <image wx:else class="process-goDown-fin" src="../../../../static/warn.png"></image>
+              </view>
+              <view class="font-14-thin process-text">交易完成</view>
+              <view class="font-14-thin process-time">2020-10-15 16:00:00</view>
+            </view>
+            <view class="font-12-thin {{order_status == '通过'?'alert-text':'alert-text1'}} ">{{order_status}}</view>
+          </view>
+          <view class="font-12-thin check-text">原因：前天就发了袋子</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 收起流程折叠 -->
+    <view class="close-pop">
+      <image src="" class="close-img-css"></image>
+    </view>
+  </view>
+
+
+</view>
+
+<!-- 底部按钮 -->
+<view class="btn-position">
+  <view wx:if="{{status == 0?true:false}}" class="btn-box flex-box-start">
+    <view class="btn-box1 flex-column-center-center" bindtap="clickBtn" data-index="0">
+      <image class="btn-img-css" src="../../../../static/recheck.png"></image>
+      <view class="font-16-thin btn-img-text">重新下单</view>
+    </view>
+    <view class="font-16-thin btn-box2 margin-btn flex-box-center" bindtap="clickBtn" data-index="1">催办</view>
+    <view class="font-16-blod btn-box3 flex-box-center" bindtap="clickBtn" data-index="2">确认收货</view>
+  </view>
+  <view wx:else class="btn-box flex-box-start">
+    <view wx:if="{{status == 1?true:false}}" class="font-16-blod btn-box3 flex-box-center" bindtap="clickBtn"
+      data-index="2">确认收货</view>
+    <view wx:else class="font-16-blod btn-box3 flex-box-center" bindtap="clickBtn" data-index="4">重新下单</view>
+  </view>
+</view>

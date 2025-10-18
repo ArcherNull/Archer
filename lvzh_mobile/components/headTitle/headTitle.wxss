@@ -1,0 +1,28 @@
+
+.headTitle {
+  width: 100%;
+  background: #FFFFFF;
+  box-shadow: 0px 4rpx 16rpx 0px rgba(44, 89, 151, 0.06);
+}
+
+.title {
+  padding: 20rpx 32rpx;
+  box-shadow: 0px 2rpx 0px 0px rgba(0, 0, 0, 0.1);
+}
+
+.title_1 {
+  width: 8rpx;
+  height: 32rpx;
+  background: linear-gradient(180deg, #00A5FF 0%, #1575F6 100%);
+}
+
+.marginLeft10 {
+  margin-left: 20rpx;
+}
+.marginLeft4 {
+  margin-left: 20rpx;
+}
+
+.content3-box2 {
+  padding: 20rpx 32rpx 28rpx;
+}

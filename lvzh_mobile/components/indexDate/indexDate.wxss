@@ -1,0 +1,39 @@
+.img-css4 {
+  width: 206rpx;
+  height: 276rpx;
+  position: absolute;
+}
+
+.index-bg {
+  position: absolute;
+  top: 88rpx;
+  right: 38rpx;
+  z-index: 100;
+}
+
+.position-scroll {
+  position: relative;
+  margin-top: 16rpx;
+  height: 260rpx;
+}
+.scroll-css{
+  height: 260rpx;
+}
+.scroll-item {
+  padding: 20rpx 68rpx;
+  font-size: 32rpx;
+  font-family: PingFangSC;
+  color: #82838E;
+  line-height: 44rpx;
+  box-shadow: 0px 2rpx 0px 0px rgba(0, 0, 0, 0.1);
+}
+.active{
+color: #1575F6;
+}
+/* .close_bg{
+  border: solid 2rpx #ff0000;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99;
+} */

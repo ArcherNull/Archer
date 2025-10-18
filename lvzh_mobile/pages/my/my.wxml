@@ -1,0 +1,43 @@
+<view class="content-bg"></view>
+<view class="content-box1 flex-box-start content">
+	<view class="content-box1-main1">
+		<image src="../../static/userImg.png" class="img-css"></image>
+	</view>
+	<view class="content-box1-main2">
+		<view class="content-main2-text1">夜雨</view>
+		<view class="subTitle">超级管理员</view>
+		<view class="subTitle" wx:if="{{ phone }}">{{ phone }} </view>
+		<view class="btnBox">
+		<button size="mini" plain="{{true}}" open-type="getPhoneNumber" style="font-size:24rpx;color:rgba(255, 255, 255, 0.6);border:solid 2rpx rgba(255, 255, 255, 0.6);margin-top:16rpx;"  bindgetphonenumber="getPhoneNumberFun">授权手机号</button>
+		</view>
+	</view>
+</view>
+<view class="content-box2 flex-box-between">
+	<view class="content-box2-box flex-box-start" wx:for="{{userMoney}}" data-item="{{item}}" bindtap="clickHead" wx:key='index'>
+		<view class="content-box2-main1">
+			<image src="{{item.src}}" class="img-css1"></image>
+		</view>
+		<view class="content-box2-main2">
+			<view class="{{index==0?'content-box2-text1' : 'font-18'}} ">{{item.num}}</view>
+			<view class="font-10">{{item.text}}</view>
+		</view>
+	</view>
+</view>
+
+<!-- 我的账单 -->
+<view class="marginTop-box">
+	<view class="content-box3 flex-box-between" wx:for="{{btnList}}" wx:key="index" bindtap="jumpPage" data-index="{{index}}">
+		<view class="content-box3-box flex-box-start">
+			<view class="content-box3-text1 flex-box-start-end">
+				<image class="img-css3" src="{{item.src}}"></image>
+			</view>
+			<view class="font-16-thin content-box3-text2">{{item.title}}</view>
+			<view wx:if="{{item.alertInfo != 0}}" class="alert-box flex-box-center">
+				<view class="alert-number">{{item.alertInfo}}</view>
+			</view>
+		</view>
+		<view class="content-box3-text3">
+			<image src="../../static/go.png" class="img-css2"></image>
+		</view>
+	</view>
+</view>

@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "订单列表",
+  "usingComponents": {
+    "nav" : "../../../components/nav/nav",
+    "search" : "../../../components/search/search",
+    "pop" : "../../../components/pop/pop",
+    "checkBox1" :"../../../components/checkbox/checkbox",
+    "timePicker" : "../../../components/timePicker/timePicker"
+  }
+}

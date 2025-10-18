@@ -1,0 +1,4 @@
+<view class="loadMore flex-box-center">
+		<view wx:if="{{loading}}" class="s-pull-loading-icon s-pull-loading-rotate"></view>
+		<view class="btmText">{{loading?'加载中...':'没有更多了'}}</view>
+	</view>

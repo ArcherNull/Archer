@@ -1,0 +1,226 @@
+.content1 {
+  position: relative;
+}
+.content1-position{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+}
+
+.content1-box {
+  background: #ffffff;
+  padding: 20rpx 32rpx 20rpx 80rpx;
+}
+
+.list-box {
+  padding: 20rpx 26rpx 40rpx 80rpx;
+}
+
+.img-buy-css {
+  width: 200rpx;
+  height: 200rpx;
+}
+
+.list-box2 {
+  margin-left: 16rpx;
+}
+
+.list-main1 {
+  font-weight: bold;
+  color: #1e1e1e;
+}
+
+.list-main2 {
+  margin-top: 14rpx;
+  padding: 4rpx 8rpx;
+  background: #F5F6F7;
+}
+
+.content1-box1 {
+  color: #999998;
+}
+
+.price-css1 {
+  color: #F02A28;
+}
+
+.list-main3 {
+  margin-top: 16rpx;
+}
+
+.numBox-css {
+  position: absolute;
+  right: 32rpx;
+  bottom: 40rpx;
+}
+
+.shopCar-position {
+  position: fixed;
+  right: 32rpx;
+  bottom: 68rpx;
+  z-index: 100;
+}
+
+.content2 {
+  background: #ffffff;
+}
+
+.list-position {
+  position: relative;
+}
+
+.numBox-css {
+  position: absolute;
+  right: 32rpx;
+  bottom: 40rpx;
+}
+
+.list-img-css {
+  margin-left: 12rpx;
+  width: 20rpx;
+  height: 14rpx;
+}
+
+.rule-text {
+  color: #333333;
+}
+
+.rlue-item-box {
+  padding: 10rpx 0;
+}
+
+.choose-btn {
+  color: #1575F6;
+  border: 2rpx solid #1575F6;
+  padding: 4rpx 8rpx;
+}
+
+.content3 {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.content3-bmainox {
+  background: #ffffff;
+  box-shadow: 0px -8rpx 20rpx 0px rgba(0, 0, 0, 0.04);
+}
+
+.price-heji {
+  columns: #999999;
+}
+
+.content3-box2 {
+  border: solid 2rpx rgba(0,0,0,0);
+  background: #1575F6;
+  border-radius: 30rpx;
+  color: #ffffff;
+}
+
+.content1 {
+  position: relative;
+}
+
+.checkbox-position {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 32rpx; 
+  z-index: 8;
+}
+
+.padding-btn {
+  padding: 20rpx 40rpx;
+}
+
+.del-css {
+  color: #F02A28;
+  border-radius: 30rpx;
+  border: 1px solid #F02A28;
+}
+
+.prices-box {
+  color: #999999;
+}
+
+.prices-box1 {
+  color: #999999;
+}
+
+.img-pop-css {
+  width: 176rpx;
+  height: 176rpx;
+}
+
+.list-pop-main2 {
+  margin-top: 4rpx;
+}
+
+.list-pop-rlue {
+  color: #666666;
+}
+
+.list-pop-box2 {
+  margin-left: 40rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.img-close-css {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.footer-position {
+  position: relative;
+  margin-bottom: 100rpx;
+}
+
+.close-Position {
+  position: absolute;
+  top: 0;
+  right: 20rpx;
+  z-index: 102;
+}
+
+.rlue-item {
+  padding: 20rpx 0;
+  box-shadow: 0px 2rpx 0px 0px rgba(238, 238, 238, 1);
+}
+
+.rlue-item-arr {
+  color: #666666;
+  padding: 8rpx 28rpx;
+  background: #F1F1F1;
+  border: solid 2rpx rgba(0, 0, 0, 0);
+}
+
+.rlue-item-arr1 {
+  color: #1575F6;
+  padding: 8rpx 28rpx;
+  background: #E5F0FD;
+  border: 2rpx solid #1575F6;
+}
+
+.pop-maegin-left {
+  margin: 10rpx 20rpx 10rpx 0;
+}
+
+.list-pop-padding {
+  padding-bottom: 20rpx;
+}
+.shopCar-list{
+  margin-top: 100rpx;
+  margin-bottom: 200rpx;
+}
+.flex-warp{
+  flex-wrap: wrap;
+}
+
+/* .rule-single-item{
+  padding: 10rpx 0;
+} */

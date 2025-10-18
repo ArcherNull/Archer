@@ -1,0 +1,5 @@
+.headTitle{
+    padding:10rpx 20rpx;
+    box-sizing: border-box;
+    font-size: 28rpx;
+}

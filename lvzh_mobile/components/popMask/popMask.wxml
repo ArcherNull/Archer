@@ -1,0 +1,3 @@
+<view class="popMask" wx:if="{{ showPopMask }}" bindtap="close">
+  <view class=""></view>
+</view>

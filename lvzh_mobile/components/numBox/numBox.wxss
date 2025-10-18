@@ -1,0 +1,11 @@
+.img-num-css{
+  width: 40rpx;
+  height: 40rpx;
+}
+.num-box2{
+  width: 70rpx;
+}
+.input-num-css{
+  width: 54rpx;
+  text-align: center;
+}

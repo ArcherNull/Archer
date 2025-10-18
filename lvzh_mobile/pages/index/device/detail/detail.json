@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "设备详情",
+  "usingComponents": {
+    "nav" : "../../../../components/nav/nav",
+    "select":"../../../../components/select/select"
+  }
+}

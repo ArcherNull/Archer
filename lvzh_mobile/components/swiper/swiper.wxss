@@ -1,0 +1,36 @@
+.nav-item{
+  padding:32rpx 0;
+  color: #999999;
+}
+
+.nav-item1{
+  padding:32rpx 0;
+  color: #1e1e1e;
+  font-weight: bold;
+  background: #ffffff;
+}
+.swiper-item{
+  position: relative;
+}
+.text-msg{
+  position: absolute;
+  width: 30rpx;
+  height: 30rpx;
+  right: 0;
+  top: -32rpx;
+}
+.item-css{
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: #F02A28;
+  font-size: 18rpx;
+  color: #ffffff;
+}
+.scroll-css{
+  width: 100%;
+}
+.swpier-box{
+  text-align: center;
+  width: 100%;
+}

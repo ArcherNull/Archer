@@ -1,0 +1,33 @@
+.content3-box2 {
+  padding: 22rpx 0;
+  box-shadow: 0rpx 2rpx 0rpx 0rpx rgba(0, 0, 0, 0.1);
+}
+
+.content3-res1 {
+  flex: 3;
+}
+
+.content3-res2 {
+  flex: 6;
+}
+
+.content3-box2-text2 {
+  font-size: 28rpx;
+  font-family: PingFangSC-Regular, PingFang SC;
+  color: #292A2C;
+  line-height: 34rpx;
+}
+
+.content3-res3 {
+  flex: 1;
+}
+
+.input-img {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.arrow-img{
+  width: 20rpx;
+  height: 28rpx;
+}

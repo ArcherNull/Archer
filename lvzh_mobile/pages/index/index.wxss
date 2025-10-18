@@ -1,0 +1,159 @@
+.header-bg {
+  height: 500rpx;
+}
+
+.content1 {
+  padding: 32rpx 32rpx 20rpx;
+  /* background: linear-gradient(270deg, #00A5FF 0%, #1575F6 100%); */
+  background-color: var(--paimary-color);
+}
+
+.content1-box1-text1 {
+  font-size: 24rpx;
+  color: #FFFFFF;
+}
+
+.content1-box1-tbox2 {
+  margin-left: 30rpx;
+}
+
+.content1-box1-tbox1 {
+  color: #292A2C;
+}
+
+.content1-box1-box {
+  padding: 10rpx 24rpx;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 30rpx;
+}
+
+
+
+.content1-box2-main1 {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 30rpx;
+}
+
+.content1-box2-main2 {
+  padding: 4rpx 16rpx;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4rpx;
+  color: #FFFFFF;
+  margin-left: 16rpx;
+}
+
+.content1-box2-text2 {
+  font-size: 58rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 80rpx;
+}
+
+.content1-box3 {
+  margin-top: 50rpx;
+}
+
+.content1-box3-text2 {
+  text-align: center;
+}
+
+.content1-box4 {
+  margin-top: 62rpx;
+}
+
+.indexDate_close{
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left:0;
+  position: fixed;
+  z-index: 99;
+}
+
+.margin-left {
+  margin-left: 20rpx;
+}
+
+.content2 {
+  height: 80rpx;
+  background: #FFFFFF;
+  box-shadow: 0px 4rpx 16rpx 0px rgba(44, 89, 151, 0.06);
+  opacity: 0.95;
+}
+
+.content3 {
+  width: 100%;
+  background: #FFFFFF;
+  box-shadow: 0px 4rpx 16rpx 0px rgba(44, 89, 151, 0.06);
+  opacity: 0.95;
+}
+
+
+.content3-box2-main {
+  margin-left: 20rpx;
+}
+
+.subtext {
+  margin-left: 8rpx;
+  color: #C1C2C5;
+}
+
+.content3-box2 {
+  padding: 20rpx 32rpx 28rpx;
+}
+
+.content3-box2-main2 {
+  font-size: 36rpx;
+  line-height: 50rpx;
+}
+
+.content3-box2-main1 {
+  font-size: 20rpx;
+  color: #82838E;
+  line-height: 30rpx;
+}
+
+.content4 {
+  width: 100%;
+  background: #FFFFFF;
+  box-shadow: 0px 2px 8px 0px rgba(44, 89, 151, 0.06);
+  opacity: 0.95;
+  margin-bottom: 60rpx;
+}
+
+.img-css3 {
+  margin-top: 36rpx;
+  width: 64rpx;
+  height: 62rpx;
+}
+
+.content4-box2-main2 {
+  margin-top: 32rpx;
+  color: #333333;
+}
+
+.content4-box2-main3 {
+  font-size: 20rpx;
+  color: #C1C2C5;
+  line-height: 30rpx;
+}
+
+.content-mainbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 33.3%;
+  box-sizing: border-box;
+  height: 224rpx;
+  border-right: solid 2rpx rgba(0, 0, 0, 0.1);
+  border-bottom: solid 2rpx rgba(0, 0, 0, 0.1);
+
+}
+
+.themeColorBtn{
+  margin: 20rpx 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20rpx;
+}

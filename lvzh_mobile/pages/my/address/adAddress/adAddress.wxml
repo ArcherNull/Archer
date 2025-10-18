@@ -1,0 +1,36 @@
+<view class="content padding">
+  <inputBox inputTitle='收货人' placeholder='请输入收货人姓名'></inputBox>
+  <inputBox inputTitle='手机号码' placeholder='请输入收货人手机号码'></inputBox>
+
+  <inputBox inputTitle='所在城市' showRight='arrow'>
+    <picker mode="region" slot='content' value="{{ cityVal }}" bindchange="selectCityFun"  class="content1-box2">
+      <view class="{{ cityVal.length==0?'placeholder-class':'selectCityCss' }}">
+        {{ cityVal.length==0?'请选择所在城市':''}}
+        {{cityVal[0]}} {{cityVal[1]}} {{cityVal[2]}}</view>
+    </picker>
+  </inputBox>
+
+  <inputBox inputTitle='收货地址' placeholder='请输入详细的收货地址'></inputBox>
+
+  <view class="content1 flex-box-start margin-top">
+    <view class="font-14-thin content1-boxM1">设置为默认地址</view>
+    <view class="content1-boxM2">
+      <view class="img-addr-box" bindtap="setBtn">
+        <image wx:if="{{setAddr}}" src="../../../../static/btnOn.png" class="img-addCss"></image>
+        <image wx:else src="../../../../static/btnClose.png" class="img-addCss"></image>
+      </view>
+    </view>
+  </view>
+
+  <!-- 删除默认地址 -->
+  <view wx:if="{{delAddr}}" class="content1-del flex-box-start margin-top">
+    <view class="font-14-thin content1-del1" bindtap="delAddr">删除收货地址</view>
+  </view>
+</view>
+
+<!-- 底部按钮 -->
+<view class="btn-position">
+  <view class="btn-flex flex-box-center">
+    <view class="font-16-blod btn-text">保存</view>
+  </view>
+</view>

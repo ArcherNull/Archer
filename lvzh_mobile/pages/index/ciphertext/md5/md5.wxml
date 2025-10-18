@@ -1,0 +1,47 @@
+<view class="bigTitle padding">
+  md5
+</view>
+
+<headTitle title='md5加密'>
+  <view slot='titleRight'>
+    <view class="outPutBtn" bindtap="encryptionFun">加密</view>
+  </view>
+  <view class="paddingLeftRight16 paddingBtm16" slot='content'>
+    <inputBox inputTitle='加密字符串' value="{{ encryptionString }}" placeholder='请输入加密字符串' bindinputVal='inputValFun' data-index='0'></inputBox>
+    <inputBox inputTitle='加密秘钥' value="{{ encryptionKey }}" placeholder='请输入加密秘钥' bindinputVal='inputValFun' data-index='1'></inputBox>
+    <inputBox inputTitle='加密规则' showRight='arrow'>
+      <picker range="{{ rulesList }}" slot='content' wx:key='index' range-key='name' value="{{ rulesIndex }}" bindchange='inputValFun' data-index='2'>
+        <view>
+          {{ rulesList[rulesIndex].name? rulesList[rulesIndex].name :'请输入加密规则'}}
+        </view>
+      </picker>
+    </inputBox>
+    <inputBox type="slot" inputTitle='密文'>
+      <view slot='content' bindtap="copyText">
+        {{ outPutEncryption || '没有输出密文' }}
+      </view>
+    </inputBox>
+  </view>
+</headTitle>
+
+<headTitle title='md5解密'>
+  <view slot='titleRight'>
+    <view class="outPutBtn">解密</view>
+  </view>
+  <view class="paddingLeftRight16 paddingBtm16" slot='content'>
+    <inputBox inputTitle='解密字符串' value="{{ decryptString }}" placeholder='请输入解密字符串' bindinputVal='inputValEnv' data-index='0'></inputBox>
+    <inputBox inputTitle='解密秘钥' value="{{ decryptKey }}" placeholder='请输入解密秘钥' bindinputVal='inputValEnv' data-index='1'></inputBox>
+    <inputBox inputTitle='解密规则' showRight='arrow'>
+      <picker range="{{ rulesList }}" slot='content' wx:key='index' range-key='name' value="{{ enRulesIndex }}" bindchange='inputValEnv' data-index='2'>
+        <view>
+          {{ rulesList[enRulesIndex].name ? rulesList[enRulesIndex].name :'请输入解密规则'}}
+        </view>
+      </picker>
+    </inputBox>
+    <inputBox type="slot" inputTitle='明文'>
+      <view slot='content' bindtap="copyText">
+        {{ outPutDecrypt || '没有输出密文' }}
+      </view>
+    </inputBox>
+  </view>
+</headTitle>

@@ -1,0 +1,10 @@
+<view class="num-box flex-box-start">
+  <!-- 加 图片 -->
+    <image wx:if="{{inputValue >1?true:false}}" class="img-num-css" src="../../static/numCle.png" catchtap="add" data-index="1" data-value="{{inputValue}}"></image>
+    <image wx:else class="img-num-css" src="../../static/numCle1.png"></image>
+  <view class="num-box2 flex-box-center">
+    <input class="input-num-css" type="number" maxlength="3"  value="{{inputValue}}" placeholder-style="color: #1E1E1E;" bindinput="inputValue" placeholder-class="input-css" />
+  </view>
+  <!-- 减 图片 -->
+    <image class="img-num-css" src="../../static/numAdd.png" catchtap="add"  data-index="0" data-value="{{inputValue}}"></image>
+</view>

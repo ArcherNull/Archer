@@ -1,0 +1,15 @@
+<view class="bigTitle padding">
+  音/视频
+</view>
+
+<headTitle title='音频'>
+  <view class="paddingLeftRight16 paddingBtm16" slot='content'>
+    <bgAudioManager></bgAudioManager>
+  </view>
+</headTitle>
+
+<headTitle title='视频'>
+  <view class="paddingLeftRight16 paddingBtm16" slot='content'>
+    <video class="video-css" src="{{ videoInfo.movieUrl }}" show-fullscreen-btn="{{ true }}" poster="{{ videoInfo.coverUrl || '/images/common-icon/1.png' }}" object-fit="cover" />
+  </view>
+</headTitle>

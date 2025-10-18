@@ -1,0 +1,49 @@
+.checkbox-css1 {
+  width: 28rpx;
+  height: 28rpx;
+  border: solid 1rpx #C1C2C5;
+}
+
+.active1 {
+  background: url(https://i.loli.net/2020/10/05/UlxV52n7rMuLw34.png) no-repeat center center;
+  background-size: 100% 100%;
+  width: 30rpx;
+  height: 30rpx;
+  border: none;
+}
+
+.rect-css {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.check-text {
+  margin-left: 16rpx;
+  font-size: 24rpx;
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: #C1C2C5;
+  line-height: 34rpx;
+}
+
+.active-title {
+  color: #68A2FD;
+}
+.checkbox-css2-box{
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+}
+.checkbox-css2 {
+  width: 24rpx;
+  height: 24rpx;
+  border: 2rpx solid #C1C2C5;
+  border-radius: 50%;
+}
+.active2-box{
+  border: solid 2rpx #1575F6;
+}
+.active2 {
+  background: #1575F6;
+}

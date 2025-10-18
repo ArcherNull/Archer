@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "headTitle" : "../../../../components/headTitle/headTitle",
+    "inputBox" : "../../../../components/inputBox/inputBox"
+  },
+  "navigationBarTitleText": "sha1"
+}

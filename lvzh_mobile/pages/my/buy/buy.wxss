@@ -1,0 +1,100 @@
+.content1 {
+  flex: 1.1;
+}
+
+.content2 {
+  flex: 3.9;
+}
+
+.content2-title {
+  padding: 20rpx 12rpx;
+}
+
+.content2-title1 {
+  color: #999999;
+}
+
+.list-item {
+  background: #ffffff;
+  position: relative;
+}
+.list-position{
+  position: relative;
+}
+
+.content2-title2 {
+  padding-right: 20rpx;
+  color: #1575F6;
+}
+
+.content {
+  height: 100%;
+}
+
+.img-buy-css {
+  width: 164rpx;
+  height: 164rpx;
+}
+
+.list-main1 {
+  font-weight: bold;
+  color: #1e1e1e;
+}
+
+.list-box {
+  padding: 20rpx 26rpx 40rpx 12rpx;
+}
+
+.list-box2 {
+  margin-left: 16rpx;
+}
+
+.list-main2 {
+  margin-top: 8rpx;
+}
+
+.list-main2-text1 {
+  color: #969696;
+}
+
+.margin-left {
+  margin-left: 40rpx;
+}
+
+.price-css1 {
+  color: #F02A28;
+}
+.list-main3{
+  margin-top: 8rpx;
+}
+.numBox-css{
+  position: absolute;
+  right: 32rpx;
+  bottom: 40rpx;
+}
+.shopCar-position{
+  position: fixed;
+  right: 32rpx;
+  bottom: 68rpx;
+  z-index: 100;
+}
+.shopCar-img-box{
+  position: relative;
+}
+
+.shopcar-img{
+  width: 180rpx;
+  height: 180rpx;
+}
+.text-shopcar-msg{
+  position: absolute;
+  top: 20rpx;
+  right: 10rpx;
+  width: 46rpx;
+  height: 46rpx;
+  background: #F02A28;
+  border-radius: 50%;
+}
+.shopcar-text{
+  color:#ffffff
+}

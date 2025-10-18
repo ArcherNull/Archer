@@ -1,0 +1,38 @@
+.text-box1 {
+  margin-top: 40rpx;
+  color: #1E1E1E;
+}
+
+.text-box2 {
+  margin-top: 8rpx;
+  color: #8E8E8E;
+}
+
+.img-pay-box {
+  width: 180rpx;
+  height: 246rpx;
+}
+
+.btn-box {
+  margin-top: 80rpx;
+}
+
+.btn-box1 {
+  flex: 1;
+  border: 2rpx solid #1575F6;
+  font-weight: 400;
+  color: #1575F6;
+  padding: 24rpx 0;
+}
+
+.btn-box2 {
+  margin-left: 32rpx;
+  flex: 1;
+  padding: 24rpx 0;
+  background: #1575F6;
+  box-shadow: 0px 8rpx 20rpx 0px rgba(31, 91, 173, 0.3);
+  border-radius: 8rpx;
+}
+.content{
+  padding: 40rpx 32rpx;
+}

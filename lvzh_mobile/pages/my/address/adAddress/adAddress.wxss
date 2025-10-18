@@ -1,0 +1,74 @@
+.content1-box1 {
+  flex: 2.5;
+  color: #333333;
+}
+
+.content {
+  background: #ffffff;
+}
+
+.content1 {
+  padding: 20rpx 0rpx;
+}
+
+.content1-box2 {
+  flex: 7;
+}
+
+.input-add-css {
+  color: #BEBEBE;
+}
+
+.img-addr-css {
+  width: 16rpx;
+  height: 24rpx;
+}
+
+.content1-boxM1 {
+  flex: 4;
+}
+
+.content1-boxM2 {
+  flex: 6;
+}
+
+.img-addCss {
+  width: 90rpx;
+  height: 44rpx;
+}
+
+.content1-boxM2 {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-position {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 32rpx;
+  z-index: 100;
+}
+
+.btn-flex {
+  padding: 20rpx;
+  background: #1575F6;
+  border-radius: 8rpx;
+}
+
+.btn-text {
+  color: #ffffff;
+}
+
+.content1-del {
+  padding: 20rpx;
+}
+
+.content1-del1 {
+  color: #EC0D0C;
+}
+.selectCityCss{
+  color: #333333;
+}

@@ -1,0 +1,5 @@
+<diyScrollView boxHeight='1000rpx' isTopUpdate="{{ isTopUpdate }}" isEnd="{{ isEnd }}" bindhandleToTop="handleToTop" bindhandleToBottom="handleToBottom">
+    <view slot='arrListSlot' class="borderRed content">
+        12313
+    </view>
+</diyScrollView>

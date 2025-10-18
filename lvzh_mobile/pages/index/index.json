@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "首页",
+  "usingComponents": {
+    "indexSwiper" : "../../components/indexSwiper/indexSwiper",
+    "indexDate" : "../../components/indexDate/indexDate",
+    "loadMore" : "../../components/loadMore/loadMore",
+    "headTitle" : "../../components/headTitle/headTitle"
+  }
+}

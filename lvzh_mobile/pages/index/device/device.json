@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "设备列表",
+  "usingComponents": {
+    "search" :"../../../components/search/search",
+    "pop" :"../../../components/pop/pop",
+    "checkBox1" :"../../../components/checkbox/checkbox"
+  }
+}

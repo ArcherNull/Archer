@@ -1,0 +1,14 @@
+
+    <scroll-view class="scroll-css" scroll-y="true">
+        <view class="font-14-thin swpier-box  {{navIndex == index?'nav-item1':'nav-item'}}" wx:for="{{navList}}"
+            wx:key="index" bindtap="clickNav" data-index="{{index}}">
+            <view class="swiper-item">
+                {{item.name}}
+                <view class="text-msg">
+                    <view class="item-css flex-box-center">
+                        <view>1</view>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </scroll-view>

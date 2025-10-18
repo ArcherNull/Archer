@@ -1,0 +1,141 @@
+.content {
+  padding: 0rpx 20rpx;
+}
+
+.header-bg {
+  background: linear-gradient(270deg, #00A5FF 0%, #1575F6 100%);
+  width: 100%;
+  height: 562rpx;
+  background-size: 100% 100%;
+  top: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.content-box1 {
+  margin-top: 80rpx;
+}
+
+.content-box2 {
+  margin-top: 20rpx;
+}
+
+.content-box2-text {
+  font-size: 36rpx;
+  font-family: PingFangSC-Semibold, PingFang SC;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 50rpx;
+}
+
+.content3-box2-title {
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: #68A2FD;
+  color: #68A2FD;
+  font-size: 24rpx;
+  line-height: 34rpx;
+}
+
+.content-box3 {
+  margin-top: 78rpx;
+  background: #FFFFFF;
+  box-shadow: 0rpx 4rpx 20rpx 0rpx rgba(21, 117, 246, 0.1);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+}
+
+.image-box {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.content3-box2 {
+  padding: 22rpx 0;
+  box-shadow: 0rpx 2rpx 0rpx 0rpx rgba(0, 0, 0, 0.1);
+}
+
+.margin-top {
+  margin-top: 40rpx;
+}
+
+.margin-top1 {
+  margin-top: 20rpx;
+}
+
+.margin {
+  margin: 20rpx 0;
+}
+
+.input-css {
+  margin-left: 24rpx;
+  width: 510rpx;
+}
+
+.margin-left {
+  margin-left: 24rpx;
+}
+
+.input-img {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.input-img1 {
+  width: 32rpx;
+  height: 14rpx;
+}
+
+.input-img2 {
+  width: 32rpx;
+  height: 24rpx;
+}
+
+.content3-box2-text2 {
+  font-size: 28rpx;
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: #292A2C;
+  line-height: 34rpx;
+}
+
+.content3-box4 {
+  margin-top: 12rpx;
+}
+
+.content3-res1 {
+  flex: 3;
+}
+
+.content3-res2 {
+  flex: 6;
+}
+
+.content3-res3 {
+  flex: 1;
+}
+
+.content3-res2-info {
+  flex: 4;
+}
+
+.content3-res3-info {
+  flex: 3;
+}
+
+.info-title {
+  font-size: 24rpx;
+  font-family: PingFangSC-Regular, PingFang SC;
+  color: #1575F6;
+  line-height: 30rpx;
+}
+.content3-res2-role{
+  flex: 7;
+}
+.padding-box{
+  padding: 16rpx 0;
+}
+.input-box1{
+  height: 40rpx;
+  width: 80rpx;
+}

@@ -1,0 +1,8 @@
+<view class="rect-css" wx:if="{{type == 'rect'}}" bindtap="click">
+	<view class="checkbox-css1 {{checkBool?'active1':''}}"></view>
+	<view class="check-text {{checkBool?'active-title':''}}">记住密码</view>
+</view>
+<view wx:elif="{{type == 'circle'}}" class="checkbox-css2 flex-box-center {{checkBool?'active2-box':''}}"  bindtap="click">
+	<view class="checkbox-css2-box {{checkBool?'active2':''}}"></view>
+</view>
+<view wx:else class="checkbox-css3"></view>

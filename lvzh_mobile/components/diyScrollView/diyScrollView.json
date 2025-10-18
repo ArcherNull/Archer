@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "loadMore" : "../loadMore/loadMore"
+  }
+}

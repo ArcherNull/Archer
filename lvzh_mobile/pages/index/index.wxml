@@ -1,0 +1,92 @@
+<view style="--paimary-color:{{ themeColor }};">
+  <view class="content1 ">
+    <view class="content1-box1 flex-box-between">
+      <view class="content1-box1-text1">您好，超级管理员</view>
+      <view class="content1-box1-box flex-box-start" bindtap="clickOne">
+        <!-- 日期选择 -->
+        <view class="content1-box1-text1 content1-box1-tbox1 ">
+          {{tagValue}}
+        </view>
+        <view class=" content1-box1-tbox2 flex-box-start">
+          <image src="../../static/index_5.png" class="img-css1"></image>
+        </view>
+      </view>
+    </view>
+    <view class="content1-box2 margin-top flex-box-center">
+      <view class="content1-box2-box1">
+        <view class="content1-box2-text1 flex-box-start">
+          <view class="content1-box2-main1">{{tagValue}}成交额(元)</view>
+          <view class="content1-box2-main1 content1-box2-main2">94单</view>
+        </view>
+        <view class="content1-box2-text2">953.40</view>
+      </view>
+    </view>
+    <view class="content1-box3 flex-box-between">
+      <view class="content1-box3-text1" wx:for="{{ profitList }}" wx:key='index'>
+        <view class="content1-box2-text1 flex-box-start">
+          <view class="content1-box2-main1">{{tagValue}}{{ item.title }}</view>
+          <view wx:if="{{ item.orderNum }}" class="content1-box2-main1 content1-box2-main2">{{ item.orderNum }}单</view>
+        </view>
+        <view class="font-18-blod content1-box3-text2">{{ item.number }}</view>
+      </view>
+    </view>
+    <view class="content1-box4 flex-box-start">
+      <view class="content1-box1-text1">较昨日对比当前营业额增长+0元</view>
+      <view class="content1-box4-text2">
+        <image src="../../static/index_4.png" class="img-css1 margin-left"></image>
+      </view>
+    </view>
+  </view>
+
+  <view class="themeColorBtn">
+    <button style="background: var(--paimary-color);color:#ffffff;width:100%;" bindtap="changeSystemTheme" data-color="#ff0000">更改系统颜色[红]</button>
+
+    <button style="background: var(--paimary-color);color:#ffffff;width:100%;" bindtap="changeSystemTheme" data-color="#6495ED">更改系统颜色[蓝]</button>
+
+    <button style="background: var(--paimary-color);color:#ffffff;width:100%;" bindtap="changeSystemTheme" data-color="#32CD32">更改系统颜色[绿]</button>
+  </view>
+
+  <!-- 日期选择弹窗 -->
+  <indexDate showDom="{{showDom}}" tagsList="{{tagsList}}" bindclickDataTag="clickTag"></indexDate>
+
+  <!-- 日期选择弹窗透明遮罩层 -->
+  <view wx:if="{{showDom}}" class="indexDate_close" bindtap="closeIndexDate"></view>
+
+  <!-- 加载loading -->
+  <loadMore wx:if="{{loading}}" loading="{{loading}}"></loadMore>
+
+  <!-- 轮播消息 -->
+  <indexSwiper wx:else indexSwiper="{{indexSwiper}}"></indexSwiper>
+
+  <view class="content3 margin-top">
+    <headTitle title='统计'>
+      <view slot='content'>
+        <view class="content3-box2 flex-box-between">
+          <view class="content3-box2-text1" wx:for="{{ bagList }}" wx:key='index'>
+            <view class="content3-box2-main1">{{ item.title }}</view>
+            <view class="font-16-blod content3-box2-main2">{{ item.number }}</view>
+          </view>
+        </view>
+      </view>
+      <view slot='subTitle'>
+        <view class="subtext">({{tagValue}}数据)</view>
+      </view>
+    </headTitle>
+  </view>
+
+  <view class="content4 margin-top">
+    <headTitle title='功能模块'>
+      <view slot='content'>
+        <view class="content4-box2 flex-box-start flex-warp">
+          <view class="content-mainbox" wx:for="{{ funList }}" wx:key='index' bindtap="clickJump" data-item="{{item}}">
+            <view class="content4-box2-main1">
+              <image src="{{ item.img }}" class="img-css3"></image>
+            </view>
+            <view class="content1-box1-text1 content4-box2-main2">{{ item.name }}</view>
+            <view class="content4-box2-main3">{{ item.subText }}<text wx:if="{{ item.totalDevice }}" class="text-css">{{ item.online }}/ {{ item.totalDevice }}</text></view>
+          </view>
+        </view>
+      </view>
+    </headTitle>
+  </view>
+</view>

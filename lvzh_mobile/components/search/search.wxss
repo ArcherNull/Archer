@@ -1,0 +1,66 @@
+.img-css-left {
+  margin-left: 32rpx;
+}
+
+.img-css1-left {
+  margin: 0 16rpx;
+}
+
+.search-box {
+  width: 80%;
+  height: 60rpx;
+  background: #F5F6F7;
+  border-radius: 30rpx;
+}
+
+.width-box {
+  width: 100%;
+}
+
+.width-box1 {
+  width: 82%;
+}
+
+.search-botton {
+  font-size: 28rpx;
+  font-family: PingFangSC-Regular, PingFang SC;
+  font-weight: 400;
+  color: #68A2FD;
+  line-height: 40rpx;
+}
+
+.input-css {
+  width: 75%;
+  margin-left: 16rpx;
+}
+
+.input-css1 {
+  width: 63%;
+  margin-left: 16rpx;
+}
+
+.search-button {
+  margin-left: 24rpx;
+  color: #68A2FD;
+}
+
+.search-position {
+  position: relative;
+}
+
+.clear-box {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-40%);
+
+}
+.clear-right-box{
+  right: 120rpx;
+}
+
+.clear-right-box1{
+  right: 90rpx;
+}
+.text-colotr{
+  color: #969696;
+}

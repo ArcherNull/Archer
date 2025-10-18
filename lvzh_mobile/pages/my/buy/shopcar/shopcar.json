@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "购物车",
+  "usingComponents": {
+    "numBox" : "../../../../components/numBox/numBox",
+    "checkBox1" : "../../../../components/checkbox/checkbox",
+    "pop" : "../../../../components/pop/pop"
+  }
+}

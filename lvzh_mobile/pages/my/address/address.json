@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "addrItem" : "../components/addrItem/addrItem",
+    "loadMore" : "../../../components/loadMore/loadMore"
+  }
+}

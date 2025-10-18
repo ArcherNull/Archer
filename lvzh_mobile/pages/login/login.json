@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "tags": "../../components/nav/nav",
+    "checkBox1" :"../../components/checkbox/checkbox",
+    "select":"../../components/select/select"
+  }
+}

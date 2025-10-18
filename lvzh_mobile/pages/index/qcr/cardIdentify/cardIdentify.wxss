@@ -1,0 +1,22 @@
+
+.identify-item {
+    margin: 0 20rpx 20rpx 0;
+}
+
+.content-subTitle {
+    color: #00A5FF;
+    text-decoration: underline;
+    font-size: 24rpx;
+    margin: 0 12rpx 12rpx 0;
+}
+
+.example-img {
+    width: 200rpx;
+    height: 200rpx;
+}
+
+.alert-msg{
+    margin-left: 12rpx;
+    color: #00A5FF;
+    font-weight: bold;
+}

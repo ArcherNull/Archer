@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "headTitle": "../../../../components/headTitle/headTitle",
+    "upLoadFile": "../../../../components/upLoadFile/upLoadFile",
+    "inputBox": "../../../../components/inputBox/inputBox",
+    "ocr-navigator": "plugin://ocr-plugin/ocr-navigator"
+  },
+  "navigationBarTitleText": "证件识别"
+}

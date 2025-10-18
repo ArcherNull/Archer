@@ -1,0 +1,68 @@
+<view class="chart">
+	<view class="content1">
+		<view class="content1-box1  padding flex-box-between">
+			<view class="content1-box1-main1">
+				<view class=" content1-bmain1 "><select propArray="{{selectList}}" nowText="{{selectList[0].text}}"></select>
+				</view>
+			</view>
+			<view class="font-14-thin content1-box1-main2">
+				下一个门店
+			</view>
+		</view>
+		<view class="content1-box2">
+			<nav type="statistic" tags="{{tagsList}}" tagIndex="{{tagIndex}}" bindclickTag="clickTag">
+				<view class="nav-content margin-top flex-box-between">
+					<view class="nav-box1 flex-box-start">
+						<view class="nav-box1-box1 ">
+							<image src="../../../../static/forward.png" class="img-css2"></image>
+						</view>
+						<view class="font-12-thin nav-box1-box1">前一天</view>
+					</view>
+					<view class="font-12-thin nav-box2">{{today}}</view>
+					<view class="nav-box1 flex-box-start">
+						<view class="font-12-thin nav-box1-box2 ">后一天</view>
+						<view class="nav-box1-box1 ">
+							<image src="../../../../static/forward1.png" class="img-css2"></image>
+						</view>
+					</view>
+				</view>
+			</nav>
+		</view>
+	</view>
+
+	<view class="content3 margin-top">
+		<view class="content3-box1 flex-box-start padding">
+			<view class="content3-box1-text1"></view>
+			<view class="font-16-blod content3-box1-text2">阳江人民医院</view>
+		</view>
+		<view class="content3-box2 flex-box-between">
+			<view class="content3-box2-main1 flex-box-start">
+				<view class="font-12-thin content3-box2-bmain1">营收总额：¥</view>
+				<view class="content3-box2-bmain2">395.80</view>
+			</view>
+			<view class="content3-box2-main2 flex-box-start">
+				<view class="font-12-thin content3-box2-bmain1">成交笔数：</view>
+				<view class="content3-box2-bmain2">39<text class="font-12-thin content3-box2-bmain1">(笔)</text></view>
+			</view>
+		</view>
+		<view class=" flex-box-start  content3-flexbox">
+			<view class="content3-boxain  flex-centent-box" wx:for="{{proDetail}}" wx:key="index">
+				<view class="font-16-blod">{{item.num}}</view>
+				<view class="content3-box1-tmain content3-boxmain2">{{item.name}}</view>
+			</view>
+		</view>
+		<!-- 折线图组件 -->
+		<view class="chartTable">
+			<view class="title"> 统计图数据</view>
+			<include src="../../../../template/scrollline/scrollline.wxml" />
+		</view>
+	</view>
+
+
+	<view class="position-box2">
+		<view class="footer-btn flex-box-between">
+			<view class="font-16-thin footer-btn1 flex-box-center" bindtap="backIndex" data-index='0'>返回首页</view>
+			<view class="font-16-thin footer-btn1 flex-box-center" bindtap="backIndex" data-index='1'>收益列表</view>
+		</view>
+	</view>
+</view>

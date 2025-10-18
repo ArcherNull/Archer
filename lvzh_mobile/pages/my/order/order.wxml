@@ -1,0 +1,119 @@
+<view class="content1">
+	<view class="content1-box1 flex-box-between">
+		<view class="content1-box1-text1 ">
+			<search type="order" value="{{value}}" placeholder="请输入设备编号或备注" bindsearch="search"></search>
+		</view>
+		<view class="content1-box1-text2 flex-box-start" bindtap="openPop">
+			<view class="content1-box1-main1">
+				<image src="../../../static/order_1.png" class="img-css"></image>
+			</view>
+			<view class="content1-box1-main2 con-margin">筛选</view>
+		</view>
+	</view>
+	<view class="content1-box2 margin-top">
+		<nav type="statistic" tags="{{tagsList}}" tagIndex="{{tagIndex}}" bindclickTag="clickTag"></nav>
+	</view>
+	<view class="content1-box3 flex-box-between">
+		<view class="font-12-thin content1-box3-text1">总金额：<text class="font-16-blod font-css">1091.90</text>元</view>
+		<view class="font-12-thin content1-box3-text1">订单数：<text class="font-16-blod font-css">109</text></view>
+	</view>
+</view>
+<view class="content2 margin-top">
+	<view class="content2-box1 flex-box-between">
+		<view class="content2-box1-text1 flex-box-start">
+			<image src="../../../static/login.png" class="img-css2"></image>
+			<view class="content2-box1-text2">
+				<view class="font-16-blod content2-box1-main1">joker</view>
+				<view class="font-12-thin">用户ID：1883</view>
+			</view>
+		</view>
+		<view class="font-14-thin content2-box1-text3 ">
+			待付款
+		</view>
+	</view>
+	<view class="content2-box2 flex-box-start">
+		<view class="content2-box2-text1">
+			<image src="../../../static/login.png" class="img-css3"></image>
+		</view>
+		<view class="content2-box2-text2">
+			<view class="content2-box2-main1">
+				<view class=" font-14-thin content2-bmian1 hidden-text1">订单号：AD8464936549HKP45549HKP45549HKP45</view>
+				<view class="font-14-thin content2-bmian1 hidden-text1">投放地址：江苏省淮安市经济开苏省淮安市苏省淮安市苏省淮安市</view>
+			</view>
+			<view class="content2-box2-main2">
+				<view class="font-12-thin content2-bmian2 hidden-text1">下单时间：2020-08-13 23:38:37</view>
+				<view class="font-12-thin content2-bmian2 hidden-text1">轮播广告-周-15秒-18.5寸广告牌(S型号)</view>
+			</view>
+		</view>
+	</view>
+	<view class="content2-box3">
+		<view class="content2-box3-text1 flex-box-between">
+			<view class="font-14-thin content2-box3-main1">投放获取消费积分：</view>
+			<view class="font-16-thin content2-box3-main3">+50</view>
+		</view>
+		<view class="content2-box3-text2  flex-box-between margin-top">
+			<view class="font-14-thin content2-box3-main1">商品金额：</view>
+			<view class="font-16-thin content2-box3-main2">￥50.00</view>
+		</view>
+		<view class="content2-box3-text3  flex-box-between margin-top">
+			<view class="font-14-thin content2-box3-main1">优惠金额：</view>
+			<view class="font-16-thin content2-box3-main2">-￥50.00</view>
+		</view>
+	</view>
+	<view class="content2-box4">
+		<view class="font-14-thin content2-box4-text">实付款：<text class="content2-text-css">￥40.00</text></view>
+	</view>
+</view>
+
+<pop type="order" wx:if="{{popDom}}" bindclosePop="closePop">
+	<block>
+		<view class="pop-nav-css"></view>
+		<nav type="statistic" tags="{{tagsList1}}" tagIndex="{{tagIndex1}}" bindclickTag="clickTag1">
+			<view class="nav-css"></view>
+			<block wx:if="{{tagIndex1 == '0' || tagIndex1 == '1'}}">
+				<view class="footer-box">
+					<view class="footer-box1 flex-box-between margin-top padding-box">
+						<view class="footer-box1-main1 flex-box-start">
+							<view class="footer-main1-text2 font-14-thin flex-box-start">
+								<view wx:if="{{tagIndex1 == '0'}}">已选门店</view>
+								<view wx:else>已选设备</view>
+								<text class="text-number">{{clickNum}}</text>个
+							</view>
+						</view>
+						<view class="footer-box1-main2" bindtap="chooseAll">
+							<view wx:if="{{chooseAll}}" class="font-12-thin footer-main2-text1">取消</view>
+							<view wx:else class="font-12-thin footer-main2-text1">全选</view>
+						</view>
+					</view>
+					<view class="footer-box2">
+						<view class="footer-box2-main flex-box-between padding-box"
+							wx:for="{{tagIndex1 == '0'?shopList:deviceList}}" wx:key='index' bindtap="clickSearch"
+							data-index="{{index}}">
+							<view class="font-14-thin footer-main2-title1">{{item.name}}</view>
+							<checkBox1 checkBool="{{item.active}}" type="circle"></checkBox1>
+						</view>
+					</view>
+				</view>
+
+			</block>
+			<block wx:else>
+				<view class="time-box">
+					<view class="time-box1 flex-box-between">
+						<view class="font-14-thin time-box1-btn" bindtap="timePic" data-index="0">
+							起始日期
+						</view>
+						<view class="font-14-thin time-box1-btn" bindtap="timePic" data-index="1">
+							终止时间
+						</view>
+					</view>
+					<view class="time-box2">
+						<view class="time-picker">
+							<timePicker></timePicker>
+						</view>
+					</view>
+				</view>
+
+			</block>
+		</nav>
+	</block>
+</pop>

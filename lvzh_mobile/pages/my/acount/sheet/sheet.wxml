@@ -1,0 +1,32 @@
+<view class="content-box">
+	<view class="content-box1">
+		<view class="font-16-blod content-box1-text1">财务报表：</view>
+		<view class="flex-box-start margin-top img-box ">
+			<view class="content-box1-text2" bindtap="clickPreview" wx:for="{{imgs}}" wx:key="index">
+				<image src="{{item}}" class="img-css"></image>
+			</view>
+		</view>
+	</view>
+	<view class="content-box2">
+		<view class="font-16-blod content-box1-text1  margin-top">财务备注：</view>
+		<view class="content-box2-text2 margin-top">
+			<view class="font-14-thin content-text2">7月份数据丢失，所以7月份补偿1000个袋子。</view>
+		</view>
+	</view>
+
+	<!-- 同意 -->
+	<view class="content-box2">
+		<view class="font-16-blod content-box1-text1  margin-top">报表状态：已完成</view>
+	</view>
+
+	<view class="content-box3">
+		<view class="font-16-blod content-box1-text1  margin-top">同意时间：2020-09-01 12:37:31</view>
+	</view>
+
+</view>
+<view class="footer-box">
+	<view class="flex-box-between">
+		<button style="width:33%;padding:20rpx 0;background: #F5F6F7;color: #626869;" bindtap="clear">拒绝</button>
+		<button style="width:52%;padding:20rpx 0;background: #1575F6;color:#ffffff;" bindtap="submit">确定</button>
+	</view>
+</view>

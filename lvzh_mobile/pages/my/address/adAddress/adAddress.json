@@ -1,0 +1,5 @@
+{
+  "usingComponents": {
+    "inputBox" : "../../../../components/inputBox/inputBox"
+  }
+}

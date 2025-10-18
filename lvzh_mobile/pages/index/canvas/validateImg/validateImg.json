@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "validateCode" :"../../../../components/validateCode/validateCode",
+    "inputBox" : "../../../../components/inputBox/inputBox",
+    "headTitle" : "../../../../components/headTitle/headTitle"
+  },
+  "navigationBarTitleText": "图形验证码"
+}

@@ -1,0 +1,24 @@
+<view class="content">
+  <!-- 图片 -->
+  <view class="content1 flex-column-center-center">
+    <view class="img-box ">
+      <image wx:if="{{payStatus}}" class="img-pay-box" src="../../../../../static/pay_success.png"></image>
+      <image wx:else class="img-pay-box" src="../../../../../static/pay_fail.png"></image>
+    </view>
+    <view class="font-18-blod text-box1">
+     {{payStatus?'付款成功':'付款失败'}} 
+    </view>
+    <view class="font-14-thin text-box2">
+     {{payStatus?'':'请重新尝试！'}} 
+    </view>
+  </view>
+  <view class="btn-box flex-box-between ">
+    <view class="font-18-blod btn-box1 flex-box-center" bindtap="operation" data-index="0">
+      {{payStatus?'查看订单':'返回订单'}} 
+      </view>
+    <view class="font-18-blod btn-box2 flex-box-center" bindtap="operation" data-index="1">
+      {{payStatus?'首页':'重新支付'}} 
+      </view>
+  </view>
+
+</view>

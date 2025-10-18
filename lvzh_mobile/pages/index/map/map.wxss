@@ -1,0 +1,41 @@
+.my_content{
+    padding: 32rpx;
+    border-bottom: solid 2rpx #f2f6fc;
+}
+
+.my_content_left_icon{
+    width: 40rpx;
+    height: 40rpx;
+}
+
+.my_content_left_text{
+    margin-left: 20rpx;
+    font-size: 32rpx;
+    color: #333;
+}
+
+.my_content_right{
+    min-width: 160rpx;
+}
+
+.my_content_right_msg{
+    width: 40rpx;
+    height: 40rpx;
+    background: #F4333C;
+    border-radius: 50%;
+    margin-right: 20rpx;
+}
+
+.my_content_right_msg_num{
+    font-size: 20rpx;
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: #FFFFFF;
+    line-height: 40rpx;
+}
+
+
+.my_content_right_icon{
+    width: 20rpx;
+    height: 34rpx;
+}

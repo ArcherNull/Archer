@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "funItem" : "../../../components/funItem/funItem"
+  },
+  "navigationBarTitleText": "地图"
+}

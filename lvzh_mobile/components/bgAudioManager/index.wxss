@@ -1,0 +1,69 @@
+.audiosBox {
+    height: 130rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f6f7f7;
+    border-radius: 10rpx;
+  }
+  
+  /*按钮大小  */
+  .audioOpen {
+    width: 70rpx;
+    height: 70rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 20rpx;
+  }
+  
+  image {
+    width: 30rpx;
+    height: 40rpx;
+  }
+  
+  .image2 {
+    margin-left: 10%;
+  }
+  
+  /*进度条长度  */
+  .slid {
+    flex: 1;
+    position: relative;
+  }
+  
+  .slid view {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .slid view>text:nth-child(1) {
+    color: #4c9dee;
+    margin-left: 6rpx;
+  }
+  
+  .slid view>text:nth-child(2) {
+    margin-right: 6rpx;
+  }
+  
+  slider {
+    width: 520rpx;
+    margin: 0;
+    margin-left: 35rpx;
+  }
+  
+  /*横向布局  */
+  .times {
+    width: 100rpx;
+    text-align: center;
+    display: inline-block;
+    font-size: 24rpx;
+    color: #999999;
+    margin-top: 5rpx;
+  }
+  
+  .title view {
+    text-indent: 2em;
+  
+  }

@@ -1,0 +1,15 @@
+<!-- 头部地址 -->
+<view class="addrBox">
+  <addrItem addrList="{{ addrList }}" bindclickTagFun="clickTagFun"></addrItem>
+
+  <loadMore loading="{{ loading }}"></loadMore>
+</view>
+
+
+<!-- 底部操作按钮 -->
+<view class="btn-position">
+  <view class="btn-flex-box flex-box-center" bindtap="addAddr">
+    <image class="btn-img-css" src="../../../static/addAddr.png"></image>
+    <view class="font-16-thin btn-text">新增收货地址</view>
+  </view>
+</view>

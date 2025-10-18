@@ -1,0 +1,9 @@
+<!--  -->
+<view class="title">
+  一种图表模板可以多个页面引用
+</view>
+
+<!-- 折线图组件 -->
+<view class="content2">
+  <include src="../../../../template/scrollline/scrollline.wxml" />
+</view>

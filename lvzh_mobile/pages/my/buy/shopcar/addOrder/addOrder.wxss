@@ -1,0 +1,191 @@
+.img-detail-css {
+  width: 36rpx;
+  height: 50rpx;
+}
+
+.img-detail-text {
+  font-size: 20rpx;
+  color: #727484;
+}
+
+.content1 {
+  padding: 28rpx 32rpx;
+  background: #ffffff;
+}
+
+.content1-box1 {
+  padding: 8rpx 14rpx;
+  background: #E5F0FD;
+}
+
+.head-text1 {
+  color: #333333;
+}
+
+.img-location {
+  flex: 1.6;
+}
+
+.content1-box2 {
+  flex: 7;
+  margin-left: 24rpx;
+}
+
+.head-text2 {
+  margin-left: 48rpx;
+  color: #969696;
+}
+
+.content1-boxtexxt2 {
+  columns: #666666;
+}
+
+.goto-css {
+  width: 24rpx;
+  height: 40rpx;
+}
+
+.goto-box {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+.content2 {
+  padding: 0 32rpx 20rpx 32rpx;
+  background: #ffffff;
+}
+
+.img-detailCss {
+  width: 176rpx;
+  height: 176rpx;
+}
+
+.content2-box1 {
+  padding: 32rpx 0 40rpx;
+}
+
+.list-position {
+  position: relative;
+}
+
+
+.list-box {
+  padding: 20rpx 0 40rpx;
+}
+
+.list-box2 {
+  margin-left: 16rpx;
+}
+
+.list-main2 {
+  margin-top: 8rpx;
+}
+
+.list-main2-text1 {
+  color: #969696;
+}
+
+.margin-left {
+  margin-left: 40rpx;
+}
+
+.price-css1 {
+  color: #F02A28;
+}
+
+.list-main3 {
+  width: 100%;
+  margin-top: 8rpx;
+}
+
+.number-box {
+  color: #1e1e1e;
+}
+
+.list-main1 {
+  font-weight: bold;
+  color: #1e1e1e;
+}
+
+.btn-box1-text {
+  color: #333333;
+}
+
+.btn-box1 {
+  padding: 16rpx 0;
+}
+
+.btn-box1-btn1 {
+  color: #999999;
+}
+
+.btn-box1-text1 {
+  flex: 2;
+  color: #333333;
+}
+
+.btn-box1-btn2 {
+  flex: 7;
+  padding: 12rpx 8rpx;
+  background: #F5F6F7;
+}
+
+.input-color {
+  color: #C1C2C5;
+}
+
+.prices-box {
+  color: #999999;
+}
+
+.prices-box1 {
+  color: #666666;
+}
+
+.prices-box2 {
+  font-size: 20rpx;
+  color: #F02A28;
+}
+
+.prices-box3 {
+  color: #F02A28;
+}
+
+.btn-box4 {
+  display: flex;
+  justify-content: flex-end;
+
+}
+
+.btn-flex-box {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-position {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #ffffff;
+  box-shadow: 0px -4rpx 20rpx 0px rgba(0, 0, 0, 0.04);
+}
+
+.price-total {
+  flex: 4;
+}
+
+.confirm-box {
+  flex: 3.8;
+}
+
+.confirm-box {
+  color: #ffffff;
+  padding: 24rpx 0;
+  background: #1575F6;
+  margin-left: 20rpx;
+}

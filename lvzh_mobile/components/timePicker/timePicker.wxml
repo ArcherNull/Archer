@@ -1,0 +1,32 @@
+<view class="container">
+  <view class="page-body">
+<!--     <view class="selected-date">{{year}}年{{month}}月{{day}}日</view> -->
+    <picker-view indicator-style="height: 24px;" style="" class="picker_view" value="{{value}}" bindchange="bindChange">
+      <picker-view-column>
+        <view wx:for="{{years}}" wx:key="years" class="picker_item">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{months}}" wx:key="months"
+        class="picker_item">{{item}}月</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{days}}" wx:key="days" class="picker_item">{{item}}日</view>
+      </picker-view-column>
+    </picker-view>
+
+    <view class="picker_middle">--</view>
+
+    <picker-view indicator-style="height: 24px;" class="picker_view" value="{{value}}" bindchange="bindChange">
+      <picker-view-column>
+        <view wx:for="{{years}}" wx:key="years" class="picker_item">{{item}}年</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{months}}" wx:key="months" class="picker_item">{{item}}月</view>
+      </picker-view-column>
+      <picker-view-column>
+        <view wx:for="{{days}}" wx:key="days" class="picker_item">{{item}}日</view>
+      </picker-view-column>
+    </picker-view>
+  </view>
+
+</view>

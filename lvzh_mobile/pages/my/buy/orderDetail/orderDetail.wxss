@@ -1,0 +1,264 @@
+.img-detail-css {
+  width: 36rpx;
+  height: 50rpx;
+}
+
+.img-detail-text {
+  font-size: 20rpx;
+  color: #727484;
+}
+
+.content1 {
+  padding: 28rpx 32rpx;
+  background: #ffffff;
+}
+
+.content1-box1 {
+  padding: 8rpx 14rpx;
+  background: #E5F0FD;
+}
+
+.head-text1 {
+  color: #333333;
+}
+
+.img-location {
+  flex: 1.6;
+}
+
+.content1-box2 {
+  flex: 7;
+  margin-left: 24rpx;
+}
+
+.head-text2 {
+  margin-left: 48rpx;
+  color: #969696;
+}
+
+.content1-boxtexxt2 {
+  columns: #666666;
+}
+
+.content2 {
+  padding: 0 32rpx;
+  background: #ffffff;
+}
+
+.img-detailCss {
+  width: 176rpx;
+  height: 176rpx;
+}
+
+.content2-box1 {
+  padding: 32rpx 0 40rpx;
+}
+
+.list-position {
+  position: relative;
+}
+
+
+.list-box {
+  padding: 20rpx 0 40rpx;
+}
+
+.list-box2 {
+  margin-left: 16rpx;
+}
+
+.list-main2 {
+  margin-top: 8rpx;
+}
+
+.list-main2-text1 {
+  color: #969696;
+}
+
+.margin-left {
+  margin-left: 40rpx;
+}
+
+.price-css1 {
+  color: #F02A28;
+}
+
+.list-main3 {
+  width: 100%;
+  margin-top: 8rpx;
+}
+
+.number-box {
+  color: #1e1e1e;
+}
+
+.list-main1 {
+  font-weight: bold;
+  color: #1e1e1e;
+}
+
+.content3 {
+  padding: 10rpx 32rpx;
+  background: #ffffff;
+}
+
+.content3-box1 {
+  flex: 2;
+  color: #333333;
+}
+
+.content3-box2 {
+  flex: 7;
+  padding: 14rpx 16rpx;
+  background: #F5F6F7;
+}
+
+.text-box1 {
+  color: #1e1e1e;
+  flex: 2;
+}
+
+.text-box2 {
+  color: #1e1e1e;
+  flex: 7;
+}
+
+.text-box4 {
+  color: #EC0C0B;
+  flex: 7;
+}
+
+.text-box3 {
+  color: #17B601;
+  flex: 7;
+}
+
+.content4 {
+  background: #ffffff;
+  margin-bottom: 170rpx;
+}
+
+.check-css {
+  flex: 7;
+  color: #FFBD08;
+}
+
+.img-box {
+  flex: 0.5;
+}
+
+.process-goDown-fin {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.goDown-box {
+  flex: 1;
+}
+
+.process-goDown {
+  width: 30rpx;
+  height: 18rpx;
+}
+
+.img-pro-css {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.process-time {
+  color: #969696;
+}
+
+.process-text {
+  flex: 2;
+  color: #1e1e1e;
+  margin-left: 10rpx;
+}
+
+.content4-proList {
+  padding: 10rpx;
+  background: #F5F6F7;
+  margin-top: 30rpx;
+}
+
+.process-box {
+  flex: 8;
+}
+
+.process-time {
+  flex: 7;
+  margin-left: 40rpx;
+}
+
+.btn-img-css {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.btn-box {
+  padding: 20rpx 32rpx;
+}
+
+.btn-box1 {
+  padding: 4rpx;
+  flex: 1;
+  background: #E5F0FD;
+  border-radius: 8rpx;
+}
+
+.btn-img-text {
+  font-size: 20rpx;
+  color: #1575F6;
+}
+
+.btn-position {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #ffffff;
+  box-shadow: 0px -8rpx 20rpx 0px rgba(44, 89, 151, 0.06);
+}
+
+.btn-box2 {
+  flex: 2;
+  padding: 26rpx 0;
+  color: #1575F6;
+  background: #E5F0FD;
+}
+
+.margin-btn {
+  margin: 0 20rpx;
+
+}
+
+.btn-box3 {
+  flex: 3;
+  padding: 26rpx 0;
+  background: #1575F6;
+  color: #ffffff;
+}
+
+.margin-process {
+  margin-top: 40rpx;
+}
+
+.alert-text {
+  color: #17B601;
+}
+
+.alert-text1 {
+  color: #EC0C0B;
+}
+
+.check-text {
+  margin-left: 42rpx;
+  color: #969696;
+  
+}
+
+.copy-acount {
+  color: #1575F6;
+}

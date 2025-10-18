@@ -1,0 +1,36 @@
+<view>
+  <view class="wxLogin">
+    <view class="wxLogin_logo">
+      <image src="../../../static/login.png" mode="widthFix" class="wxLogin_logo_1"></image>
+      <view class="wxLogin_logo_2">
+        <view class="logoText1 text-pop-up-top">管理后台小程序</view>
+        <view class="logoText2 tracking-in-expand">让企业更加高效</view>
+      </view>
+    </view>
+    <view class="wxLogin_btn">
+      <view class="wxLogin_btn_1">
+        <button loading="{{ loginLoading }}" bindtap="getuser">微信用户一键登录</button>
+        <button bindtap="refund">暂不授权</button>
+      </view>
+      <view class="wxLogin_btn_2 flex-box-center">
+        <view class="flex-box-center" bindtap="operation" data-index='0'>
+          <view class="imageBox flex-box-center">
+            <image wx:if="{{selected}}" src="../../../static/login_choose.png" mode="widthFix"></image>
+            <image wx:else src="../../../static/login_unchoose.png" mode="widthFix"></image>
+          </view>
+          <view class="privicyPolicy">
+            阅读并同意
+            <text class="Policy" bindtap="operation" data-index='1'>《用户协议》</text>
+            和
+            <text class="Policy" bindtap="operation" data-index='2'>《隐私政策》</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 电话授权弹窗 -->
+<view>
+  <popMask showPopMask="{{showPopMask}}"></popMask>
+</view>

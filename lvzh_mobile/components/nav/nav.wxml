@@ -1,0 +1,33 @@
+  <view class="nav-box">
+  	<view wx:if="{{type == 'login'}}" class="tag-content-box flex-box-between">
+  		<view class="tag-nav {{item.active?'active':''}}" wx:for="{{tags}}" wx:key="index" bindtap="clickTag" data-index="{{index}}">
+  			<view class="flex-box-center font-16-thin tag-item {{item.active?'active':''}}">
+  				{{item.name}}
+  			</view>
+  		</view>
+  	</view>
+
+  	<view wx:elif="{{type == 'detail'}}" class="tag-content-box1 flex-box-between">
+  		<view class="tag-nav" wx:for="{{tags}}" wx:key="index" bindtap="clickTag" data-index="{{index}}">
+  			<view class="flex-box-center font-14-thin tag-item1 ">
+  				<view class="tag-item-box flex-box-start {{item.active?'active1':''}}">{{item.name}}
+  					<view wx:if="{{(item.id == '1'?(item.active?false:true):false)}}">
+  						<image class="img-css" src="../../static/detail_6.png"></image>
+  					</view>
+  				</view>
+  			</view>
+  		</view>
+  	</view>
+
+  	<view wx:elif="{{type == 'statistic'}}" class="flex-box-between">
+  		<view class="tag-nav flex-box-center" wx:for="{{tags}}" wx:key="index" bindtap="clickTag" data-index="{{index}}">
+  				<view class="font-16-thin {{tagIndex == index?'tag-active':''}}">{{item}}
+  			</view>
+  		</view>
+  	</view>
+
+	
+  	<view class="tag-content">
+  		<slot></slot>
+  	</view>
+  </view>

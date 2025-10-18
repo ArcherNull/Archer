@@ -1,0 +1,89 @@
+{
+    "pages": [
+        "pages/index/index",
+        "pages/login/login",
+        "pages/my/my",
+        "pages/index/device/device",
+        "pages/index/device/detail/detail",
+        "pages/index/statistics/statistics",
+        "pages/index/statistics/chart/chart",
+        "pages/my/order/order",
+        "pages/my/buy/buy",
+        "pages/my/acount/acount",
+        "pages/my/acount/sheet/sheet",
+        "pages/my/buy/shopcar/shopcar",
+        "pages/my/buy/orderDetail/orderDetail",
+        "pages/my/buy/shopcar/addOrder/addOrder",
+        "pages/my/address/address",
+        "pages/my/address/adAddress/adAddress",
+        "pages/my/buy/shopcar/payPage/payPage",
+        "pages/login/forgetPassWord/forgetPassWord",
+        "components/timePicker/timePicker",
+        "pages/index/map/currentLocation/currentLocation",
+        "pages/index/map/LocationPerimeter/LocationPerimeter",
+        "pages/my/buy/shopcar/addOrder/paySuccess/paySuccess",
+        "pages/my/buy/shopcar/addOrder/payFail/payFail",
+        "pages/index/statistics/chartTable/chartTable",
+        "pages/index/seat/seatList/seatList",
+        "pages/login/wxLogin/wxLogin",
+        "pages/index/map/map",
+        "pages/index/ciphertext/ciphertext",
+        "pages/index/ciphertext/md5/md5",
+        "pages/index/ciphertext/sha1/sha1",
+        "pages/index/canvas/canvas",
+        "pages/index/canvas/signBoard/signBoard",
+        "pages/index/canvas/poster/poster",
+        "pages/index/QrCode/QrCode",
+        "pages/index/canvas/validateImg/validateImg",
+        "pages/index/qcr/qcr",
+        "pages/index/qcr/cardIdentify/cardIdentify",
+        "pages/index/map/luShang/luShang",
+        "pages/index/ciphertext/wxApi/wxApi",
+        "pages/index/refresh/index",
+        "pages/index/videoAndVoice/index"
+    ],
+    "permission": {
+        "scope.userLocation": {
+            "desc": "你的位置信息将用于小程序位置接口的效果展示"
+        }
+    },
+    "requiredPrivateInfos": [
+        "getLocation",
+        "chooseLocation"
+    ],
+    "window": {
+        "backgroundTextStyle": "light",
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTitleText": "后台管理系统",
+        "navigationBarTextStyle": "black"
+    },
+    "style": "v2",
+    "sitemapLocation": "sitemap.json",
+    "requiredBackgroundModes": ["音乐播放"],
+    "tabBar": {
+        "color": "#C1C2C5",
+        "selectedColor": "#1575F6",
+        "borderStyle": "black",
+        "backgroundColor": "#ffffff",
+        "height": "48px",
+        "list": [{
+                "pagePath": "pages/index/index",
+                "text": "首页",
+                "iconPath": "static/index.png",
+                "selectedIconPath": "static/index_selected.png"
+            },
+            {
+                "pagePath": "pages/my/my",
+                "text": "我的",
+                "iconPath": "static/my.png",
+                "selectedIconPath": "static/my_selected.png"
+            }
+        ]
+    },
+    "plugins": {
+        "ocr-plugin": {
+            "version": "3.1.2",
+            "provider": "wx4418e3e031e551be"
+        }
+    }
+}
