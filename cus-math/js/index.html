@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:21:13
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-10-08 17:06:50
+ * @LastEditTime: 2025-10-20 18:47:58
  * @FilePath: \Archer\cus-math\js\index.html
  * @Description: js示例
 -->
@@ -22,6 +22,7 @@
     <button id="button6">计算6</button>
     <button id="button7">计算7</button>
     <button id="button8">计算8</button>
+    <button id="button9">计算9</button>
 
     <script type="module">
       import { CusMath } from "./cusMath.js";
@@ -135,6 +136,15 @@
         testFun();
       }
 
+      function calcFun9() {
+        cusMath.sub(-10, 1);
+        const logs = cusMath._logs
+        console.log("logs123=====>", logs);
+
+        const result = cusMath.end();
+        console.log("计算9结果=====>", result);
+      }
+
       function loadEvent() {
         const button1 = document.getElementById("button1");
         button1.addEventListener("click", calcFun1);
@@ -159,6 +169,9 @@
 
         const button8 = document.getElementById("button8");
         button8.addEventListener("click", calcFun8);
+
+        const button9 = document.getElementById("button9");
+        button9.addEventListener("click", calcFun9);
       }
 
       window.onload = function () {

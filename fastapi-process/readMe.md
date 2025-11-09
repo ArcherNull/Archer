@@ -1,7 +1,7 @@
 <!--
  * @Author: junsong Chen 779217162@qq.com
  * @Date: 2025-04-02 17:50:15
- * @LastEditTime: 2025-08-21 13:48:52
+ * @LastEditTime: 2025-10-20 10:03:15
  * @Description:
 -->
 
@@ -30,6 +30,7 @@ python版本：3.13.5
 pip版本：25.2
 MySQL数据库：8.0版本
 ```bash
+cd backend
 
 # 去数据库中执行sql文件  example_db.sql
 

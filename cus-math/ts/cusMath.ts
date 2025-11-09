@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:06:07
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-10-08 16:48:51
+ * @LastEditTime: 2025-10-20 18:11:01
  * @FilePath: \Archer\cus-math\ts\cusMath.ts
  * @Description: 自定义计算类
  */
@@ -375,8 +375,8 @@ export class CusMath {
 
   /**
    * @description: 减法函数
-   * @param {*} arg2
    * @param {*} arg1
+   * @param {*} arg2
    * @return {*}
    * ```
    * 说明：减法函数。
@@ -384,7 +384,7 @@ export class CusMath {
    * 返回值：arg1减去arg2的精确结果
    * ```
    */
-  static accSub(arg2: number, arg1: number): number {
+  static accSub(arg1: number, arg2: number): number {
     let r1: number = CusMath.getPrecision(arg1);
     let r2: number = CusMath.getPrecision(arg2);
 

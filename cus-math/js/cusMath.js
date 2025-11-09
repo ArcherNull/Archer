@@ -2,7 +2,7 @@
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:20:36
  * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-10-08 16:55:40
+ * @LastEditTime: 2025-10-21 11:26:55
  * @FilePath: \Archer\cus-math\js\cusMath.js
  * @Description: 自定义计算类
  */
@@ -12,7 +12,7 @@ export class CusMath {
     // 操作记录
     _logs = []
     // 过程值
-    _processValue = 0
+    _processValue
     // 原始的表达式
     _original_expression = ''
     // 过程表达式
@@ -60,6 +60,7 @@ export class CusMath {
         const that = this
         const operaFun = this.operationProxy[type]
         if (typeof operaFun === 'function' && that.isNotEmptyArr(args)) {
+            console.log('args=====>', args)
             this._processValue = args.reduce(function (a, b) {
                 const val = operaFun(that.convertNumber(a), that.convertNumber(b))
                 that.logPush({
@@ -317,6 +318,9 @@ export class CusMath {
     static accSub(arg2, arg1) {
         let r1 = CusMath.getPrecision(arg1);
         let r2 = CusMath.getPrecision(arg2);
+
+        console.log('r1=====>', r1);
+        console.log('r2=====>', r2);
 
         let m = Math.pow(10, Math.max(r1, r2));
         // last modify by deeka
