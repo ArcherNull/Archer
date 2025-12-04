@@ -1,8 +1,8 @@
 /*
  * @Author: Null 779217162@qq.com
  * @Date: 2025-08-28 14:06:07
- * @LastEditors: Null 779217162@qq.com
- * @LastEditTime: 2025-10-20 18:11:01
+ * @LastEditors: junsong Chen 779217162@qq.com
+ * @LastEditTime: 2025-12-04 09:26:03
  * @FilePath: \Archer\cus-math\ts\cusMath.ts
  * @Description: 自定义计算类
  */
@@ -14,10 +14,10 @@ type OperationProxyType = {
 };
 
 type ExpressionOperationProxyType = {
-  '*': (arg1: number, arg2: number) => number;
-  '+': (arg1: number, arg2: number) => number;
-  '/': (arg1: number, arg2: number) => number;
-  '-': (arg1: number, arg2: number) => number;
+  "*": (arg1: number, arg2: number) => number;
+  "+": (arg1: number, arg2: number) => number;
+  "/": (arg1: number, arg2: number) => number;
+  "-": (arg1: number, arg2: number) => number;
 };
 
 type OperationLogType = {
@@ -97,7 +97,7 @@ export class CusMath {
       this._processValue = argsString.reduce(function (a, b) {
         const val = operaFun(that.convertNumber(a), that.convertNumber(b));
         that.logPush({
-          operationName: operaFun?.name,
+          operationName: operaFun!.name,
           result: val,
           type: "chain",
           params: [a, b],
@@ -110,7 +110,7 @@ export class CusMath {
   }
 
   // 方法调用的日志push
-  logPush(options: OperationLogType) {
+  logPush(options: any) {
     const { operationName, result, params, type } = options;
     this._logs.push({
       operationName,
@@ -139,10 +139,10 @@ export class CusMath {
         try {
           const result = this.dealAndCalcFirstBracketArr();
           this.expLogPush(result);
- 					this._processValue = result
-          return this
+          this._processValue = result;
+          return this;
         } catch (err) {
-          console.log((err as Error)?.message);
+          throw err;
         }
       } else {
         throw new Error("无效数学表达式");
@@ -200,7 +200,6 @@ export class CusMath {
 
   // 计算平铺的表达式
   calcFlatExpress(expStr: string) {
-    console.log("计算平铺的表达式", expStr);
     // 转换操作， +- => - ;  ++ => + ; -- => + ;  -+ => -
     const dealExpStr = expStr
       ?.replace(/\s/g, "")
@@ -228,9 +227,7 @@ export class CusMath {
     if (mulOrDivArr?.length) {
       for (let i = 0; i < mulOrDivArr.length; i++) {
         const { ele: expStr, index } = mulOrDivArr[i] as MulOrDivArrType;
-
         const result = this.getFlatExpressResult(expStr);
-        console.log("result", result);
         cloneParts.splice(index, 1, result);
       }
     }
@@ -251,8 +248,6 @@ export class CusMath {
    */
   getFlatExpressResult(expStr: string): number {
     const parts = this.getExpParts(expStr);
-    console.log("运算符拆解", parts);
-
     let val = 0;
     if (this.isNotEmptyArr(parts)) {
       const expressKeyArr = Object.keys(this.expressionOperationProxy);
@@ -299,7 +294,7 @@ export class CusMath {
       ) {
         while (operaArr.length) {
           const arg1 = operaArrLen === operaArr.length ? numArr.shift() : val;
-           const arg1Num = CusMath.convertNumber(arg1);
+          const arg1Num = CusMath.convertNumber(arg1);
           const operaFunObj = operaArr.shift();
           const arg2 = numArr.shift();
           const arg2Num = CusMath.convertNumber(arg2);
