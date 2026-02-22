@@ -1,3 +1,11 @@
+/*
+ * @Author: junsong Chen 779217162@qq.com
+ * @Date: 2024-07-16 19:09:03
+ * @LastEditors: junsong Chen 779217162@qq.com
+ * @LastEditTime: 2025-11-15 15:41:55
+ * @FilePath: \Archer\ag_grid_server\package.json
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 {
   "name": "ag_grid_server",
   "version": "1.0.0",
@@ -11,6 +19,8 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.5.0",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "nodemon": "^3.0.1"
   }
 }

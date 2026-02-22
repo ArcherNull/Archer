@@ -49,7 +49,9 @@ server.registerTool(
     },
     ({ filename, content }) => {
         try {
-            fs.writeFileSync(filename, content)
+            // 处理Windows路径中的反斜杠，将其转换为正斜杠
+            const normalizedFilename = filename.replace(/\\/g, '/');
+            fs.writeFileSync(normalizedFilename, content)
             return {
                 content: [{
                     type: "text",
