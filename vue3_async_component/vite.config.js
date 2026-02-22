@@ -20,6 +20,7 @@ const resolve = (dir) => {
 }
 // 打包体积可视化插件
 import { visualizer } from 'rollup-plugin-visualizer'
+import { preloadImages } from './vite-plugin-image-prefetch'
 
 export default defineConfig(({ command, mode }) => {
   console.log('mode=====>', mode)
@@ -89,6 +90,13 @@ export default defineConfig(({ command, mode }) => {
 
       legacy({
         targets: ['defaults', 'not IE 11']
+      }),
+      preloadImages({
+        // glob语法
+        dir: 'images/*.{jpg,png,svg}',
+        attrs: {
+          rel: 'prefetch'
+        }
       })
     ],
     server: {

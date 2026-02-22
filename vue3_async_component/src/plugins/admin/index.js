@@ -17,6 +17,8 @@ import { createPinia } from 'pinia'
 // 持久化缓存
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
+import slideIn from '@/directive/slideIn/index'
+
 // element-plus 样式
 import 'element-plus/dist/index.css'
 // flex 布局库
@@ -46,6 +48,9 @@ export const Run = function (app) {
       // 使用状态管理器
       const pinia = createPinia()
       app.use(pinia)
+
+      app.directive('slideIn', slideIn);
+
       pinia.use(piniaPluginPersistedstate)
 
       Object.values(compList).forEach(component => {

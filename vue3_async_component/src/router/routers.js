@@ -10,6 +10,9 @@ import redirect from '@/views/system/function/redirect/index'
 import refresh from '@/views/system/function/refresh/index'
 // 登录
 import login from '@/views/system/login/index.vue'
+// 测试
+import Test from '@/views/system/test/index.vue'
+
 // 404
 import error from '@/views/system/404/index.vue'
 
@@ -68,6 +71,11 @@ const frameOut = [
     path: '/login',
     name: 'login',
     component: login
+  },
+  {
+    path: '/test',
+    name: 'test',
+    component: Test
   }
 ]
 

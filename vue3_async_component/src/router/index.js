@@ -27,7 +27,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   NProgress.start()
-  if (to.path === '/login') {
+  if (['/login', '/test'].includes(to.path)) {
     next()
   } else {
     const token = storage.get('token')

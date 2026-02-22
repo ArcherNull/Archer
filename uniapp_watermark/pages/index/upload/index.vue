@@ -157,7 +157,7 @@
 				// 水印并压缩图片数组（单传）
 				imageSrc5: [],
 				// 当前定位字符串
-				locationAddrStr: '',
+				locationAddrStr: '深圳市南山区',
 
 				// 压缩图片数组
 				imageSrc2: [],
@@ -307,9 +307,7 @@
 						.finally(() => {
 							uni.hideLoading()
 						})
-				} else {
-					that.validateSFisPass()
-				}
+				} 
 			},
 
 			// 超出大小
