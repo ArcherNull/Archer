@@ -61,3 +61,10 @@ Give a ⭐️ if this project helped you!
 ## 🤝 Contributing
 欢迎提供问题和功能需求, 如果大家有好的点子和优化建议, 也欢迎提出参与我们的共建.
 
+
+  "lint-staged": {
+    "src/**/*.{js,vue}": [
+      "eslint --fix",
+      "git add"
+    ]
+  }

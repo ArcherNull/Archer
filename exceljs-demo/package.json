@@ -1,0 +1,28 @@
+{
+  "name": "excel-demo",
+  "version": "1.0.0",
+  "description": "Excel generation demo using TypeScript",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "nodemon index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "excel",
+    "typescript",
+    "node"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/lodash": "^4.17.21",
+    "@types/node": "^24.10.1",
+    "dayjs": "^1.11.19",
+    "exceljs": "^4.4.0",
+    "lodash": "^4.17.21",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

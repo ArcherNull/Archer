@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>车牌识别 · HyperLPR3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12161c;
+      --panel: #1a212b;
+      --line: #2c3644;
+      --text: #e8eef6;
+      --muted: #8b97a8;
+      --amber: #f5c518;
+      --amber-dim: #c49a0a;
+      --green: #3dd68c;
+      --red: #ff6b6b;
+      --blue-plate: #1e4fd6;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, rgba(245, 197, 24, 0.12), transparent 55%),
+        radial-gradient(900px 420px at 90% 0%, rgba(30, 79, 214, 0.16), transparent 50%),
+        linear-gradient(180deg, #0f1318 0%, var(--bg) 45%, #0d1117 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    .wrap {
+      position: relative;
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      animation: rise 0.55s ease both;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      color: var(--amber);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 0 4px rgba(245, 197, 24, 0.18);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 40px);
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status {
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(26, 33, 43, 0.8);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .status.ok { color: var(--green); border-color: rgba(61, 214, 140, 0.35); }
+    .status.bad { color: var(--red); border-color: rgba(255, 107, 107, 0.35); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(26, 33, 43, 0.95), rgba(18, 23, 30, 0.95));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: rise 0.65s ease both;
+    }
+
+    .panel:nth-child(2) { animation-delay: 0.08s; }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .drop {
+      position: relative;
+      min-height: 360px;
+      margin: 18px;
+      border: 1.5px dashed #3a4658;
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
+        #141a22;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      overflow: hidden;
+    }
+
+    .drop:hover,
+    .drop.dragover {
+      border-color: var(--amber);
+      background: #171e28;
+      transform: translateY(-1px);
+    }
+
+    .drop input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-hint {
+      text-align: center;
+      color: var(--muted);
+      padding: 24px;
+      pointer-events: none;
+    }
+
+    .drop-hint strong {
+      display: block;
+      color: var(--text);
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .preview {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #0b0f14;
+    }
+
+    .drop.has-image .drop-hint { display: none; }
+    .drop.has-image .preview { display: block; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+    }
+
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(180deg, #ffd84a, var(--amber));
+      color: #1a1400;
+      box-shadow: 0 8px 24px rgba(245, 197, 24, 0.22);
+    }
+
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #ffe06a, #f0c000); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .result-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 420px;
+    }
+
+    .plate-card {
+      position: relative;
+      border-radius: 14px;
+      padding: 22px 18px 18px;
+      background:
+        linear-gradient(135deg, #1e4fd6 0%, #163aa3 55%, #102a78 100%);
+      border: 2px solid #7ea2ff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .plate-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 40%, rgba(255, 255, 255, 0.12) 50%, transparent 60%);
+      transform: translateX(-120%);
+      animation: shine 2.8s ease-in-out infinite;
+    }
+
+    .plate-card.empty {
+      background: #151b24;
+      border-color: var(--line);
+      color: var(--muted);
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      box-shadow: none;
+    }
+
+    .plate-card.empty::after { display: none; }
+
+    .plate-code {
+      position: relative;
+      z-index: 1;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-align: center;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .meta-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .meta-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .meta-item strong {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #141a22;
+      font-size: 13px;
+    }
+
+    .list-item code {
+      font-family: "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+    }
+
+    .msg {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .msg.error { color: var(--red); }
+    .msg.ok { color: var(--green); }
+
+    footer {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(18, 23, 30, 0.85);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      text-align: left;
+      animation: rise 0.7s ease both;
+      animation-delay: 0.12s;
+    }
+
+    footer h2 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    footer h3 {
+      margin: 14px 0 6px;
+      color: var(--amber);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    footer ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    footer li + li { margin-top: 4px; }
+
+    footer .engine-note {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shine {
+      0%, 60% { transform: translateX(-120%); }
+      100% { transform: translateX(120%); }
+    }
+
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; align-items: start; }
+      .drop { min-height: 280px; }
+      .result-body { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="eyebrow">HyperLPR3</div>
+        <h1>车牌识别</h1>
+        <p class="sub">上传车辆图片，自动检测并识别中国大陆车牌号码</p>
+      </div>
+      <div id="health" class="status">服务检测中…</div>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <span>图片上传</span>
+          <span id="fileName" style="color: var(--muted); font-size: 12px;">未选择文件</span>
+        </div>
+        <label id="drop" class="drop" for="fileInput">
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+          <div class="drop-hint">
+            <strong>拖拽图片到这里</strong>
+            或点击选择本地车辆照片<br />支持 JPG / PNG / WEBP / BMP
+          </div>
+          <img id="preview" class="preview" alt="预览图" />
+        </label>
+        <div class="actions">
+          <button id="recognizeBtn" class="btn-primary" type="button" disabled>开始识别</button>
+          <button id="resetBtn" class="btn-ghost" type="button">清空</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span>识别结果</span>
+          <span id="countLabel" style="color: var(--muted); font-size: 12px;">0 个车牌</span>
+        </div>
+        <div class="result-body">
+          <div id="plateCard" class="plate-card empty">上传图片后显示车牌号</div>
+          <div class="meta">
+            <div class="meta-item">
+              <span>置信度</span>
+              <strong id="confValue">—</strong>
+            </div>
+            <div class="meta-item">
+              <span>车牌类型</span>
+              <strong id="typeValue">—</strong>
+            </div>
+          </div>
+          <div id="msg" class="msg">等待上传…</div>
+          <div id="list" class="list"></div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <h2>识别说明与注意事项</h2>
+
+      <h3>识别效果较差的场景</h3>
+      <ul>
+        <li><strong style="color: var(--text);">摩托车牌</strong>：HyperLPR3 对摩托车牌支持较弱，易漏检、错识或置信度偏低，不建议作为摩托车号牌识别方案。</li>
+        <li>双层车牌、临时牌、军警牌、使馆牌等非常见民用牌，准确率通常不如普通蓝牌 / 新能源绿牌。</li>
+        <li>车牌严重倾斜、侧拍、远距离小目标、反光、污损、遮挡（支架 / 泥污 / 树叶）时，识别不稳定。</li>
+        <li>夜间低光照、过曝、运动模糊、压缩伪影明显的图片，可能无法检出或字符读错。</li>
+      </ul>
+
+      <h3>识别注意事项</h3>
+      <ul>
+        <li>尽量拍摄车牌正面、水平、清晰、占画面比例适中的照片；避免过度裁切或整车过远。</li>
+        <li>优先使用普通汽车蓝牌、黄牌及新能源绿牌；摩托车、电动车号牌请谨慎参考结果。</li>
+        <li>同一张图若检出多个车牌，请以置信度最高结果为准，并结合原图人工核对。</li>
+        <li>识别结果仅供参考，重要业务请二次人工核验，避免因误识别造成错误登记。</li>
+      </ul>
+
+      <div class="engine-note">引擎：HyperLPR3 · 本地推理，图片不会上传到第三方服务</div>
+    </footer>
+  </div>
+
+  <script>
+    const drop = document.getElementById("drop");
+    const fileInput = document.getElementById("fileInput");
+    const preview = document.getElementById("preview");
+    const fileName = document.getElementById("fileName");
+    const recognizeBtn = document.getElementById("recognizeBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const plateCard = document.getElementById("plateCard");
+    const confValue = document.getElementById("confValue");
+    const typeValue = document.getElementById("typeValue");
+    const countLabel = document.getElementById("countLabel");
+    const msg = document.getElementById("msg");
+    const list = document.getElementById("list");
+    const health = document.getElementById("health");
+
+    let selectedFile = null;
+
+    async function checkHealth() {
+      try {
+        const res = await fetch("/api/health");
+        if (!res.ok) throw new Error("bad status");
+        health.textContent = "服务已就绪";
+        health.classList.add("ok");
+      } catch {
+        health.textContent = "后端未启动";
+        health.classList.add("bad");
+      }
+    }
+
+    function setMessage(text, type = "") {
+      msg.textContent = text;
+      msg.className = "msg" + (type ? ` ${type}` : "");
+    }
+
+    function resetResult() {
+      plateCard.className = "plate-card empty";
+      plateCard.textContent = "上传图片后显示车牌号";
+      confValue.textContent = "—";
+      typeValue.textContent = "—";
+      countLabel.textContent = "0 个车牌";
+      list.innerHTML = "";
+    }
+
+    function setFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        setMessage("请选择有效的图片文件", "error");
+        return;
+      }
+      selectedFile = file;
+      fileName.textContent = file.name;
+      recognizeBtn.disabled = false;
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+      drop.classList.add("has-image");
+      resetResult();
+      setMessage("图片已就绪，点击「开始识别」");
+    }
+
+    function clearAll() {
+      selectedFile = null;
+      fileInput.value = "";
+      preview.removeAttribute("src");
+      drop.classList.remove("has-image");
+      fileName.textContent = "未选择文件";
+      recognizeBtn.disabled = true;
+      resetResult();
+      setMessage("等待上传…");
+    }
+
+    function renderResult(data) {
+      countLabel.textContent = `${data.count} 个车牌`;
+      list.innerHTML = "";
+
+      if (!data.best) {
+        resetResult();
+        setMessage("未识别到车牌，请换一张更清晰的正面照片试试", "error");
+        return;
+      }
+
+      const best = data.best;
+      plateCard.className = "plate-card";
+      plateCard.innerHTML = `<div class="plate-code">${best.code}</div>`;
+      confValue.textContent = `${(best.confidence * 100).toFixed(1)}%`;
+      typeValue.textContent = best.plate_type;
+
+      data.plates.forEach((p, idx) => {
+        const row = document.createElement("div");
+        row.className = "list-item";
+        row.innerHTML = `
+          <code>${idx + 1}. ${p.code}</code>
+          <span>${p.plate_type} · ${(p.confidence * 100).toFixed(1)}%</span>
+        `;
+        list.appendChild(row);
+      });
+
+      setMessage("识别完成", "ok");
+    }
+
+    async function recognize() {
+      if (!selectedFile) return;
+      recognizeBtn.disabled = true;
+      setMessage("识别中，请稍候…");
+
+      const form = new FormData();
+      form.append("file", selectedFile);
+
+      try {
+        const res = await fetch("/api/recognize", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "识别失败");
+        renderResult(data);
+      } catch (err) {
+        setMessage(err.message || "识别失败", "error");
+      } finally {
+        recognizeBtn.disabled = !selectedFile;
+      }
+    }
+
+    ["dragenter", "dragover"].forEach((evt) => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((evt) => {
+      drop.addEventListener(evt, (e) => {
+        e.preventDefault();
+        drop.classList.remove("dragover");
+      });
+    });
+
+    drop.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files?.[0];
+      if (file) setFile(file);
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (file) setFile(file);
+    });
+
+    recognizeBtn.addEventListener("click", recognize);
+    resetBtn.addEventListener("click", clearAll);
+
+    checkHealth();
+  </script>
+</body>
+</html>

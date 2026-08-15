@@ -111,10 +111,10 @@
 			</view>
 		</view>
 
-
-		<!-- 给图片添加的标签 -->
+		<!-- 给图片添加的标签 -->s
 		<canvas v-if="watermarkCanvasOption.width > 0 && watermarkCanvasOption.height > 0"
 			:style="{ width: watermarkCanvasOption.width + 'px', height: watermarkCanvasOption.height + 'px' }"
+			:width="watermarkCanvasOption.width" :height="watermarkCanvasOption.height"
 			canvas-id="watermarkCanvas" id="watermarkCanvas" style="position: absolute; top: -10000000rpx;" />
 	</view>
 </template>
@@ -223,7 +223,7 @@
 			reLocation() {
 				const that = this
 				const resetLocation = () => {
-					that.locationAddrStr = ''
+					that.locationAddrStr = '测试地址'
 					that.getCusLocation()
 				}
 				if (this.locationAddrStr) {
@@ -465,7 +465,7 @@
 							url: res
 						});
 						// 下载图片
-						return saveImageToPA(res)
+						// return saveImageToPA(res)
 					})
 					.catch(err => {
 						console.log('压缩图片失败', err)

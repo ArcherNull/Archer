@@ -3,5 +3,18 @@
   "projectname": "uniapp_watermark",
   "setting": {
     "compileHotReLoad": true
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "pages/index/upload/index",
+          "pathName": "pages/index/upload/index",
+          "query": "",
+          "scene": null,
+          "launchMode": "default"
+        }
+      ]
+    }
   }
 }
