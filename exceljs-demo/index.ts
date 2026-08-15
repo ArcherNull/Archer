@@ -1,194 +1,162 @@
-/*
- * @Author: junsong Chen 779217162@qq.com
- * @Date: 2025-12-04 14:52:14
- * @LastEditors: junsong Chen 779217162@qq.com
- * @LastEditTime: 2025-12-09 21:24:37
- * @FilePath: \excel-demo\index.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-import { GenerateExcelClass } from "./generateExcel";
+import { Elysia } from 'elysia';
+import { join } from 'node:path';
 
-// 创建测试数据
-const testData = [
-  {
-    username: "user1",
-    phoneNumber: "13800138000",
-    email: "user1@example.com",
-    realName: "张三",
-    idCardNo: "110101199001011234",
-    latestLoginTime: "2024-01-01 12:00:00",
-    latestLoginType: "手机登录",
-  },
-  {
-    username: "user2",
-    phoneNumber: "13800138001",
-    email: "user2@example.com",
-    realName: "李四",
-    idCardNo: "110101199001011235",
-    latestLoginTime: "2024-01-02 13:00:00",
-    latestLoginType: "邮箱登录",
-  },
-  {
-    username: "user1",
-    phoneNumber: "13800138001",
-    email: "user2@example.com",
-    realName: "李四",
-    idCardNo: "110101199001011235",
-    latestLoginTime: "2024-01-02 13:00:00",
-    latestLoginType: "邮箱登录",
-  },
-  {
-    username: "user6",
-    phoneNumber: "13800138001",
-    email: "user2@example.com",
-    realName: "李四",
-    idCardNo: "110101199001011235",
-    latestLoginTime: "2024-01-02 13:00:00",
-    latestLoginType: "邮箱登录",
-  },
-  {
-    username: "user8",
-    phoneNumber: "13800138001",
-    email: "user2@example.com",
-    realName: "李四",
-    idCardNo: "110101199001011235",
-    latestLoginTime: "2024-01-02 13:00:00",
-    latestLoginType: "邮箱登录",
-  },
-];
+import {
+  exportExcelWorkbook,
+  type MappingInput,
+  type RowInput,
+} from './excel/index';
+import {
+  getNevExcelSheetStyleOptions,
+  getNevFinanceMock,
+} from './mock/nevFinance';
 
-const options = {
-  fileName: "用户数据1",
-  sheets: [
-    {
-      sheetName: "在用用户",
-      mapping: {
-        基础信息: {
-          用户名称: "username",
-          手机号: "phoneNumber",
-          邮箱: "email",
-        },
-        敏感信息: {
-          真实姓名: "realName",
-          身份证: "idCardNo",
-        },
-        最近登录时间: "latestLoginTime",
-        最近登录方式: "latestLoginType",
-      },
-      tableData: testData,
-      filter: true,
-      rowStyle: (row: any) => {
-        if (row.username === "user8") {
-          return {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF1B8FF" },
-            bgColor: { argb: "FFF1B8FF" },
-          };
-        }
-      },
-      colStyle: (options: any, row: any) => {
-        const { field, value } = options;
-        if (field === "realName" && value === "张三") {
-          return {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFF4D4F" },
-            bgColor: { argb: "FFFF4D4F" },
-          };
-        }
+const ROOT = import.meta.dir;
+const PORT = 6984;
+const CACHE_DIR = join(ROOT, '.cache');
 
-        if (field === "username") {
-          return {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFD9F7BE" },
-            bgColor: { argb: "FFD9F7BE" },
-          };
-        }
-      },
+/** 打包前端：Vue/Tabulator 来自 CDN 全局，仅打包本地代码 + exceljs 等 */
+async function buildFrontend(): Promise<void> {
+  await Bun.write(join(CACHE_DIR, '.keep'), '');
+  const result = await Bun.build({
+    entrypoints: [join(ROOT, 'frontend/main.ts')],
+    target: 'browser',
+    format: 'esm',
+    minify: false,
+    sourcemap: 'none',
+    splitting: true,
+    outdir: CACHE_DIR,
+    naming: {
+      entry: 'main.js',
+      chunk: 'chunk-[hash].js',
     },
-    {
-      sheetName: "注销用户",
-      mapping: {
-        用户名称: "username",
-        手机号: "phoneNumber",
-        邮箱: "email",
-        真实姓1名: "realName",
-        身份证2: "idCardNo",
-        测试最近登录时间: "latestLoginTime",
-        最近登录方式: "latestLoginType",
-      },
-      tableData: testData,
-      rowStyle: (row: any) => {
-        if (row.username === "user1") {
-          return {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF1B8FF" },
-            bgColor: { argb: "FFF1B8FF" },
-          };
-        }
-      },
-    },
-    {
-      sheetName: "多表格头表格",
-      mapping: {
-        用户列表: {
-          基础信息: {
-            用户名称1: "username",
-            手机2号: "phoneNumber",
-            s邮箱: "email",
-          },
-          敏感信息: {
-            真实姓1名: "realName",
-            身份证2: "idCardNo",
-          },
-          最近登1录时间: "latestLoginTime",
-          最近4登录方式: "latestLoginType",
-        },
-        用户列表1: {
-          基础信息: {
-            用户名称1: "username",
-            手机2号: "phoneNumber",
-            s邮箱: "email",
-          },
-          敏感信息: {
-            真实姓1名: "realName",
-            身份证2: "idCardNo",
-          },
-          最近登1录时间: "latestLoginTime",
-          最近4登录方式: "latestLoginType",
-        },
-      },
-      tableData: testData,
-      rowStyle: (row: any) => {
-        if (row.username === "user1") {
-          return {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF1B8FF" },
-            bgColor: { argb: "FFF1B8FF" },
-          };
-        }
-      },
-    },
-  ],
-  fileType: "file",
-};
+    // Vue / Tabulator 由 index.html CDN 注入，勿打进包
+    external: [],
+    define: {},
+  });
 
-// 测试generateExcel方法
-async function testGenerateExcel() {
-  try {
-    const excelGenerator = new GenerateExcelClass();
-    const workbook = await excelGenerator.exportExcel(options);
-
-    // 保存Excel文件到磁盘
-    await workbook.xlsx.writeFile(`${options.fileName}.xlsx`);
-    console.log(`Excel文件已生成: ${options.fileName}.xlsx`);
-  } catch (error) {
-    console.error("生成Excel文件失败:", error);
+  if (!result.success) {
+    const msg = result.logs.map((l) => String(l)).join('\n');
+    throw new Error(`前端打包失败:\n${msg}`);
   }
 }
 
-testGenerateExcel();
+/**
+ * 参考 excel/index.ts runDemo：用 /mock 假数据构建 Workbook 并返回二进制。
+ * 行列样式与前端导出共用 getNevExcelSheetStyleOptions（不改 excel/ 封装）。
+ */
+export async function exportNevFinanceExcelBuffer(): Promise<{
+  buffer: ArrayBuffer;
+  fileName: string;
+}> {
+  const mock = getNevFinanceMock();
+  const fileName = `新能源车辆财务报表-${Date.now()}.xlsx`;
+  const {
+    rowStyle,
+    columnStyle,
+    columnWidths,
+    columnNumFmts,
+  } = getNevExcelSheetStyleOptions();
+
+  const workbook = await exportExcelWorkbook({
+    fileName: fileName.replace(/\.xlsx$/i, ''),
+    sheets: [
+      {
+        sheetName: '新能源车辆财务报表',
+        mapping: mock.mapping as MappingInput,
+        rows: [...mock.rows, mock.summaryRow] as RowInput[],
+        enableFilter: true,
+        defaultColumnWidth: 16,
+        // 显式传入，避免被后续同名项覆盖
+        columnWidths,
+        columnNumFmts,
+        rowStyle,
+        columnStyle,
+        headerStyle: {
+          fill: {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFF100' },
+          },
+        },
+        dataCellStyle: {
+          alignment: { vertical: 'middle', horizontal: 'center' },
+        },
+      },
+    ],
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return {
+    buffer: buffer as ArrayBuffer,
+    fileName,
+  };
+}
+
+function safeCacheName(name: string): boolean {
+  return !!name && !name.includes('..') && !name.includes('/') && !name.includes('\\');
+}
+
+await buildFrontend();
+console.log('前端已打包到 .cache/');
+
+const app = new Elysia()
+  .get('/', async () => {
+    const html = await Bun.file(join(ROOT, 'index.html')).text();
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  })
+  .get('/frontend/main.js', async () => {
+    try {
+      await buildFrontend();
+      return new Response(Bun.file(join(CACHE_DIR, 'main.js')), {
+        headers: {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      return new Response(String(e), {
+        status: 500,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
+    }
+  })
+  .get('/frontend/:name', async ({ params }) => {
+    const name = params.name;
+    if (!safeCacheName(name)) {
+      return new Response('Bad Request', { status: 400 });
+    }
+    // chunk 与动态 import 产物都在 .cache 下；main.js 已单独处理
+    const file = Bun.file(join(CACHE_DIR, name));
+    if (!(await file.exists())) {
+      // 兼容动态 import 相对路径 ./chunk-*.js（从 /frontend/main.js 发出）
+      return new Response('Not Found', { status: 404 });
+    }
+    return new Response(file, {
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    });
+  })
+  .get('/mock', () => getNevFinanceMock())
+  .get('/excel', async ({ set }) => {
+    const { buffer, fileName } = await exportNevFinanceExcelBuffer();
+    const encoded = encodeURIComponent(fileName);
+    set.headers['Content-Type'] =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    set.headers['Content-Disposition'] =
+      `attachment; filename="nev-finance.xlsx"; filename*=UTF-8''${encoded}`;
+    return new Response(buffer);
+  })
+  .listen(PORT);
+
+console.log(
+  `Elysia 服务已启动: http://localhost:${app.server?.port ?? PORT}`,
+);
+console.log(`  GET /       → 前端界面（Vue + Tabulator CDN）`);
+console.log(`  GET /mock   → 模拟报表数据`);
+console.log(`  GET /excel  → 后端导出 Excel`);
