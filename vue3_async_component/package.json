@@ -22,6 +22,7 @@
     "autoprefixer": "^10.4.8",
     "axios": "^0.27.2",
     "element-plus": "^2.3.8",
+    "fast-glob": "^3.3.3",
     "flex.css": "^1.1.7",
     "js-cookie": "^3.0.1",
     "lodash-es": "^4.17.21",

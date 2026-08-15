@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button onclick="insertDom()">插入100000个元素</button>
+  </body>
+
+  <script>
+    const tasks = Array.from({ length: 100000 }, (_, i) => () => {
+      {
+        const div = document.createElement('div')
+        div.innerText = i
+        document.body.appendChild(div)
+      }
+    })
+
+    function insertDom() {
+      idlePerformTask(tasks)
+    }
+
+    // 分步执行任务
+    function performTask(tasks, scheduler) {
+      let index = 0
+      function _run() {
+        scheduler(isGoOn => {
+          // isGoOn 表示是否继续
+          while (index < tasks.length && isGoOn()) {
+            // 执行当前任务，并将index+1
+            tasks[index++]()
+          }
+          // 表示任务长度还有
+          if (index < tasks.length) {
+            _run()
+          }
+        })
+      }
+      _run()
+    }
+
+    // requestIdleCallback封装
+    function idlePerformTask(tasks) {
+      performTask(tasks, runChunk => {
+        requestIdleCallback(idle => {
+          runChunk(() => idle.timeRemaining() > 0)
+        })
+      })
+    }
+  </script>
+</html>
