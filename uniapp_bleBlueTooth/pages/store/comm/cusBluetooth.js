@@ -1,5 +1,6 @@
 // 当蓝牙模块通过后，才是蓝牙设备， 一个蓝牙模块对应多个蓝牙设备，并且启动心跳检测每个设备的连接状态
-import * as gbk from './printUtil-GBK.js';
+import * as gbk from './cpcl/ZICOX/CC3/printUtil-GBK.js';
+import { tfmbuffer } from './cpcl/base64gb2312.js';
 
 // 是非空数组
 export function isNotEmptyArr(arr) {
@@ -56,7 +57,7 @@ function sleep(time) {
 	})
 }
 
-// 错误码
+// 错误码（含微信隐私协议相关 errno）
 const ERROR_CODE = {
 	'0': '正常',
 	'-1': '已连接',
@@ -74,6 +75,45 @@ const ERROR_CODE = {
 	'10011': '配对设备需要配对码',
 	'10012': '连接超时',
 	'10013': '连接 deviceId 为空或者是格式不正确',
+	'103': '用户拒绝隐私授权',
+	'104': '用户未同意隐私协议',
+	'112': '未在微信小程序后台声明蓝牙隐私接口，请到「设置-服务内容声明-用户隐私保护指引」勾选蓝牙相关能力（约5分钟生效）',
+}
+
+// 是否为后台未声明隐私接口（errno 112），此类错误不应占用重启次数
+function isPrivacyScopeUndeclaredError(errOrRes) {
+	const errno = errOrRes?.errno
+	const msg = errOrRes?.errMsg || errOrRes?.message || ''
+	return errno === 112 ||
+		String(msg).includes('not declared in the privacy agreement') ||
+		String(msg).includes('未在微信小程序后台声明蓝牙隐私接口')
+}
+
+function formatBluetoothError(res, fallback = '蓝牙操作失败') {
+	const errno = res?.errno
+	const errCode = res?.errCode
+	if (errno !== undefined && ERROR_CODE[String(errno)]) {
+		return ERROR_CODE[String(errno)]
+	}
+	if (errCode !== undefined && ERROR_CODE[String(errCode)]) {
+		return ERROR_CODE[String(errCode)]
+	}
+	return res?.errMsg || fallback
+}
+
+async function tipBluetoothError(errOrMsg) {
+	const msg = typeof errOrMsg === 'string' ? errOrMsg : (errOrMsg?.message || '蓝牙操作失败')
+	if (isPrivacyScopeUndeclaredError(typeof errOrMsg === 'string' ? { message: errOrMsg } : errOrMsg) ||
+		msg.includes('隐私')) {
+		await showModal({
+			title: '蓝牙不可用',
+			content: msg,
+			showCancel: false,
+			confirmText: '知道了',
+		})
+		return
+	}
+	showMsg(msg)
 }
 
 // 自定义蓝牙模块类
@@ -87,11 +127,10 @@ export class CusBluetoothModuleClass {
 	_restartBlueToothCount = 0
 	// 重启蓝牙模块最大次数
 	_restartBlueToothMaxCount = 3
-
-	// 等待蓝牙模块启动次数
-	_waitBlueToothCount = 0
-	// 等待蓝牙模块启动最大次数
-	_waitBlueToothMaxCount = 3
+	// 是否正在执行重启流程（防连点）
+	_isRestartingBlueTooth = false
+	// 关闭适配器后再打开的间隔（部分机型需要短暂等待）
+	_reopenDelayMs = 500
 
 	// 蓝牙模块适配器状态
 	_bluetoothAdapterState = {
@@ -99,8 +138,8 @@ export class CusBluetoothModuleClass {
 		discovering: false,
 	}
 
-	// 用户授权蓝牙是否通过
-	_isAuthSettingBluetooth = false
+	// 是否校验蓝牙授权（微信小程序需开启；H5 可关闭）
+	_isAuthSettingBluetooth = true
 	// 蓝牙模块状态， 未启动 notStarted ;  已启动 started ; 正在启动  starting
 	_bluetoothModuleState = 'notStarted'
 	// 蓝牙模块搜索蓝牙设备状态， 未搜索 notSearched ;  已搜索 searched ; 正在搜索  searching
@@ -109,6 +148,12 @@ export class CusBluetoothModuleClass {
 	_searchDevicesResultList = []
 	// 已经连接蓝牙设备列表
 	_connectedDevicesList = []
+	// CPCL 打印设备名称前缀，设备名 startsWith 任一前缀即走 CPCL（如 HM-A300L、HM-A300-668B）；可手动追加
+	_cpclDeviceNamePrefixes = ['HM-', 'HPRT']
+	// GBK 打印设备名称前缀：芝柯 CC3_ / 优博讯 K319
+	_gbkDeviceNamePrefixes = ['CC3_', 'K319']
+	// 常见打印机可写服务 UUID 关键词（优先匹配，避免选到错误特征值）
+	_preferredWriteServiceKeywords = ['FF00', 'FFE0', 'FFF0', '49535343', '18F0']
 	// 正在连接的设备信息
 	_operationDevicesInfo = {}
 
@@ -166,51 +211,92 @@ export class CusBluetoothModuleClass {
 
 	// 处理错误信息
 	dealFailRes(res, reject, text = '初始化蓝牙模块失败') {
-		const {
-			errCode,
-			errMsg
-		} = res || {}
-		const eMsg = errCode !== undefined ? (ERROR_CODE[errCode] || errMsg) :
-			errMsg
-		console.log('错误提示=====>', eMsg)
+		const eMsg = formatBluetoothError(res, text)
+		console.log('错误提示=====>', eMsg, res)
 		showMsg(eMsg)
-		reject(new Error(eMsg || text))
+		const err = new Error(eMsg || text)
+		err.errno = res?.errno
+		err.errCode = res?.errCode
+		reject(err)
 	}
 
 	// 启动蓝牙
-	async setupBlueTooth() {
+	async setupBlueTooth({ silent = false } = {}) {
+		const that = this
 		try {
-			const that = this
-			uni.showLoading({
+			if (that._bluetoothModuleState === 'starting') {
+				!silent && showMsg('蓝牙模块正在启动中，请耐心等待')
+				return null
+			}
+
+			!silent && uni.showLoading({
 				title: '启动中...'
 			})
 
 			that._bluetoothModuleState = 'starting'
+			that.emit('stateChange')
+			// 微信：先隐私协议，再蓝牙授权，最后打开适配器
+			await that.ensurePrivacyAuthorize()
 			await that.checkAndRequestPermissions()
 			await that.openBluetoothAdapter()
 			const aRes = await that.getBluetoothAdapterState()
 			that._bluetoothModuleState = 'started'
-			showMsg('蓝牙启动成功', 'success')
+			that._restartBlueToothCount = 0
+			!silent && showMsg('蓝牙启动成功', 'success')
 			// 异步蓝牙适配器状态变化
 			that.onBluetoothAdapterStateChange()
+			that.emit('stateChange')
 			return aRes
 		} catch (err) {
-			uni.hideLoading()
-			this._bluetoothModuleState = 'notStarted'
-			showMsg(err?.message || '启动蓝牙失败')
+			that._bluetoothModuleState = 'notStarted'
+			that.emit('stateChange')
+			!silent && await tipBluetoothError(err?.message || '启动蓝牙失败')
+			throw err
 		} finally {
 			uni.hideLoading()
 		}
 	}
 
-	// 重新搜索结果
+	// 重新搜索结果（先重启蓝牙模块，再搜索）
 	async reSearchNearByBlueTooth() {
 		const that = this
-		const mFun = () => {
+		const mFun = async () => {
 			that._connectedDevicesList = []
 			that._searchDevicesResultList = []
 			that._operationDevicesInfo = {}
-			that.searchNearByBlueTooth()
+			try {
+				if (that._bluetoothModuleState === 'starting') {
+					showMsg('蓝牙模块正在启动中，请耐心等待')
+					return
+				}
+				if (that._isRestartingBlueTooth) {
+					showMsg('蓝牙模块正在重启中，请稍候')
+					return
+				}
+				that._isRestartingBlueTooth = true
+				uni.showLoading({
+					title: '重启中...'
+				})
+				// 有搜索先停，再关适配器，再重新启动后搜索
+				if (that._bluetoothModuleSearchState === 'searching') {
+					try {
+						await that.stopBluetoothDevicesDiscovery()
+					} catch (e) {
+						console.log('重新搜索前停止搜索忽略=====>', e)
+					}
+				}
+				await that.safeCloseBluetoothAdapter()
+				await sleep(that._reopenDelayMs / 1000)
+				await that.setupBlueTooth({
+					silent: true
+				})
+				await that.searchNearByBlueTooth()
+			} catch (err) {
+				await tipBluetoothError(err?.message || '重新搜索失败')
+			} finally {
+				that._isRestartingBlueTooth = false
+				uni.hideLoading()
+			}
 		}
 
 		if (that._searchDevicesResultList.length) {
@@ -218,9 +304,9 @@ export class CusBluetoothModuleClass {
 				title: "温馨提示",
 				content: `您确定重新刷新蓝牙搜索结果？`,
 			});
-			res?.confirm && mFun()
+			res?.confirm && await mFun()
 		} else {
-			mFun()
+			await mFun()
 		}
 	}
 
@@ -350,174 +436,316 @@ export class CusBluetoothModuleClass {
 		this._osName = systemInfo?.osName
 	}
 
+	// 微信小程序：确保用户已同意隐私协议（未声明后台接口时仍会报 errno 112）
+	ensurePrivacyAuthorize() {
+		return new Promise((resolve, reject) => {
+			// #ifdef MP-WEIXIN
+			if (typeof uni.getPrivacySetting !== 'function') {
+				resolve(true)
+				return
+			}
+			uni.getPrivacySetting({
+				success: (res) => {
+					console.log('getPrivacySetting=====>', res)
+					if (!res?.needAuthorization) {
+						resolve(true)
+						return
+					}
+					if (typeof uni.requirePrivacyAuthorize !== 'function') {
+						// 交由系统官方弹窗处理
+						resolve(true)
+						return
+					}
+					uni.requirePrivacyAuthorize({
+						success: () => resolve(true),
+						fail: (err) => {
+							console.log('requirePrivacyAuthorize-fail=====>', err)
+							if (isPrivacyScopeUndeclaredError(err)) {
+								reject(new Error(ERROR_CODE['112']))
+								return
+							}
+							reject(new Error(formatBluetoothError(err, '请先同意隐私协议后再使用蓝牙')))
+						}
+					})
+				},
+				fail: (err) => {
+					console.log('getPrivacySetting-fail=====>', err)
+					// 低版本基础库可能无此能力，继续后续流程
+					resolve(true)
+				}
+			})
+			// #endif
+			// #ifndef MP-WEIXIN
+			resolve(true)
+			// #endif
+		})
+	}
+
 	// 蓝牙是否授权
 	checkAndRequestPermissions() {
+		const that = this
 		return new Promise((resolve, reject) => {
-			if (this._isAuthSettingBluetooth === true) {
-				// #ifndef APP || H5
-				const that = this
-				uni.getSetting({
-					success: (res) => {
-						console.log('蓝牙是否授权res', res)
-						const isPers = res.authSetting['scope.bluetooth']
-						//非初始化进入该页面,且未授权
-						if (isPers != undefined && isPers != true) {
+			if (!that._isAuthSettingBluetooth) {
+				resolve(true)
+				return
+			}
+
+			// #ifdef MP-WEIXIN
+			uni.getSetting({
+				success: (res) => {
+					console.log('蓝牙是否授权res', res)
+					const isPers = res?.authSetting?.['scope.bluetooth']
+					if (isPers === true) {
+						resolve(true)
+						return
+					}
+					if (isPers === false) {
+						showModal({
+							title: '是否授权蓝牙连接',
+							content: '需要获取您的蓝牙模块，用于连接蓝牙打印机',
+						}).then((modalRes) => {
+							if (!modalRes?.confirm) {
+								reject(new Error('授权失败'))
+								return
+							}
+							uni.openSetting({
+								success: (settingRes) => {
+									const isPass = settingRes?.authSetting?.['scope.bluetooth'] === true
+									if (isPass) {
+										showMsg('授权成功', 'success')
+										resolve(true)
+									} else {
+										reject(new Error('授权失败'))
+									}
+								},
+								fail: () => reject(new Error('打开设置失败'))
+							})
+						}).catch(() => reject(new Error('授权失败')))
+						return
+					}
+					// undefined：尚未询问，主动拉起授权
+					uni.authorize({
+						scope: 'scope.bluetooth',
+						success: () => resolve(true),
+						fail: () => {
 							showModal({
 								title: '是否授权蓝牙连接',
 								content: '需要获取您的蓝牙模块，用于连接蓝牙打印机',
-								success: function(res) {
-									if (res.cancel) {
-										reject(new Error('授权失败'))
-									}
-									if (res.confirm) {
-										uni.openSetting({
-											success: function(res) {
-												const isPass = res
-													.authSetting[
-														"scope.bluetooth"
-													] == true
-												if (isPass) {
-													showMsg('授权成功',
-														'success')
-													resolve(true)
-												} else {
-													reject(new Error(
-														'授权失败'))
-												}
-											}
-										})
-									}
+							}).then((modalRes) => {
+								if (!modalRes?.confirm) {
+									reject(new Error('授权失败'))
+									return
 								}
-							})
-						} else if (isPers == undefined) {
-							resolve(true)
-						} else {
-							//授权后默认加载
-							resolve(true)
+								uni.openSetting({
+									success: (settingRes) => {
+										const isPass = settingRes?.authSetting?.['scope.bluetooth'] === true
+										if (isPass) {
+											showMsg('授权成功', 'success')
+											resolve(true)
+										} else {
+											reject(new Error('授权失败'))
+										}
+									},
+									fail: () => reject(new Error('打开设置失败'))
+								})
+							}).catch(() => reject(new Error('授权失败')))
 						}
-					},
-					fail: (err) => {
-						reject(new Error('蓝牙授权失败,' + err?.toString()))
-					}
-				})
-				// #endif
-				// #ifdef APP
-				const permissions = ["android.permission.BLUETOOTH", "android.permission.BLUETOOTH_ADMIN"];
+					})
+				},
+				fail: (err) => {
+					reject(new Error('蓝牙授权失败,' + (err?.errMsg || String(err))))
+				}
+			})
+			// #endif
+
+			// #ifdef APP-PLUS
+			const permissions = [
+				'android.permission.BLUETOOTH',
+				'android.permission.BLUETOOTH_ADMIN',
+				'android.permission.BLUETOOTH_SCAN',
+				'android.permission.BLUETOOTH_CONNECT',
+				'android.permission.ACCESS_FINE_LOCATION',
+			]
+			if (typeof uni.requestAndroidPermissions === 'function') {
 				uni.requestAndroidPermissions({
 					permissions,
 					success(res) {
 						if (res.all === true) {
-							// 权限请求成功，可以调用蓝牙相关API
 							resolve(true)
 						} else {
-							// 权限请求失败
 							reject(new Error('蓝牙授权失败'))
 						}
-					}
-				});
-				// #endif
-				// #ifdef  H5
-				resolve(true)
-				// #endif
+					},
+					fail: () => reject(new Error('蓝牙授权失败'))
+				})
 			} else {
 				resolve(true)
 			}
+			// #endif
+
+			// #ifdef H5
+			resolve(true)
+			// #endif
+
+			// #ifndef MP-WEIXIN || APP-PLUS || H5
+			resolve(true)
+			// #endif
 		})
+	}
+
+	// 清空设备相关缓存（不改模块启停状态）
+	clearDeviceLists() {
+		this._connectedDevicesList = []
+		this._searchDevicesResultList = []
+		this._operationDevicesInfo = {}
+		this._bluetoothModuleSearchState = 'notSearched'
 	}
 
 	// 重置蓝牙参数
 	resetBTParams() {
-		const that = this
-		that._connectedDevicesList = []
-		that._searchDevicesResultList = []
-		that._operationDevicesInfo = {}
-		that._bluetoothModuleState = 'notStarted'
-		that._bluetoothModuleSearchState = 'notSearched'
-		that._restartBlueToothCount = 0
-		that._waitBlueToothCount = 0
+		this.clearDeviceLists()
+		this._bluetoothModuleState = 'notStarted'
+		this._bluetoothAdapterState = {
+			available: false,
+			discovering: false,
+		}
+		this._restartBlueToothCount = 0
+		this._isRestartingBlueTooth = false
 	}
 
 	// 初始化蓝牙模块， 校验蓝牙是否正常
 	openBluetoothAdapter() {
 		const that = this
-		that._bluetoothModuleState = 'starting'
 		return new Promise((resolve, reject) => {
-			that.resetBTParams()
+			// 仅清空设备列表，避免把 starting 状态冲成 notStarted
+			that.clearDeviceLists()
 			uni.openBluetoothAdapter({
 				success: function(res) {
 					console.log('openBluetoothAdapter-success=====>', res)
 					if (res?.errMsg === 'openBluetoothAdapter:ok') {
-						that._bluetoothModuleState = 'started'
 						resolve(true)
 					} else {
-						reject(new Error('蓝牙启动失败'))
 						that._bluetoothModuleState = 'notStarted'
+						reject(new Error('蓝牙启动失败'))
 					}
 				},
 				fail: function(res) {
 					console.log('openBluetoothAdapter-fail=====>', res)
+					const errCode = res?.errCode
+					const errMsg = res?.errMsg || ''
+					// 部分端上重复 open 会报已打开，视为可用
+					if (errCode === 0 || errMsg.includes('already opened') || errMsg.includes('已经打开')) {
+						resolve(true)
+						return
+					}
 					that._bluetoothModuleState = 'notStarted'
+					if (isPrivacyScopeUndeclaredError(res)) {
+						const err = new Error(ERROR_CODE['112'])
+						err.errno = 112
+						reject(err)
+						return
+					}
 					that.dealFailRes(res, reject, '初始化蓝牙模块失败')
-					// setTimeout(() => {
-					// 	that.restartOpenBluetoothAdapter()
-					// }, 2000)
 				}
 			});
 		})
 	}
 
-	// 重启蓝牙模块
+	// 安全关闭蓝牙模块（未启动时也视为成功，避免重启链路中断）
+	safeCloseBluetoothAdapter() {
+		const that = this
+		return new Promise((resolve) => {
+			that.saveConnectedDevices()
+			uni.closeBluetoothAdapter({
+				success: (res) => {
+					console.log('closeBluetoothAdapter-success=====>', res)
+					that.clearDeviceLists()
+					that._bluetoothModuleState = 'notStarted'
+					that._bluetoothAdapterState = {
+						available: false,
+						discovering: false,
+					}
+					that.emit('stateChange')
+					resolve(true)
+				},
+				fail: (res) => {
+					console.log('closeBluetoothAdapter-fail=====>', res)
+					// 未初始化时关闭失败可忽略，保证重启流程可继续
+					that.clearDeviceLists()
+					that._bluetoothModuleState = 'notStarted'
+					that.emit('stateChange')
+					resolve(false)
+				}
+			})
+		})
+	}
+
+	// 重启蓝牙模块：先关闭再完整走 setupBlueTooth
 	async restartOpenBluetoothAdapter() {
+		const that = this
+		let consumedRestartQuota = false
 		try {
-			const that = this
+			if (that._isRestartingBlueTooth) {
+				showMsg('蓝牙模块正在重启中，请稍候')
+				return
+			}
+
+			if (that._bluetoothModuleState === 'starting') {
+				showMsg('蓝牙模块正在启动中，请耐心等待...')
+				return
+			}
+
+			if (that._restartBlueToothCount >= that._restartBlueToothMaxCount) {
+				showMsg(`重新启动蓝牙模块已超出最大次数${that._restartBlueToothMaxCount}次`)
+				return
+			}
+
+			const isStarted = that._bluetoothModuleState === 'started'
+			const modalRes = await showModal({
+				title: '温馨提示',
+				content: isStarted ?
+					'蓝牙模块已启动，重新启动将断开已连接设备，是否继续？' :
+					'您确定重新启动蓝牙模块？',
+			})
+			if (!modalRes?.confirm) {
+				return
+			}
+
+			that._isRestartingBlueTooth = true
+			that._restartBlueToothCount++
+			consumedRestartQuota = true
 			uni.hideLoading()
-			// 已经连接了
-			if (that._bluetoothModuleState === 'started') {
-				const res = await showModal({
-					title: "温馨提示",
-					content: `蓝牙模块已经启动并连接，您需要重新连接蓝牙模块吗？`,
-				});
-				if (res?.confirm) {
-					console.log('手动终止蓝牙模块连接=======>')
-					const cRes = await that.closeBluetoothAdapter()
-					cRes && (await that.openBluetoothAdapter())
-				}
+			uni.showLoading({
+				title: '重启中...'
+			})
 
-			} else if (that._bluetoothModuleState === 'starting') {
-				if (this._waitBlueToothCount >= this._waitBlueToothMaxCount) {
-					const res = await showModal({
-						title: "温馨提示",
-						content: `蓝牙模块长时间无反应，您是否终止连接？`,
-					});
-					if (res?.confirm) {
-						console.log('手动终止蓝牙模块连接=======>')
-						that.closeBluetoothAdapter()
-					}
-				} else {
-					showMsg(`蓝牙模块正在启动中，请耐心等待...`)
-				}
-				that._waitBlueToothCount++
-			} else {
-				if (that._restartBlueToothCount < that._restartBlueToothMaxCount) {
-					const res = await showModal({
-						title: "温馨提示",
-						content: `您确定重新启动蓝牙模块？`,
-					});
-					if (res?.confirm) {
-						that._restartBlueToothCount++
-						await that.openBluetoothAdapter();
-					}
-					if (res?.cancel) {
-						that._restartBlueToothCount = that._restartBlueToothMaxCount
-					}
-
-				} else {
-					showMsg(`重新启动蓝牙模块已超出最大次数${that._restartBlueToothMaxCount}次`)
+			// 有搜索先停，再关适配器，再短暂等待后完整启动
+			if (that._bluetoothModuleSearchState === 'searching') {
+				try {
+					await that.stopBluetoothDevicesDiscovery()
+				} catch (e) {
+					console.log('重启前停止搜索忽略=====>', e)
 				}
 			}
 
+			await that.safeCloseBluetoothAdapter()
+			await sleep(that._reopenDelayMs / 1000)
+			await that.setupBlueTooth({
+				silent: true
+			})
+			showMsg('蓝牙重启成功', 'success')
+			that.emit('stateChange')
 		} catch (err) {
-			showMsg(err?.message || '重启蓝牙模块失败')
+			that._bluetoothModuleState = 'notStarted'
+			that.emit('stateChange')
+			// 配置类错误（未声明隐私接口）不占用重启次数
+			if (consumedRestartQuota && isPrivacyScopeUndeclaredError(err)) {
+				that._restartBlueToothCount = Math.max(0, that._restartBlueToothCount - 1)
+			}
+			await tipBluetoothError(err?.message || '重启蓝牙模块失败')
+		} finally {
+			that._isRestartingBlueTooth = false
+			uni.hideLoading()
 		}
 	}
 
@@ -794,6 +1022,7 @@ export class CusBluetoothModuleClass {
 			})
 			that.changeConnectState(device, 'connecting')
 			await that.createBLEConnection(device)
+			await that.setBLEMTU(device.deviceId)
 			const dealRes = await that.dealServicesAndCharacteristics(device)
 			console.log('dealRes=======>', dealRes)
 			that.operationConnectDevice(dealRes)
@@ -889,33 +1118,46 @@ export class CusBluetoothModuleClass {
 		const that = this
 		try {
 			const sRes = await that.getBLEDeviceServices(device)
-			let characteristicId
-			let serviceId
+			let preferred = null
+			let fallback = null
 			for (let i = 0; i < sRes.length; i++) {
-				let sId = sRes[i].uuid;
-				if (sId) {
-					const characteristics = await that.getBLEDeviceCharacteristics({
-						...device,
-						serviceId: sId
-					})
-					for (let j = 0; j < characteristics.length; j++) {
-						const cItem = characteristics[j]
-						if (cItem.properties.write == true) {
-							const cUuid = cItem.uuid
-							characteristicId = cUuid
-							serviceId = sId
-
+				let sId = sRes[i].uuid
+				if (!sId) continue
+				const characteristics = await that.getBLEDeviceCharacteristics({
+					...device,
+					serviceId: sId
+				})
+				const sIdUpper = String(sId).toUpperCase()
+				const isPreferredService = that._preferredWriteServiceKeywords.some(k => sIdUpper.includes(k))
+				for (let j = 0; j < characteristics.length; j++) {
+					const cItem = characteristics[j]
+					const props = cItem.properties || {}
+					const canWrite = props.write === true || props.writeNoResponse === true
+					if (!canWrite) continue
+					const candidate = {
+						characteristicId: cItem.uuid,
+						serviceId: sId,
+						writeType: props.writeNoResponse ? 'writeNoResponse' : 'write'
+					}
+					if (isPreferredService) {
+						// 优先：可写无响应 > 可写；同优先级下保留第一个首选服务特征
+						if (!preferred || (candidate.writeType === 'writeNoResponse' && preferred.writeType !== 'writeNoResponse')) {
+							preferred = candidate
 						}
+					} else if (!fallback || (candidate.writeType === 'writeNoResponse' && fallback.writeType !== 'writeNoResponse')) {
+						fallback = candidate
 					}
 				}
 			}
-			if (characteristicId && serviceId) {
+			const selected = preferred || fallback
+			if (selected) {
 				const nObj = {
-					characteristicId,
-					serviceId,
+					characteristicId: selected.characteristicId,
+					serviceId: selected.serviceId,
+					writeType: selected.writeType,
 					services: [{
-						characteristicId,
-						serviceId,
+						characteristicId: selected.characteristicId,
+						serviceId: selected.serviceId,
 					}]
 				}
 				const ndObj = that.changeConnectState(nObj, 'connected')
@@ -1026,12 +1268,59 @@ export class CusBluetoothModuleClass {
 		return errLog
 	}
 
+	// 设置 CPCL 打印设备名称前缀列表（完全替换）
+	setCpclDeviceNamePrefixes(prefixes) {
+		if (Array.isArray(prefixes) && prefixes.length) {
+			this._cpclDeviceNamePrefixes = prefixes
+		}
+	}
+
+	// 追加 CPCL 打印设备名称前缀
+	addCpclDeviceNamePrefix(prefix) {
+		if (prefix && !this._cpclDeviceNamePrefixes.includes(prefix)) {
+			this._cpclDeviceNamePrefixes.push(prefix)
+		}
+	}
+
+	// 获取打印机设备名称（优先任务中的 name，否则从已连接列表查找）
+	getPrinterDeviceName(deviceId, taskName, taskLocalName) {
+		if (taskName) return taskName
+		if (taskLocalName) return taskLocalName
+		const device = this._connectedDevicesList.find(d => d.deviceId === deviceId)
+		return device?.name || device?.localName || ''
+	}
+
+	// 根据设备名称前缀判断是否为 CPCL 打印设备（startsWith / includes）
+	isCpclPrinter(deviceName) {
+		if (!deviceName) return false
+		const name = String(deviceName).trim().toUpperCase()
+		return this._cpclDeviceNamePrefixes.some(prefix => {
+			const p = String(prefix).trim().toUpperCase()
+			return p && (name.startsWith(p) || name.includes(p))
+		})
+	}
+
+	// 根据设备名称前缀判断是否为 GBK 打印设备（芝柯 CC3_ / 优博讯 K319）
+	isGbkPrinter(deviceName) {
+		if (!deviceName) return false
+		const name = String(deviceName).trim().toUpperCase()
+		return this._gbkDeviceNamePrefixes.some(prefix => {
+			const p = String(prefix).trim().toUpperCase()
+			return p && (name.startsWith(p) || name.includes(p))
+		})
+	}
+
+	// CPCL 指令通常以 "! " 开头，可作为设备名缺失时的兜底判断
+	isCpclPrintData(printDataStr) {
+		if (!printDataStr || typeof printDataStr !== 'string') return false
+		return /^\s*!/.test(printDataStr)
+	}
+
 	// 打印， printTaskList 打印任务列表
 	async print(printTaskList) {
 		const that = this
 		try {
 			if (isNotEmptyArr(printTaskList)) {
-				that._osName === 'ios' && (await that.setBLEMTU())
 				for (let i = 0; i < printTaskList.length; i++) {
 					const pTask = printTaskList[i]
 					const errLog = that.validatePrintTask(pTask)
@@ -1049,59 +1338,76 @@ export class CusBluetoothModuleClass {
 		}
 	}
 
-	// 打印任务项
+	// 打印任务项：芝柯/优博讯优先 GBK，其余（含汉印）走 CPCL
 	async printTaskItem(pTask) {
 		const that = this
 		try {
-			const {
-				deviceId,
-				serviceId,
-				characteristicId,
-				printDataStr
-			} = pTask
-			const buffer = that.getBuffer(printDataStr)
-			console.log('buffer', buffer)
-			const dpData = {
-				deviceId,
-				serviceId,
-				characteristicId,
+			const { deviceId, name, localName, printDataStr } = pTask
+			const deviceName = that.getPrinterDeviceName(deviceId, name, localName)
+			// 1. 优先：芝柯（CC3_）/ 优博讯（K319）→ GBK
+			if (that.isGbkPrinter(deviceName)) {
+				await that.printGbkTaskItem(pTask)
+			} else if (that.isCpclPrinter(deviceName) || that.isCpclPrintData(printDataStr)) {
+				// 2. 汉印（_cpclDeviceNamePrefixes）或 CPCL 指令数据 → CPCL
+				await that.printCpclTaskItem(pTask)
+			} else {
+				// 3. 其余情况 → CPCL
+				await that.printCpclTaskItem(pTask)
 			}
-			if (that._osName === 'ios') {
+		} catch (err) {
+			showMsg(err?.message || '打印任务执行失败')
+		}
+	}
+
+	// CPCL 打印（汉印 HM-A300L/HM-A300E/HM-A300-668B 等）
+	async printCpclTaskItem(pTask) {
+		const that = this
+		const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
+		const bufferList = tfmbuffer(printDataStr)
+		const maxChunk = 20
+		for (let c = 0; c < bufferList.length; c++) {
+			const buffer = bufferList[c]
+			const length = buffer.byteLength
+			for (let i = 0; i < length; i += maxChunk) {
+				const subPackage = buffer.slice(i, i + maxChunk <= length ? (i + maxChunk) : length)
 				await that.writeBLECharacteristicValue({
 					deviceId,
 					serviceId,
 					characteristicId,
-					buffer: buffer
+					buffer: subPackage,
+					writeType: writeType || 'writeNoResponse'
 				})
-			} else {
-				var length = buffer.byteLength;
-				console.log('进入=====>', length)
-				const mtu = that._mtu
-				var count = Math.ceil(length / mtu); //最多执行 count 次
-				for (let i = 0; i < count; i++) {
-					let tempBuffer = "";
-					if (((i + 1) * mtu) < length) {
-						tempBuffer = buffer.slice(i * mtu, (i + 1) * mtu);
-						await that.writeBLECharacteristicValue({
-							deviceId,
-							serviceId,
-							characteristicId,
-							buffer: tempBuffer
-						})
-					} else {
-						tempBuffer = buffer.slice(i * mtu, lengtsh);
-						await that.writeBLECharacteristicValue({
-							deviceId,
-							serviceId,
-							characteristicId,
-							buffer: tempBuffer
-						})
-					}
-					// this.sleep(i * 0.02); //延迟 i*200ms  
-				}
+				await sleep(0.02)
 			}
-		} catch (err) {
-			showMsg(err?.message || '打印任务执行失败')
+		}
+	}
+
+	// GBK 打印（芝柯 CC3 / 优博讯 K319 等）
+	async printGbkTaskItem(pTask) {
+		const that = this
+		const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
+		const buffer = that.getBuffer(printDataStr)
+		console.log('buffer', buffer)
+		const chunkSize = that._osName === 'ios' ? buffer.byteLength : Math.min(that._mtu || 20, 180)
+		var length = buffer.byteLength
+		var count = Math.ceil(length / chunkSize)
+		for (let i = 0; i < count; i++) {
+			let tempBuffer
+			if (((i + 1) * chunkSize) < length) {
+				tempBuffer = buffer.slice(i * chunkSize, (i + 1) * chunkSize)
+			} else {
+				tempBuffer = buffer.slice(i * chunkSize, length)
+			}
+			await that.writeBLECharacteristicValue({
+				deviceId,
+				serviceId,
+				characteristicId,
+				buffer: tempBuffer,
+				writeType: writeType || 'write'
+			})
+			if (count > 1) {
+				await sleep(0.02)
+			}
 		}
 	}
 
@@ -1111,13 +1417,16 @@ export class CusBluetoothModuleClass {
 		return buffer
 	}
 
-	// oppo 手机设置可能会存在失败的情况
-	// 设置蓝牙最大传输单元。需在 uni.createBLEConnection调用成功后调用，mtu 设置范围 (22,512)。安卓5.1以上有效。
-	setBLEMTU() {
+	// 连接成功后设置 MTU（安卓有效）；失败不阻断打印
+	setBLEMTU(deviceId) {
 		const that = this
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
+			if (!deviceId || that._osName === 'ios') {
+				resolve(false)
+				return
+			}
 			uni.setBLEMTU({
-				deviceId: deviceId,
+				deviceId,
 				mtu: that._mtu,
 				success(res) {
 					console.log('setBLEMTU-success======>', res)
@@ -1125,46 +1434,43 @@ export class CusBluetoothModuleClass {
 				},
 				fail(res) {
 					console.log('setBLEMTU-fail======>', res)
-					reject(new Error(res?.errMsg || '设置最大传输单元失败'))
+					resolve(false)
 				}
 			})
 		})
 	}
 
-	// 向打印机设备写入二进制数据，这里需要区分ios和android平台，android需要分片，每次传输都有最大限制，ios不用
+	// 向打印机设备写入二进制数据
 	writeBLECharacteristicValue(options) {
-		const that = this
-		return new Promise((resolve, reject) => {
+		const doWrite = (writeType, retried) => new Promise((resolve) => {
 			const {
 				deviceId,
 				serviceId,
 				characteristicId,
 				buffer
 			} = options
-			uni.writeBLECharacteristicValue({
+			const writeOpts = {
 				deviceId,
 				serviceId,
 				characteristicId,
 				value: buffer,
 				success(res) {
-					console.log('writeBLECharacteristicValue-success======>', res)
 					resolve(true)
 				},
 				fail(res) {
-					// 这个地方就算错误了也不要reject
-					console.log('writeBLECharacteristicValue-fail======>', res)
-					// reject(new Error(res?.errMsg || '写入失败'))
+					if (!retried && writeType) {
+						const altType = writeType === 'writeNoResponse' ? 'write' : 'writeNoResponse'
+						doWrite(altType, true).then(resolve)
+						return
+					}
 					resolve(true)
 				}
-			})
+			}
+			if (writeType) {
+				writeOpts.writeType = writeType
+			}
+			uni.writeBLECharacteristicValue(writeOpts)
 		})
-	}
-
-	// 延时函数
-	sleep(delay) {
-		var start = (new Date()).getTime();
-		while ((new Date()).getTime() - start < delay) {
-			continue;
-		}
+		return doWrite(options.writeType, false)
 	}
 }

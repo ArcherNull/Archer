@@ -138,7 +138,8 @@
 		isNotEmptyArr
 	} from './comm/cusBluetooth.js'
 	import {
-		template1
+		template1,
+		template2
 	} from './comm/template.js'
 
 	const loadingType = ref('normal')
@@ -333,7 +334,10 @@
 					deviceId: labelPrinter.deviceId,
 					serviceId: labelPrinter.serviceId,
 					characteristicId: labelPrinter.characteristicId,
-					printDataStr: template1
+					name: labelPrinter.name || labelPrinter.localName || '',
+					localName: labelPrinter.localName || '',
+					writeType: labelPrinter.writeType || '',
+					printDataStr: template2
 				}
 				for (let i = 0; i < pCount; i++) {
 					printTaskList.push(pData)
@@ -349,6 +353,9 @@
 					deviceId: waybillPrinter.deviceId,
 					serviceId: waybillPrinter.serviceId,
 					characteristicId: waybillPrinter.characteristicId,
+					name: waybillPrinter.name || waybillPrinter.localName || '',
+					localName: waybillPrinter.localName || '',
+					writeType: waybillPrinter.writeType || '',
 					printDataStr: template1
 				}
 				for (let i = 0; i < ydCount; i++) {

@@ -112,7 +112,7 @@ const base = {
  * uni的app端不知道为啥在此无法使用转换，用uni.base64ToArrayBuffer还是我自己封装的都是无法转换，小程序就正常
  * 目前研究的结果就是app端将ArrayBuffer转换成了object类型，而且小程序是ArrayBuffer的string写入的
  */
-function tfmbuffer(t) {
+export function tfmbuffer(t) {
 	// const base = require('@/common/base64gb2312.js');
 	let a = []
 	for (let n = 0; n < Math.ceil(t.length / 10); n++) {
