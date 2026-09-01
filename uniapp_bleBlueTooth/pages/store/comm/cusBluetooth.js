@@ -1,5 +1,5 @@
 // 当蓝牙模块通过后，才是蓝牙设备， 一个蓝牙模块对应多个蓝牙设备，并且启动心跳检测每个设备的连接状态
-import * as gbk from './cpcl/ZICOX/CC3/printUtil-GBK.js';
+import * as gbk from './cpcl/printUtil-GBK.js';
 import { tfmbuffer } from './cpcl/base64gb2312.js';
 
 // 是非空数组

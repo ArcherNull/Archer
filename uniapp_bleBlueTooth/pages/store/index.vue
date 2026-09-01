@@ -140,7 +140,7 @@
 	import {
 		template1,
 		template2
-	} from './comm/template.js'
+	} from './template/cpcl/index.js'
 
 	const loadingType = ref('normal')
 	const labelPrintChecked = ref(true)
