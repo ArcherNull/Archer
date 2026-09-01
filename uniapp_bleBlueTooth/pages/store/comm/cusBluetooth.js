@@ -118,10 +118,14 @@ async function tipBluetoothError(errOrMsg) {
 
 // 自定义蓝牙模块类
 export class CusBluetoothModuleClass {
-	// 区分苹果 / 安卓
+	// 区分苹果 / 安卓 / 鸿蒙
 	_osName
+	// 是否鸿蒙（含 HarmonyOS Next / 卓易通兼容层）
+	_isHarmonyOS = false
 	// 设置蓝牙最大传输单元
 	_mtu = 512
+	// 实际协商后的 MTU（失败则回退默认分包）
+	_negotiatedMtu = 0
 
 	// 重启蓝牙模块次数
 	_restartBlueToothCount = 0
@@ -432,8 +436,59 @@ export class CusBluetoothModuleClass {
 
 	// 平台是否支持蓝牙
 	getSystemInfoSync() {
-		const systemInfo = uni.getSystemInfoSync()
-		this._osName = systemInfo?.osName
+		const systemInfo = uni.getSystemInfoSync() || {}
+		this._osName = systemInfo.osName || systemInfo.platform || ''
+		this._isHarmonyOS = this.detectHarmonyOS(systemInfo)
+		console.log('bluetooth-os=====>', {
+			osName: this._osName,
+			platform: systemInfo.platform,
+			system: systemInfo.system,
+			romName: systemInfo.romName,
+			isHarmonyOS: this._isHarmonyOS,
+		})
+	}
+
+	// 识别鸿蒙（纯血 / 兼容 Android 层 / 卓易通）
+	detectHarmonyOS(systemInfo = {}) {
+		const osName = String(systemInfo.osName || '').toLowerCase()
+		const platform = String(systemInfo.platform || '').toLowerCase()
+		const system = String(systemInfo.system || '').toLowerCase()
+		const romName = String(systemInfo.romName || '').toLowerCase()
+		return osName.includes('harmony') ||
+			platform === 'harmony' ||
+			platform.includes('harmony') ||
+			system.includes('harmony') ||
+			romName.includes('harmony')
+	}
+
+	// 单次写入分包大小：鸿蒙协议栈缓冲弱，强制小包更稳
+	getWriteChunkSize(totalLength = 0) {
+		if (this._osName === 'ios') {
+			return totalLength || 20
+		}
+		if (this._isHarmonyOS) {
+			// 鸿蒙上 MTU 协商常不可靠，默认 20；协商成功也不超过 50
+			const mtu = this._negotiatedMtu || 23
+			return Math.max(20, Math.min(mtu - 3, 50))
+		}
+		const mtu = this._negotiatedMtu || this._mtu || 20
+		return Math.min(Math.max(mtu - 3, 20), 180)
+	}
+
+	// 包间隔：鸿蒙 writeNoResponse 易拥塞，需要更长间隔
+	getWriteIntervalSec() {
+		if (this._isHarmonyOS) {
+			return 0.08
+		}
+		return 0.02
+	}
+
+	// 鸿蒙默认走带响应写；若连接时已按特征值能力选定，则尊重该类型
+	resolveWriteType(preferredWriteType) {
+		if (this._isHarmonyOS) {
+			return preferredWriteType || 'write'
+		}
+		return preferredWriteType || 'writeNoResponse'
 	}
 
 	// 微信小程序：确保用户已同意隐私协议（未声明后台接口时仍会报 errno 112）
@@ -1021,6 +1076,7 @@ export class CusBluetoothModuleClass {
 				title: '连接中...'
 			})
 			that.changeConnectState(device, 'connecting')
+			that._negotiatedMtu = 0
 			await that.createBLEConnection(device)
 			await that.setBLEMTU(device.deviceId)
 			const dealRes = await that.dealServicesAndCharacteristics(device)
@@ -1134,17 +1190,30 @@ export class CusBluetoothModuleClass {
 					const props = cItem.properties || {}
 					const canWrite = props.write === true || props.writeNoResponse === true
 					if (!canWrite) continue
+					// 鸿蒙：优先 write（有 ATT 响应，便于流控）；其它平台：优先 writeNoResponse（吞吐更高）
+					let writeType
+					if (that._isHarmonyOS) {
+						writeType = props.write ? 'write' : 'writeNoResponse'
+					} else {
+						writeType = props.writeNoResponse ? 'writeNoResponse' : 'write'
+					}
 					const candidate = {
 						characteristicId: cItem.uuid,
 						serviceId: sId,
-						writeType: props.writeNoResponse ? 'writeNoResponse' : 'write'
+						writeType
+					}
+					const preferCandidate = (current) => {
+						if (!current) return true
+						if (that._isHarmonyOS) {
+							return candidate.writeType === 'write' && current.writeType !== 'write'
+						}
+						return candidate.writeType === 'writeNoResponse' && current.writeType !== 'writeNoResponse'
 					}
 					if (isPreferredService) {
-						// 优先：可写无响应 > 可写；同优先级下保留第一个首选服务特征
-						if (!preferred || (candidate.writeType === 'writeNoResponse' && preferred.writeType !== 'writeNoResponse')) {
+						if (preferCandidate(preferred)) {
 							preferred = candidate
 						}
-					} else if (!fallback || (candidate.writeType === 'writeNoResponse' && fallback.writeType !== 'writeNoResponse')) {
+					} else if (preferCandidate(fallback)) {
 						fallback = candidate
 					}
 				}
@@ -1364,7 +1433,9 @@ export class CusBluetoothModuleClass {
 		const that = this
 		const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
 		const bufferList = tfmbuffer(printDataStr)
-		const maxChunk = 20
+		const maxChunk = that._isHarmonyOS ? that.getWriteChunkSize() : 20
+		const writeInterval = that.getWriteIntervalSec()
+		const finalWriteType = that.resolveWriteType(writeType)
 		for (let c = 0; c < bufferList.length; c++) {
 			const buffer = bufferList[c]
 			const length = buffer.byteLength
@@ -1375,9 +1446,9 @@ export class CusBluetoothModuleClass {
 					serviceId,
 					characteristicId,
 					buffer: subPackage,
-					writeType: writeType || 'writeNoResponse'
+					writeType: finalWriteType
 				})
-				await sleep(0.02)
+				await sleep(writeInterval)
 			}
 		}
 	}
@@ -1388,9 +1459,11 @@ export class CusBluetoothModuleClass {
 		const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
 		const buffer = that.getBuffer(printDataStr)
 		console.log('buffer', buffer)
-		const chunkSize = that._osName === 'ios' ? buffer.byteLength : Math.min(that._mtu || 20, 180)
+		const chunkSize = that.getWriteChunkSize(buffer.byteLength)
 		var length = buffer.byteLength
 		var count = Math.ceil(length / chunkSize)
+		const writeInterval = that.getWriteIntervalSec()
+		const finalWriteType = that.resolveWriteType(writeType || 'write')
 		for (let i = 0; i < count; i++) {
 			let tempBuffer
 			if (((i + 1) * chunkSize) < length) {
@@ -1403,10 +1476,10 @@ export class CusBluetoothModuleClass {
 				serviceId,
 				characteristicId,
 				buffer: tempBuffer,
-				writeType: writeType || 'write'
+				writeType: finalWriteType
 			})
 			if (count > 1) {
-				await sleep(0.02)
+				await sleep(writeInterval)
 			}
 		}
 	}
@@ -1417,7 +1490,7 @@ export class CusBluetoothModuleClass {
 		return buffer
 	}
 
-	// 连接成功后设置 MTU（安卓有效）；失败不阻断打印
+	// 连接成功后设置 MTU（安卓/鸿蒙有效）；失败不阻断打印
 	setBLEMTU(deviceId) {
 		const that = this
 		return new Promise((resolve) => {
@@ -1425,24 +1498,37 @@ export class CusBluetoothModuleClass {
 				resolve(false)
 				return
 			}
+			// 鸿蒙上大 MTU 协商常失败或名不副实，请求较小值更稳
+			const requestMtu = that._isHarmonyOS ? 128 : that._mtu
 			uni.setBLEMTU({
 				deviceId,
-				mtu: that._mtu,
+				mtu: requestMtu,
 				success(res) {
 					console.log('setBLEMTU-success======>', res)
+					const mtu = Number(res?.mtu)
+					if (!isNaN(mtu) && mtu > 0) {
+						that._negotiatedMtu = mtu
+					} else if (that._isHarmonyOS) {
+						that._negotiatedMtu = 23
+					} else {
+						that._negotiatedMtu = requestMtu
+					}
 					resolve(true)
 				},
 				fail(res) {
 					console.log('setBLEMTU-fail======>', res)
+					that._negotiatedMtu = that._isHarmonyOS ? 23 : 0
 					resolve(false)
 				}
 			})
 		})
 	}
 
-	// 向打印机设备写入二进制数据
+	// 向打印机设备写入二进制数据（失败重试，避免静默丢包导致“打一下就停”）
 	writeBLECharacteristicValue(options) {
-		const doWrite = (writeType, retried) => new Promise((resolve) => {
+		const that = this
+		const maxRetry = that._isHarmonyOS ? 3 : 2
+		const doWrite = (writeType, retriedType, retryCount) => new Promise((resolve, reject) => {
 			const {
 				deviceId,
 				serviceId,
@@ -1458,12 +1544,26 @@ export class CusBluetoothModuleClass {
 					resolve(true)
 				},
 				fail(res) {
-					if (!retried && writeType) {
+					console.log('writeBLECharacteristicValue-fail======>', res, {
+						writeType,
+						retryCount,
+						byteLength: buffer?.byteLength
+					})
+					// 先尝试切换 write / writeNoResponse
+					if (!retriedType && writeType) {
 						const altType = writeType === 'writeNoResponse' ? 'write' : 'writeNoResponse'
-						doWrite(altType, true).then(resolve)
+						doWrite(altType, true, retryCount).then(resolve).catch(reject)
 						return
 					}
-					resolve(true)
+					// 再按次数重试（鸿蒙常见 10008 拥塞）
+					if (retryCount < maxRetry) {
+						const delay = that._isHarmonyOS ? 0.12 : 0.05
+						sleep(delay).then(() => {
+							doWrite(writeType, retriedType, retryCount + 1).then(resolve).catch(reject)
+						})
+						return
+					}
+					reject(new Error(formatBluetoothError(res, '蓝牙写入失败')))
 				}
 			}
 			if (writeType) {
@@ -1471,6 +1571,6 @@ export class CusBluetoothModuleClass {
 			}
 			uni.writeBLECharacteristicValue(writeOpts)
 		})
-		return doWrite(options.writeType, false)
+		return doWrite(options.writeType, false, 0)
 	}
 }
