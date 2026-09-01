@@ -149,11 +149,11 @@ function verticalLabelY(rowTop, rowH, charCount) {
 export const template2DummyData = {
 	orderNo: 'DK435575-1',
 	senderCompany: '浩运郑州名优汽配配件贸易有限责任公司',
-	senderName: '张世豪',
+	senderName: '张三五',
 	senderPhone: '13266895574',
 	deliveryType: '自提自提自提自提自提',
 	receiverCity: '安庆',
-	receiverInfo: '张世豪VIP超级白金钻石客户 18888888888',
+	receiverInfo: '张三五VIP超级白金钻石客户 18888888888',
 	goodsName: '配件配件配件',
 	goodsQty: '10285件',
 	packType: '纸箱纸箱纸箱',

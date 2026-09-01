@@ -97,7 +97,7 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "wx4f68723468c11738", // 掌上德坤
+        "appid" : "wx4f68723468c11738", // 掌上紫光
         "setting" : {
             "urlCheck" : false
         },
