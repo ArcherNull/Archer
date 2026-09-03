@@ -84,7 +84,8 @@
 		ref,
 		computed,
 		toRaw,
-		watch
+		watch,
+		markRaw
 	} from 'vue'
 	import {
 		onShow,
@@ -155,6 +156,8 @@
 	const searching = ref(false)
 	const scanning = ref(false)
 	const connectingId = ref('')
+	// 离开页面关闭适配器的 Promise，重新进入时需等关闭完成再重连，避免竞态清空已连接列表
+	let pendingClosePromise = null
 	const printProgress = ref({
 		estimatedSec: 0,
 		printProgress: 0,
@@ -247,14 +250,21 @@
 	})
 
 	onHide(() => {
-		if (cusBModuleInstance.value) {
-			cusBModuleInstance.value.closeBluetoothAdapter()
-			cusBModuleInstance.value = null
-		}
+		const bt = cusBModuleInstance.value
+		if (!bt) return
+		const rawBt = toRaw(bt)
+		cusBModuleInstance.value = null
+		btVersion.value += 1
+		pendingClosePromise = Promise.resolve()
+			.then(() => rawBt.closeBluetoothAdapter())
+			.catch(() => {})
+			.finally(() => {
+				pendingClosePromise = null
+			})
 	})
 
 	function syncPrintProgressFromBt() {
-		const bt = cusBModuleInstance.value
+		const bt = toRaw(cusBModuleInstance.value)
 		if (!bt) return
 		printProgress.value = bt.getPrintProgress()
 		printProgressVersion.value += 1
@@ -270,7 +280,7 @@
 	}
 
 	function syncConfigFromBt() {
-		const bt = cusBModuleInstance.value
+		const bt = toRaw(cusBModuleInstance.value)
 		if (!bt) return
 		platformName.value = bt.getPlatformDisplayName()
 		deviceName.value = bt.getDeviceDisplayName()
@@ -279,8 +289,16 @@
 	}
 
 	async function initBlueTooth() {
+		if (pendingClosePromise) {
+			try {
+				await pendingClosePromise
+			} catch (e) {}
+			// 部分机型关闭适配器后需短暂间隔再 open，否则历史重连成功但状态会被随后的 available:false 冲掉
+			await new Promise((resolve) => setTimeout(resolve, 400))
+		}
 		if (!cusBModuleInstance.value) {
-			const instance = new CusBluetoothModuleClass()
+			// markRaw：避免 class 实例被深度代理导致内部列表变更与视图不同步
+			const instance = markRaw(new CusBluetoothModuleClass())
 			instance.on('stateChange', bumpBtVersion)
 			instance.on('printProgress', syncPrintProgressFromBt)
 			cusBModuleInstance.value = instance

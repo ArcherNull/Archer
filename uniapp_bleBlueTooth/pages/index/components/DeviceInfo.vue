@@ -118,12 +118,14 @@
 
 	const deviceList = computed(() => {
 		void props.btVersion
-		return props.bt?._searchDevicesResultList || []
+		const list = props.bt?._searchDevicesResultList || []
+		return list.slice()
 	})
 
 	const connectedList = computed(() => {
 		void props.btVersion
-		return props.bt?._connectedDevicesList || []
+		const list = props.bt?._connectedDevicesList || []
+		return list.slice()
 	})
 
 	const moduleStateText = computed(() => {
