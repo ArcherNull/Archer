@@ -120,6 +120,8 @@ async function tipBluetoothError(errOrMsg) {
 export class CusBluetoothModuleClass {
     // 区分苹果 / 安卓 / 鸿蒙
     _osName
+    // 手机设备名称（品牌 + 型号）
+    _deviceName = ''
     // 是否鸿蒙（含 HarmonyOS Next / 卓易通兼容层）
     _isHarmonyOS = false
     // 设置蓝牙最大传输单元
@@ -180,10 +182,30 @@ export class CusBluetoothModuleClass {
     // 系统配置存储键值
     _storageSystemConfigKey = 'kps-system-config'
 
-    // 系统初始化设置
-    _systemDefaultConfig = {
-
+    // 系统初始化设置（由平台决定默认值，见 getPlatformDefaultConfig）
+    _systemDefaultConfig = {}
+    // 当前打印配置（可被界面覆盖）
+    _printConfig = {}
+    // 打印任务中断标记（超时 / 手动中断）
+    _printAborted = false
+    // 用户取消：终止全部打印任务（含递归重试），直至本轮 print 结束才复位
+    _printCancelled = false
+    // 递进打印任务级最大重试轮次
+    _recursivePrintMaxRound = 5
+    // 打印进度信息
+    _printProgress = {
+        status: 'idle',
+        estimatedSec: 0,
+        printProgress: 0,
+        transferProgress: 0,
+        elapsedSec: 0,
+        totalTasks: 0,
+        finishedTasks: 0,
+        totalBytes: 0,
+        sentBytes: 0,
+        startTime: 0,
     }
+    _printElapsedTimer = null
 
     constructor() {
         this.init()
@@ -191,8 +213,363 @@ export class CusBluetoothModuleClass {
 
     init() {
         this.getSystemInfoSync()
+        this.initPrintConfig()
         this.getHistoryPrintDevices()
         this.initEvents()
+    }
+
+    // 平台展示名
+    getPlatformDisplayName() {
+        if (this._isHarmonyOS) return '鸿蒙'
+        const os = String(this._osName || '').toLowerCase()
+        if (os === 'ios') return 'iOS'
+        if (os === 'android') return '安卓'
+        return this._osName || '其它'
+    }
+
+    // 手机设备名称
+    getDeviceDisplayName() {
+        return this._deviceName || '未知设备'
+    }
+
+    // 各平台初始打印配置
+    getPlatformDefaultConfig() {
+        const base = {
+            printTimeoutSec: 40,
+            enableRecursivePrint: true,
+            mtu: 23,
+            mtuStep: 20,
+            packetIntervalMs: 20,
+            packetStepMs: 20,
+            retryIntervalMs: 50,
+            retryStepMs: 30,
+            maxPacketRetry: 2,
+        }
+        if (this._isHarmonyOS) {
+            return {
+                ...base,
+                // 鸿蒙单包约 23 字节，过大易乱码
+                mtu: 23,
+                mtuStep: 20,
+                packetIntervalMs: 80,
+                packetStepMs: 20,
+                retryIntervalMs: 120,
+                retryStepMs: 30,
+                maxPacketRetry: 3,
+            }
+        }
+        if (this._osName === 'android') {
+            return {
+                ...base,
+                // 安卓单包传输速率默认 512 字节
+                mtu: 512,
+                mtuStep: 20,
+            }
+        }
+        // iOS / 其它：iOS 界面只读，由系统分配；配置仍保留默认值便于展示
+        return base
+    }
+
+    // 初始化打印配置：优先读本地成功记录，否则用平台默认
+    initPrintConfig() {
+        this._systemDefaultConfig = this.getPlatformDefaultConfig()
+        const saved = this.loadPrintConfig()
+        this._printConfig = {
+            ...this._systemDefaultConfig,
+            ...(saved || {}),
+        }
+        this.clampPrintConfig(this._printConfig)
+        const mtu = convertNumber(this._printConfig.mtu)
+        if (mtu > 0) {
+            this._mtu = mtu
+        }
+    }
+
+    // 读取本地成功配置
+    loadPrintConfig() {
+        try {
+            const raw = uni.getStorageSync(this._storageSystemConfigKey)
+            if (!raw) return null
+            return typeof raw === 'string' ? JSON.parse(raw) : raw
+        } catch (e) {
+            this.log('loadPrintConfig-fail=====>', e)
+            return null
+        }
+    }
+
+    // 打印成功后记录当前配置
+    savePrintConfig(config = this._printConfig) {
+        try {
+            const data = {
+                ...this.getPrintConfig(),
+                ...(config || {}),
+            }
+            this.clampPrintConfig(data)
+            uni.setStorageSync(this._storageSystemConfigKey, JSON.stringify(data))
+            this._printConfig = data
+            const mtu = convertNumber(data.mtu)
+            if (mtu > 0) {
+                this._mtu = mtu
+            }
+            this.emit('stateChange')
+            return true
+        } catch (e) {
+            this.log('savePrintConfig-fail=====>', e)
+            return false
+        }
+    }
+
+    // 获取当前打印配置副本
+    getPrintConfig() {
+        return {
+            ...this._systemDefaultConfig,
+            ...this._printConfig,
+        }
+    }
+
+    // 界面更新打印配置
+    updatePrintConfig(partial = {}) {
+        this._printConfig = {
+            ...this.getPrintConfig(),
+            ...partial,
+        }
+        this.clampPrintConfig(this._printConfig)
+        // 同步请求 MTU（iOS 不生效，连接时由系统分配）
+        const mtu = convertNumber(this._printConfig.mtu)
+        if (mtu > 0) {
+            this._mtu = mtu
+        }
+        this.emit('stateChange')
+        return this.getPrintConfig()
+    }
+
+    // 配置边界裁剪
+    clampPrintConfig(cfg = {}) {
+        const clamp = (v, min, max, def) => {
+            const n = Number(v)
+            if (isNaN(n)) return def
+            return Math.min(max, Math.max(min, Math.round(n)))
+        }
+        cfg.printTimeoutSec = clamp(cfg.printTimeoutSec, 10, 100, 40)
+        cfg.mtu = clamp(cfg.mtu, 20, 512, 23)
+        cfg.mtuStep = clamp(cfg.mtuStep, 10, 100, 20)
+        cfg.packetIntervalMs = clamp(cfg.packetIntervalMs, 20, 300, 20)
+        cfg.packetStepMs = clamp(cfg.packetStepMs, 10, 100, 20)
+        cfg.retryIntervalMs = clamp(cfg.retryIntervalMs, 20, 300, 50)
+        cfg.retryStepMs = clamp(cfg.retryStepMs, 10, 200, 30)
+        cfg.maxPacketRetry = clamp(cfg.maxPacketRetry, 0, 6, 2)
+        cfg.enableRecursivePrint = cfg.enableRecursivePrint !== false
+        return cfg
+    }
+
+    // 递进：打印失败时按步进增大间隔
+    progressiveBumpPrintConfig() {
+        const cfg = this.getPrintConfig()
+        cfg.packetIntervalMs = Math.min(300, cfg.packetIntervalMs + cfg.packetStepMs)
+        cfg.retryIntervalMs = Math.min(300, cfg.retryIntervalMs + cfg.retryStepMs)
+        this._printConfig = cfg
+        this.emit('stateChange')
+        this.log('递进打印配置=====>', cfg)
+        return cfg
+    }
+
+    // 中断当前打印任务（超时或单次中断）
+    abortPrint(reason = '打印任务已中断') {
+        this._printAborted = true
+        this.log('abortPrint=====>', reason)
+    }
+
+    // 取消递归打印：终止全部打印任务（含递进重试）
+    cancelAllPrintTasks(reason = '已取消所有打印任务') {
+        this._printCancelled = true
+        this._printAborted = true
+        this.updatePrintProgress({
+            status: 'cancelled'
+        })
+        this.refreshPrintElapsed()
+        this.emitPrintProgress()
+        showMsg(reason)
+        return true
+    }
+
+    ensurePrintNotAborted() {
+        if (this._printCancelled) {
+            throw new Error('已取消所有打印任务')
+        }
+        if (this._printAborted) {
+            throw new Error('打印任务已中断')
+        }
+    }
+
+    getPrintProgress() {
+        this.refreshPrintElapsed()
+        return {
+            ...this._printProgress
+        }
+    }
+
+    resetPrintProgress(partial = {}) {
+        this._printProgress = {
+            status: 'idle',
+            estimatedSec: 0,
+            printProgress: 0,
+            transferProgress: 0,
+            elapsedSec: 0,
+            totalTasks: 0,
+            finishedTasks: 0,
+            totalBytes: 0,
+            sentBytes: 0,
+            startTime: 0,
+            ...partial,
+        }
+        this.emitPrintProgress()
+    }
+
+    updatePrintProgress(partial = {}) {
+        this._printProgress = {
+            ...this._printProgress,
+            ...partial,
+        }
+        const totalBytes = this._printProgress.totalBytes || 0
+        const sentBytes = this._printProgress.sentBytes || 0
+        const totalTasks = this._printProgress.totalTasks || 0
+        const finishedTasks = this._printProgress.finishedTasks || 0
+
+        this._printProgress.transferProgress = totalBytes > 0
+            ? Math.min(100, Math.round((sentBytes / totalBytes) * 100))
+            : 0
+
+        // 打印进度：已完成任务 + 当前任务传输占比
+        if (totalTasks > 0) {
+            const currentTaskRatio = totalBytes > 0
+                ? (sentBytes / totalBytes)
+                : 0
+            // 用整体字节进度作为打印进度更直观；同时兼顾任务完成数
+            const byBytes = currentTaskRatio * 100
+            const byTasks = (finishedTasks / totalTasks) * 100
+            this._printProgress.printProgress = Math.min(100, Math.round(Math.max(byBytes, byTasks)))
+        } else {
+            this._printProgress.printProgress = 0
+        }
+        this.refreshPrintElapsed()
+    }
+
+    refreshPrintElapsed() {
+        const start = this._printProgress.startTime
+        if (start > 0 && (this._printProgress.status === 'printing' || this._printProgress.status === 'cancelled')) {
+            this._printProgress.elapsedSec = Number(((Date.now() - start) / 1000).toFixed(1))
+        }
+    }
+
+    emitPrintProgress() {
+        this.emit('printProgress')
+        this.emit('stateChange')
+    }
+
+    startPrintElapsedTimer() {
+        this.stopPrintElapsedTimer()
+        this._printElapsedTimer = setInterval(() => {
+            if (this._printProgress.status !== 'printing') {
+                this.stopPrintElapsedTimer()
+                return
+            }
+            this.refreshPrintElapsed()
+            this.emit('printProgress')
+        }, 200)
+    }
+
+    stopPrintElapsedTimer() {
+        if (this._printElapsedTimer) {
+            clearInterval(this._printElapsedTimer)
+            this._printElapsedTimer = null
+        }
+    }
+
+    // 估算单任务字节数与分包数
+    calcTaskTransferMeta(pTask = {}) {
+        const printDataStr = pTask.printDataStr || ''
+        const deviceName = this.getPrinterDeviceName(pTask.deviceId, pTask.name, pTask.localName)
+        let totalBytes = 0
+        let packetCount = 0
+        let chunkSize = 20
+
+        if (this.isGbkPrinter(deviceName)) {
+            const buffer = this.getBuffer(printDataStr)
+            totalBytes = buffer.byteLength || 0
+            chunkSize = this.getWriteChunkSize(totalBytes)
+            packetCount = totalBytes > 0 ? Math.ceil(totalBytes / chunkSize) : 0
+        } else {
+            const bufferList = tfmbuffer(printDataStr) || []
+            chunkSize = this._isHarmonyOS ? this.getWriteChunkSize() : 20
+            bufferList.forEach((buffer) => {
+                const len = buffer?.byteLength || 0
+                totalBytes += len
+                if (len > 0) {
+                    packetCount += Math.ceil(len / chunkSize)
+                }
+            })
+        }
+        return {
+            totalBytes,
+            packetCount,
+            chunkSize
+        }
+    }
+
+    // 预计打印耗时（秒）：按包数 *（包间隔 + 写开销）粗估
+    estimatePrintTimeSec(printTaskList = []) {
+        if (!isNotEmptyArr(printTaskList)) return 0
+        const intervalMs = convertNumber(this.getPrintConfig().packetIntervalMs) || 20
+        const writeOverheadMs = 15
+        let packetCount = 0
+        printTaskList.forEach((task) => {
+            packetCount += this.calcTaskTransferMeta(task).packetCount
+        })
+        const ms = packetCount * (intervalMs + writeOverheadMs)
+        return Number(Math.max(0.1, ms / 1000).toFixed(1))
+    }
+
+    markTransferBytes(byteLength = 0) {
+        const add = Number(byteLength) || 0
+        if (add <= 0) return
+        this.updatePrintProgress({
+            sentBytes: (this._printProgress.sentBytes || 0) + add
+        })
+        this.emitPrintProgress()
+    }
+
+    // 带超时执行
+    runWithPrintTimeout(taskFn, timeoutSec) {
+        const that = this
+        // 用户取消后不可被超时逻辑清掉
+        if (!that._printCancelled) {
+            that._printAborted = false
+        }
+        const sec = convertNumber(timeoutSec) || that.getPrintConfig().printTimeoutSec || 40
+        return new Promise(async (resolve, reject) => {
+            let settled = false
+            const timer = setTimeout(() => {
+                if (settled) return
+                settled = true
+                that.abortPrint(`打印任务超时（${sec}s）`)
+                reject(new Error(`打印任务超时（${sec}s），已中断`))
+            }, sec * 1000)
+            try {
+                that.ensurePrintNotAborted()
+                const res = await taskFn()
+                if (!settled) {
+                    settled = true
+                    clearTimeout(timer)
+                    resolve(res)
+                }
+            } catch (err) {
+                if (!settled) {
+                    settled = true
+                    clearTimeout(timer)
+                    reject(err)
+                }
+            }
+        })
     }
 
     // 获取历史打印机
@@ -215,17 +592,24 @@ export class CusBluetoothModuleClass {
         this.eventMap = new Map()
         // 蓝牙模块断开事件以及蓝牙模块搜索蓝牙设备事件
         this.eventMap.set('stateChange', new Set([]))
+        // 打印进度事件
+        this.eventMap.set('printProgress', new Set([]))
 
         this.on = (event, handler) => {
+            if (!this.eventMap.has(event)) {
+                this.eventMap.set(event, new Set([]))
+            }
             this.eventMap.get(event).add(handler)
         }
 
         this.off = (event, handler) => {
-            this.eventMap.get(event).delete(handler)
+            this.eventMap.get(event)?.delete(handler)
         }
 
         this.emit = (event) => {
-            this.eventMap.get(event).forEach(h => {
+            const handlers = this.eventMap.get(event)
+            if (!handlers) return
+            handlers.forEach(h => {
                 h.call(this, this)
             });
         }
@@ -457,13 +841,34 @@ export class CusBluetoothModuleClass {
         const systemInfo = uni.getSystemInfoSync() || {}
         this._osName = systemInfo.osName || systemInfo.platform || ''
         this._isHarmonyOS = this.detectHarmonyOS(systemInfo)
+        this._deviceName = this.resolveDeviceName(systemInfo)
         this.log('bluetooth-os=====>', {
             osName: this._osName,
             platform: systemInfo.platform,
             system: systemInfo.system,
             romName: systemInfo.romName,
+            deviceName: this._deviceName,
             isHarmonyOS: this._isHarmonyOS,
         })
+    }
+
+    // 解析手机设备名称
+    resolveDeviceName(systemInfo = {}) {
+        const brand = String(systemInfo.brand || systemInfo.deviceBrand || '').trim()
+        const model = String(
+            systemInfo.deviceModel ||
+            systemInfo.model ||
+            systemInfo.deviceId ||
+            ''
+        ).trim()
+        if (brand && model) {
+            // 型号已包含品牌时避免重复，如 Xiaomi / Xiaomi 14
+            if (model.toLowerCase().startsWith(brand.toLowerCase())) {
+                return model
+            }
+            return `${brand} ${model}`
+        }
+        return model || brand || ''
     }
 
     // 识别鸿蒙（纯血 / 兼容 Android 层 / 卓易通）
@@ -484,21 +889,47 @@ export class CusBluetoothModuleClass {
         if (this._osName === 'ios') {
             return totalLength || 20
         }
+        const cfgMtu = convertNumber(this.getPrintConfig().mtu) || this._mtu || 23
         if (this._isHarmonyOS) {
-            // 鸿蒙上 MTU 协商常不可靠，默认 20；协商成功也不超过 50
-            const mtu = this._negotiatedMtu || 23
-            return Math.max(20, Math.min(mtu - 3, 50))
+            // 鸿蒙上 MTU 协商常不可靠；以配置为准，协商成功也不超过配置与 50
+            const mtu = this._negotiatedMtu || cfgMtu
+            return Math.max(20, Math.min(mtu - 3, Math.min(cfgMtu, 50)))
         }
-        const mtu = this._negotiatedMtu || this._mtu || 20
-        return Math.min(Math.max(mtu - 3, 20), 180)
+        const mtu = this._negotiatedMtu || cfgMtu
+        return Math.min(Math.max(mtu - 3, 20), Math.min(cfgMtu, 512))
     }
 
-    // 包间隔：鸿蒙 writeNoResponse 易拥塞，需要更长间隔
+    // 包间隔：优先使用界面配置；未配置时按平台默认
     getWriteIntervalSec() {
+        const cfg = this.getPrintConfig()
+        const ms = convertNumber(cfg.packetIntervalMs)
+        if (ms > 0) {
+            return ms / 1000
+        }
         if (this._isHarmonyOS) {
             return 0.08
         }
         return 0.02
+    }
+
+    // 单包重试间隔（秒）
+    getRetryIntervalSec() {
+        const cfg = this.getPrintConfig()
+        const ms = convertNumber(cfg.retryIntervalMs)
+        if (ms > 0) {
+            return ms / 1000
+        }
+        return this._isHarmonyOS ? 0.12 : 0.05
+    }
+
+    // 单包最大重试次数
+    getMaxPacketRetry() {
+        const cfg = this.getPrintConfig()
+        const n = Number(cfg.maxPacketRetry)
+        if (!isNaN(n) && n >= 0) {
+            return n
+        }
+        return this._isHarmonyOS ? 3 : 2
     }
 
     // 鸿蒙默认走带响应写；若连接时已按特征值能力选定，则尊重该类型
@@ -1411,26 +1842,125 @@ export class CusBluetoothModuleClass {
         const that = this
         try {
             if (isNotEmptyArr(printTaskList)) {
+                that._printCancelled = false
+                that._printAborted = false
+
+                let totalBytes = 0
+                printTaskList.forEach((task) => {
+                    totalBytes += that.calcTaskTransferMeta(task).totalBytes
+                })
+                const estimatedSec = that.estimatePrintTimeSec(printTaskList)
+                that.resetPrintProgress({
+                    status: 'printing',
+                    estimatedSec,
+                    totalTasks: printTaskList.length,
+                    finishedTasks: 0,
+                    totalBytes,
+                    sentBytes: 0,
+                    printProgress: 0,
+                    transferProgress: 0,
+                    elapsedSec: 0,
+                    startTime: Date.now(),
+                })
+                that.startPrintElapsedTimer()
+
                 for (let i = 0; i < printTaskList.length; i++) {
+                    that.ensurePrintNotAborted()
                     const pTask = printTaskList[i]
                     const errLog = that.validatePrintTask(pTask)
                     if (errLog.length) {
                         throw new Error(`第【${i + 1}】打印任务，${errLog.join(';')}`)
-                    } else {
-                        await that.printTaskItem(pTask)
                     }
+                    await that.printTaskWithRetry(pTask, i)
+                    that.updatePrintProgress({
+                        finishedTasks: i + 1
+                    })
+                    that.emitPrintProgress()
                 }
+
+                that.updatePrintProgress({
+                    status: 'success',
+                    printProgress: 100,
+                    transferProgress: 100,
+                    finishedTasks: printTaskList.length,
+                    sentBytes: totalBytes
+                })
+                that.emitPrintProgress()
+                return true
             } else {
                 showMsg('打印任务列表不能为空')
+                return false
             }
         } catch (err) {
-            showMsg(err?.message || '打印失败')
+            const cancelled = that._printCancelled
+            that.updatePrintProgress({
+                status: cancelled ? 'cancelled' : 'fail'
+            })
+            that.emitPrintProgress()
+            if (!cancelled) {
+                showMsg(err?.message || '打印失败')
+            }
+            return false
+        } finally {
+            that.stopPrintElapsedTimer()
+            that.refreshPrintElapsed()
+            that.emitPrintProgress()
+            that._printAborted = false
+            that._printCancelled = false
         }
+    }
+
+    // 单任务打印：支持超时中断 + 递进重试
+    async printTaskWithRetry(pTask, taskIndex = 0) {
+        const that = this
+        const cfg = that.getPrintConfig()
+        const enableRecursive = cfg.enableRecursivePrint !== false
+        const maxRound = enableRecursive ? that._recursivePrintMaxRound : 1
+        let lastErr = null
+
+        for (let round = 0; round < maxRound; round++) {
+            that.ensurePrintNotAborted()
+            // 递进重试时回退传输进度到已完成任务，避免重复累计超 100%
+            const totalBytes = that._printProgress.totalBytes || 0
+            const totalTasks = that._printProgress.totalTasks || 1
+            const finishedTasks = that._printProgress.finishedTasks || 0
+            that.updatePrintProgress({
+                sentBytes: Math.round((finishedTasks / totalTasks) * totalBytes)
+            })
+            that.emitPrintProgress()
+            try {
+                await that.runWithPrintTimeout(
+                    () => that.printTaskItem(pTask),
+                    cfg.printTimeoutSec
+                )
+                // 成功后记录当前配置
+                that.savePrintConfig()
+                return true
+            } catch (err) {
+                lastErr = err
+                that.log(`第【${taskIndex + 1}】打印任务第${round + 1}轮失败=====>`, err)
+                // 用户取消：不再递进重试
+                if (that._printCancelled) {
+                    throw err
+                }
+                if (!enableRecursive || round >= maxRound - 1) {
+                    break
+                }
+                // 递进：增大包间隔 / 重试间隔后再打
+                that.progressiveBumpPrintConfig()
+                if (!that._printCancelled) {
+                    that._printAborted = false
+                }
+                await sleep(that.getRetryIntervalSec())
+            }
+        }
+        throw lastErr || new Error(`第【${taskIndex + 1}】打印任务失败`)
     }
 
     // 打印任务项：芝柯/优博讯优先 GBK，其余（含汉印）走 CPCL
     async printTaskItem(pTask) {
         const that = this
+        that.ensurePrintNotAborted()
         try {
             const { deviceId, name, localName, printDataStr } = pTask
             const deviceName = that.getPrinterDeviceName(deviceId, name, localName)
@@ -1442,7 +1972,7 @@ export class CusBluetoothModuleClass {
                 await that.printCpclTaskItem(pTask)
             }
         } catch (err) {
-            showMsg(err?.message || '打印任务执行失败')
+            throw err instanceof Error ? err : new Error(err?.message || '打印任务执行失败')
         }
     }
 
@@ -1452,12 +1982,12 @@ export class CusBluetoothModuleClass {
         const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
         const bufferList = tfmbuffer(printDataStr)
         const maxChunk = that._isHarmonyOS ? that.getWriteChunkSize() : 20
-        const writeInterval = that.getWriteIntervalSec()
         const finalWriteType = that.resolveWriteType(writeType)
         for (let c = 0; c < bufferList.length; c++) {
             const buffer = bufferList[c]
             const length = buffer.byteLength
             for (let i = 0; i < length; i += maxChunk) {
+                that.ensurePrintNotAborted()
                 const subPackage = buffer.slice(i, i + maxChunk <= length ? (i + maxChunk) : length)
                 await that.writeBLECharacteristicValue({
                     deviceId,
@@ -1466,7 +1996,8 @@ export class CusBluetoothModuleClass {
                     buffer: subPackage,
                     writeType: finalWriteType
                 })
-                await sleep(writeInterval)
+                that.markTransferBytes(subPackage.byteLength)
+                await sleep(that.getWriteIntervalSec())
             }
         }
     }
@@ -1479,9 +2010,9 @@ export class CusBluetoothModuleClass {
         const chunkSize = that.getWriteChunkSize(buffer.byteLength)
         var length = buffer.byteLength
         var count = Math.ceil(length / chunkSize)
-        const writeInterval = that.getWriteIntervalSec()
         const finalWriteType = that.resolveWriteType(writeType || 'write')
         for (let i = 0; i < count; i++) {
+            that.ensurePrintNotAborted()
             let tempBuffer
             if (((i + 1) * chunkSize) < length) {
                 tempBuffer = buffer.slice(i * chunkSize, (i + 1) * chunkSize)
@@ -1495,8 +2026,9 @@ export class CusBluetoothModuleClass {
                 buffer: tempBuffer,
                 writeType: finalWriteType
             })
+            that.markTransferBytes(tempBuffer.byteLength)
             if (count > 1) {
-                await sleep(writeInterval)
+                await sleep(that.getWriteIntervalSec())
             }
         }
     }
@@ -1515,8 +2047,14 @@ export class CusBluetoothModuleClass {
                 resolve(false)
                 return
             }
-            // 鸿蒙上大 MTU 协商常失败或名不副实，请求较小值更稳
-            const requestMtu = that._isHarmonyOS ? 128 : that._mtu
+            const cfgMtu = convertNumber(that.getPrintConfig().mtu)
+            // 优先用界面配置；鸿蒙过大易乱码，未配置时回退 23
+            let requestMtu = cfgMtu || that._mtu || 23
+            if (that._isHarmonyOS && !cfgMtu) {
+                requestMtu = 23
+            }
+            requestMtu = Math.min(512, Math.max(20, Math.round(requestMtu)))
+            that._mtu = requestMtu
             uni.setBLEMTU({
                 deviceId,
                 mtu: requestMtu,
@@ -1526,7 +2064,7 @@ export class CusBluetoothModuleClass {
                     if (!isNaN(mtu) && mtu > 0) {
                         that._negotiatedMtu = mtu
                     } else if (that._isHarmonyOS) {
-                        that._negotiatedMtu = 23
+                        that._negotiatedMtu = Math.min(requestMtu, 23)
                     } else {
                         that._negotiatedMtu = requestMtu
                     }
@@ -1544,8 +2082,14 @@ export class CusBluetoothModuleClass {
     // 向打印机设备写入二进制数据（失败重试，避免静默丢包导致“打一下就停”）
     writeBLECharacteristicValue(options) {
         const that = this
-        const maxRetry = that._isHarmonyOS ? 3 : 2
+        const maxRetry = that.getMaxPacketRetry()
         const doWrite = (writeType, retriedType, retryCount) => new Promise((resolve, reject) => {
+            try {
+                that.ensurePrintNotAborted()
+            } catch (abortErr) {
+                reject(abortErr)
+                return
+            }
             const {
                 deviceId,
                 serviceId,
@@ -1572,9 +2116,13 @@ export class CusBluetoothModuleClass {
                         doWrite(altType, true, retryCount).then(resolve).catch(reject)
                         return
                     }
-                    // 再按次数重试（鸿蒙常见 10008 拥塞）
+                    // 再按次数重试（鸿蒙常见 10008 拥塞）；开启递进时同步抬升间隔
                     if (retryCount < maxRetry) {
-                        const delay = that._isHarmonyOS ? 0.12 : 0.05
+                        const cfg = that.getPrintConfig()
+                        if (cfg.enableRecursivePrint) {
+                            that.progressiveBumpPrintConfig()
+                        }
+                        const delay = that.getRetryIntervalSec()
                         sleep(delay).then(() => {
                             doWrite(writeType, retriedType, retryCount + 1).then(resolve).catch(reject)
                         })
