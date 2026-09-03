@@ -121,6 +121,11 @@ export function tfmbuffer(t) {
 	return a;
 }
 
+/** 整串 CPCL → ArrayBuffer（避免按 10 字符截断破坏汉字，利于老机型） */
+export function cpclToArrayBuffer(t) {
+	return base.base64ToArrayBuffer(base.encode64gb2312(t || ''))
+}
+
 const common = {
 	isShowLoading: false,
 	showLoading(object) {

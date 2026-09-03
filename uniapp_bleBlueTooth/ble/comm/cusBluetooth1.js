@@ -24,7 +24,6 @@ export function showMsg(text, icon = 'none', duration = 2500) {
 
 // 模态框展示
 export function showModal(props) {
-	console.log('模态框展示')
 	return new Promise((resolve, reject) => {
 		let defaultProps = {
 			title: '提示',
@@ -54,6 +53,12 @@ function sleep(time) {
 		setTimeout(() => {
 			resolve(true)
 		}, time * 1000);
+	})
+}
+
+function sleepMs(ms) {
+	return new Promise((resolve) => {
+		setTimeout(() => resolve(true), ms)
 	})
 }
 
@@ -172,6 +177,8 @@ export class CusBluetoothModuleClass {
 	_storageKey = 'kps-history-print-devices'
 	// 历史连接列表
 	_historyPrintDeviceList = []
+	// 是否输出调试日志
+	_debugLogEnabled = false
 
 	constructor() {
 		this.init()
@@ -190,6 +197,22 @@ export class CusBluetoothModuleClass {
 			const pList = JSON.parse(pStr)
 			this._historyPrintDeviceList = pList
 		}
+	}
+
+	/** 开启/关闭蓝牙调试日志 */
+	setDebugLogEnabled(enabled) {
+		this._debugLogEnabled = !!enabled
+	}
+
+	/** 当前是否开启调试日志 */
+	isDebugLogEnabled() {
+		return this._debugLogEnabled
+	}
+
+	/** 蓝牙模块调试日志（受 _debugLogEnabled 控制） */
+	log(...args) {
+		if (!this._debugLogEnabled) return
+		console.log('[Bluetooth]', ...args)
 	}
 
 	// 初始化发布订阅事件
@@ -216,7 +239,7 @@ export class CusBluetoothModuleClass {
 	// 处理错误信息
 	dealFailRes(res, reject, text = '初始化蓝牙模块失败') {
 		const eMsg = formatBluetoothError(res, text)
-		console.log('错误提示=====>', eMsg, res)
+		this.log('错误提示=====>', eMsg, res)
 		showMsg(eMsg)
 		const err = new Error(eMsg || text)
 		err.errno = res?.errno
@@ -286,7 +309,7 @@ export class CusBluetoothModuleClass {
 					try {
 						await that.stopBluetoothDevicesDiscovery()
 					} catch (e) {
-						console.log('重新搜索前停止搜索忽略=====>', e)
+						that.log('重新搜索前停止搜索忽略=====>', e)
 					}
 				}
 				await that.safeCloseBluetoothAdapter()
@@ -348,7 +371,7 @@ export class CusBluetoothModuleClass {
 						const nTime = new Date().getTime()
 						let bool = false
 						const list = res?.devices || []
-						console.log('接收到信息', res?.devices)
+						this.log('接收到信息', res?.devices)
 						dList.push(...list)
 						if (nTime > endTime) {
 							bool = true
@@ -393,7 +416,7 @@ export class CusBluetoothModuleClass {
 					}
 				})
 
-				console.log('nList========>', nList)
+				this.log('nList========>', nList)
 				if (findResultType === 'continue') {
 					that._searchDevicesResultList.push(...nList)
 				} else {
@@ -418,7 +441,7 @@ export class CusBluetoothModuleClass {
 		try {
 			if (isNotEmptyArr(that._historyPrintDeviceList)) {
 				that._searchDevicesResultList.push(...that._historyPrintDeviceList)
-				console.log('that._bluetoothModuleState', that._bluetoothModuleState)
+				that.log('that._bluetoothModuleState', that._bluetoothModuleState)
 				if (that._bluetoothModuleState === 'started') {
 					const mList = that._historyPrintDeviceList.map(ele => {
 						return that.connectBlueToothPrinter(ele)
@@ -439,7 +462,7 @@ export class CusBluetoothModuleClass {
 		const systemInfo = uni.getSystemInfoSync() || {}
 		this._osName = systemInfo.osName || systemInfo.platform || ''
 		this._isHarmonyOS = this.detectHarmonyOS(systemInfo)
-		console.log('bluetooth-os=====>', {
+		this.log('bluetooth-os=====>', {
 			osName: this._osName,
 			platform: systemInfo.platform,
 			system: systemInfo.system,
@@ -461,13 +484,13 @@ export class CusBluetoothModuleClass {
 			romName.includes('harmony')
 	}
 
-	// 单次写入分包大小：鸿蒙协议栈缓冲弱，强制小包更稳
+	// 单次写入分包大小（ATT 有效载荷 = MTU - 3）
 	getWriteChunkSize(totalLength = 0) {
 		if (this._osName === 'ios') {
 			return totalLength || 20
 		}
 		if (this._isHarmonyOS) {
-			// 鸿蒙上 MTU 协商常不可靠，默认 20；协商成功也不超过 50
+			// 鸿蒙协议栈缓冲弱：小包更稳；协商成功也不超过 50（过大易整单丢包）
 			const mtu = this._negotiatedMtu || 23
 			return Math.max(20, Math.min(mtu - 3, 50))
 		}
@@ -475,15 +498,19 @@ export class CusBluetoothModuleClass {
 		return Math.min(Math.max(mtu - 3, 20), 180)
 	}
 
-	// 包间隔：鸿蒙 writeNoResponse 易拥塞，需要更长间隔
-	getWriteIntervalSec() {
+	// 包间隔（秒）
+	getWriteIntervalSec(writeType) {
 		if (this._isHarmonyOS) {
-			return 0.08
+			// 旧版 80ms 过慢；带响应 write 已有流控，20ms 足够稳且明显更快
+			return writeType === 'writeNoResponse' ? 0.04 : 0.02
 		}
-		return 0.02
+		if (writeType === 'writeNoResponse') {
+			return 0.005
+		}
+		return 0.01
 	}
 
-	// 鸿蒙默认走带响应写；若连接时已按特征值能力选定，则尊重该类型
+	// 鸿蒙优先带响应写（流控可靠）；仅当特征值只支持无响应时才用 writeNoResponse
 	resolveWriteType(preferredWriteType) {
 		if (this._isHarmonyOS) {
 			return preferredWriteType || 'write'
@@ -501,7 +528,7 @@ export class CusBluetoothModuleClass {
 			}
 			uni.getPrivacySetting({
 				success: (res) => {
-					console.log('getPrivacySetting=====>', res)
+					this.log('getPrivacySetting=====>', res)
 					if (!res?.needAuthorization) {
 						resolve(true)
 						return
@@ -514,7 +541,7 @@ export class CusBluetoothModuleClass {
 					uni.requirePrivacyAuthorize({
 						success: () => resolve(true),
 						fail: (err) => {
-							console.log('requirePrivacyAuthorize-fail=====>', err)
+							this.log('requirePrivacyAuthorize-fail=====>', err)
 							if (isPrivacyScopeUndeclaredError(err)) {
 								reject(new Error(ERROR_CODE['112']))
 								return
@@ -524,7 +551,7 @@ export class CusBluetoothModuleClass {
 					})
 				},
 				fail: (err) => {
-					console.log('getPrivacySetting-fail=====>', err)
+					this.log('getPrivacySetting-fail=====>', err)
 					// 低版本基础库可能无此能力，继续后续流程
 					resolve(true)
 				}
@@ -548,7 +575,7 @@ export class CusBluetoothModuleClass {
 			// #ifdef MP-WEIXIN
 			uni.getSetting({
 				success: (res) => {
-					console.log('蓝牙是否授权res', res)
+					that.log('蓝牙是否授权res', res)
 					const isPers = res?.authSetting?.['scope.bluetooth']
 					if (isPers === true) {
 						resolve(true)
@@ -676,7 +703,7 @@ export class CusBluetoothModuleClass {
 			that.clearDeviceLists()
 			uni.openBluetoothAdapter({
 				success: function(res) {
-					console.log('openBluetoothAdapter-success=====>', res)
+					that.log('openBluetoothAdapter-success=====>', res)
 					if (res?.errMsg === 'openBluetoothAdapter:ok') {
 						resolve(true)
 					} else {
@@ -685,7 +712,7 @@ export class CusBluetoothModuleClass {
 					}
 				},
 				fail: function(res) {
-					console.log('openBluetoothAdapter-fail=====>', res)
+					that.log('openBluetoothAdapter-fail=====>', res)
 					const errCode = res?.errCode
 					const errMsg = res?.errMsg || ''
 					// 部分端上重复 open 会报已打开，视为可用
@@ -713,7 +740,7 @@ export class CusBluetoothModuleClass {
 			that.saveConnectedDevices()
 			uni.closeBluetoothAdapter({
 				success: (res) => {
-					console.log('closeBluetoothAdapter-success=====>', res)
+					that.log('closeBluetoothAdapter-success=====>', res)
 					that.clearDeviceLists()
 					that._bluetoothModuleState = 'notStarted'
 					that._bluetoothAdapterState = {
@@ -724,7 +751,7 @@ export class CusBluetoothModuleClass {
 					resolve(true)
 				},
 				fail: (res) => {
-					console.log('closeBluetoothAdapter-fail=====>', res)
+					that.log('closeBluetoothAdapter-fail=====>', res)
 					// 未初始化时关闭失败可忽略，保证重启流程可继续
 					that.clearDeviceLists()
 					that._bluetoothModuleState = 'notStarted'
@@ -779,7 +806,7 @@ export class CusBluetoothModuleClass {
 				try {
 					await that.stopBluetoothDevicesDiscovery()
 				} catch (e) {
-					console.log('重启前停止搜索忽略=====>', e)
+					this.log('重启前停止搜索忽略=====>', e)
 				}
 			}
 
@@ -810,7 +837,7 @@ export class CusBluetoothModuleClass {
 		return new Promise((resolve, reject) => {
 			uni.getBluetoothAdapterState({
 				success: (res) => {
-					console.log('getBluetoothAdapterState-success=====>', res)
+					that.log('getBluetoothAdapterState-success=====>', res)
 					const available = res?.available
 					const discovering = res?.discovering
 					if (res?.errMsg === 'getBluetoothAdapterState:ok' && available ===
@@ -831,7 +858,7 @@ export class CusBluetoothModuleClass {
 					}
 				},
 				fail: (res) => {
-					console.log('getBluetoothAdapterState-fail=====>', res)
+					that.log('getBluetoothAdapterState-fail=====>', res)
 					that._bluetoothModuleState = 'notStarted'
 					that.dealFailRes(res, reject, '蓝牙适配器不可用')
 				},
@@ -862,7 +889,7 @@ export class CusBluetoothModuleClass {
 			that.saveConnectedDevices()
 			uni.closeBluetoothAdapter({
 				success: (res) => {
-					console.log('closeBluetoothAdapter-success=====>', res)
+					that.log('closeBluetoothAdapter-success=====>', res)
 					that._restartBlueToothCount = 0
 					that._waitBlueToothCount = 0
 					that._bluetoothModuleState = 'notStarted'
@@ -872,7 +899,7 @@ export class CusBluetoothModuleClass {
 					resolve(res)
 				},
 				fail: (res) => {
-					console.log('closeBluetoothAdapter-fail=====>', res)
+					that.log('closeBluetoothAdapter-fail=====>', res)
 					that.dealFailRes(res, reject, '关闭蓝牙模块失败')
 				}
 			})
@@ -889,7 +916,7 @@ export class CusBluetoothModuleClass {
 				interval: 0,
 				powerLevel: "high",
 				success: function(res) {
-					console.log('startBluetoothDevicesDiscovery-success=====>', res)
+					that.log('startBluetoothDevicesDiscovery-success=====>', res)
 					if (res?.errMsg === 'startBluetoothDevicesDiscovery:ok') {
 						resolve(true)
 					} else {
@@ -901,7 +928,7 @@ export class CusBluetoothModuleClass {
 				fail: (res) => {
 					that._bluetoothModuleSearchState = 'notSearched'
 					that.stopBluetoothDevicesDiscovery()
-					console.log('startBluetoothDevicesDiscovery-fail=====>', res)
+					that.log('startBluetoothDevicesDiscovery-fail=====>', res)
 					that.dealFailRes(res, reject, '搜索附近可用蓝牙设备失败')
 				}
 			})
@@ -915,7 +942,7 @@ export class CusBluetoothModuleClass {
 			uni.hideLoading()
 			uni.stopBluetoothDevicesDiscovery({
 				success: (res) => {
-					console.log('stopBluetoothDevicesDiscovery-success=====>', res)
+					that.log('stopBluetoothDevicesDiscovery-success=====>', res)
 					if (res?.errMsg === 'stopBluetoothDevicesDiscovery:ok' && res
 						?.isDiscovering === false) {
 						that._bluetoothModuleSearchState = 'notSearched'
@@ -925,7 +952,7 @@ export class CusBluetoothModuleClass {
 					}
 				},
 				fail: (res) => {
-					console.log('stopBluetoothDevicesDiscovery-fail=====>', res)
+					that.log('stopBluetoothDevicesDiscovery-fail=====>', res)
 					that._bluetoothModuleSearchState = 'notSearched'
 					that.dealFailRes(res, reject, '停止搜索附近可用蓝牙设备失败')
 				},
@@ -935,8 +962,8 @@ export class CusBluetoothModuleClass {
 
 	// 递归获取设备列表
 	async recGetBluetoothDevices(count) {
-		console.log('递归获取设备列表', count)
 		const that = this
+		that.log('递归获取设备列表', count)
 		const maxCount = 2
 		let cCount = count || 0
 
@@ -955,15 +982,16 @@ export class CusBluetoothModuleClass {
 
 	// 获取在蓝牙模块生效期间所有已发现的蓝牙设备。包括已经和本机处于连接状态的设备。在停止搜索后获取
 	getBluetoothDevices() {
+		const that = this
 		return new Promise((resolve, reject) => {
 			uni.getBluetoothDevices({
 				success: async function(res) {
-					console.log('getBluetoothDevices蓝牙列表', res)
+					that.log('getBluetoothDevices蓝牙列表', res)
 					const list = res?.devices || []
 					resolve(list)
 				},
 				fail: function(res) {
-					console.log("搜索蓝牙设备失败")
+					that.log('搜索蓝牙设备失败')
 					that.dealFailRes(res, reject, '搜索附近可用蓝牙设备失败')
 				}
 			})
@@ -972,16 +1000,16 @@ export class CusBluetoothModuleClass {
 
 	// 根据 uuid 获取处于已连接状态的设备。
 	getConnectedBluetoothDevices() {
-		// uni.getConnectedBluetoothDevices(OBJECT)
+		const that = this
 		return new Promise((resolve, reject) => {
 			uni.getConnectedBluetoothDevices({
 				success: (res) => {
-					console.log('getConnectedBluetoothDevices-success=====>', res)
+					that.log('getConnectedBluetoothDevices-success=====>', res)
 					const devices = res?.devices || []
 					resolve(devices)
 				},
 				fail: (res) => {
-					console.log('getConnectedBluetoothDevices-fail=====>', res)
+					that.log('getConnectedBluetoothDevices-fail=====>', res)
 					that.dealFailRes(res, reject, '获取已连接的蓝牙设备失败')
 				}
 			})
@@ -990,9 +1018,10 @@ export class CusBluetoothModuleClass {
 
 	// 监听寻找到新设备的事件
 	onBluetoothDeviceFound(callback) {
+		const that = this
 		return new Promise((resolve, reject) => {
 			uni.onBluetoothDeviceFound(function(devices) {
-				console.log('onBluetoothDeviceFound', devices)
+				that.log('onBluetoothDeviceFound', devices)
 				if (typeof callback === 'function') {
 					const data = JSON.parse(JSON.stringify(devices));
 					const res = callback(data)
@@ -1006,11 +1035,11 @@ export class CusBluetoothModuleClass {
 
 	// 监听蓝牙适配器状态变化事件
 	onBluetoothAdapterStateChange() {
-		console.log('监听蓝牙适配器状态变化事件')
+		this.log('监听蓝牙适配器状态变化事件')
 		const that = this
 		return new Promise((resolve, reject) => {
 			uni.onBluetoothAdapterStateChange(function(res) {
-				console.log('监听蓝牙适配器状态变化事件', res)
+				that.log('监听蓝牙适配器状态变化事件', res)
 				const {
 					available,
 					discovering
@@ -1026,7 +1055,7 @@ export class CusBluetoothModuleClass {
 
 	// 新增/减去连接的设备
 	async operationConnectDevice(item) {
-		console.log('新增连接的设备', item)
+		this.log('新增连接的设备', item)
 		if (item?.serviceId && item?.characteristicId) {
 			const findInd = this._searchDevicesResultList.findIndex(ele => ele.deviceId === item.deviceId)
 			if (findInd !== -1) {
@@ -1080,7 +1109,7 @@ export class CusBluetoothModuleClass {
 			await that.createBLEConnection(device)
 			await that.setBLEMTU(device.deviceId)
 			const dealRes = await that.dealServicesAndCharacteristics(device)
-			console.log('dealRes=======>', dealRes)
+			that.log('dealRes=======>', dealRes)
 			that.operationConnectDevice(dealRes)
 			return dealRes
 		} catch (err) {
@@ -1104,7 +1133,7 @@ export class CusBluetoothModuleClass {
 				uni.createBLEConnection({
 					deviceId,
 					success: (res) => {
-						console.log("createBLEConnection-success=====>", res);
+						that.log("createBLEConnection-success=====>", res);
 						if (res.errMsg == "createBLEConnection:ok") {
 							showMsg(`设备${name}连接成功`)
 							resolve(true)
@@ -1113,7 +1142,7 @@ export class CusBluetoothModuleClass {
 						}
 					},
 					fail: (res) => {
-						console.log("createBLEConnection-fail=====>", res);
+						that.log("createBLEConnection-fail=====>", res);
 						that.dealFailRes(res, reject, '初始化蓝牙模块失败')
 					},
 				})
@@ -1154,12 +1183,12 @@ export class CusBluetoothModuleClass {
 				uni.closeBLEConnection({
 					deviceId,
 					success: (res) => {
-						console.log(res)
+						that.log(res)
 						showMsg('断开与低功耗蓝牙设备的连接成功')
 						resolve(true)
 					},
 					fail: (res) => {
-						console.log("closeBLEConnection-fail=====>", res);
+						that.log("closeBLEConnection-fail=====>", res);
 						that.dealFailRes(res, reject, '断开与低功耗蓝牙设备的连接失败')
 					},
 				})
@@ -1190,7 +1219,7 @@ export class CusBluetoothModuleClass {
 					const props = cItem.properties || {}
 					const canWrite = props.write === true || props.writeNoResponse === true
 					if (!canWrite) continue
-					// 鸿蒙：优先 write（有 ATT 响应，便于流控）；其它平台：优先 writeNoResponse（吞吐更高）
+					// 鸿蒙：优先 write（有 ATT 响应，便于流控）；其它平台：优先 writeNoResponse
 					let writeType
 					if (that._isHarmonyOS) {
 						writeType = props.write ? 'write' : 'writeNoResponse'
@@ -1236,7 +1265,7 @@ export class CusBluetoothModuleClass {
 				throw new Error('蓝牙打印机服务ID和特征值ID获取失败')
 			}
 		} catch (err) {
-			console.log('err======>123123', err)
+			that.log('err======>123123', err)
 			throw new Error(err?.message || '处理蓝牙打印机服务以及获取设备特征值失败')
 		}
 	}
@@ -1252,7 +1281,7 @@ export class CusBluetoothModuleClass {
 				uni.getBLEDeviceServices({
 					deviceId,
 					success: (res) => {
-						console.log("getBLEDeviceServices-success=====>", res);
+						that.log("getBLEDeviceServices-success=====>", res);
 						if (res?.errMsg === 'getBLEDeviceServices:ok') {
 							if (isNotEmptyArr(res.services)) {
 								resolve(res.services)
@@ -1264,7 +1293,7 @@ export class CusBluetoothModuleClass {
 						}
 					},
 					fail: (res) => {
-						console.log("getBLEDeviceServices-fail=====>", res);
+						that.log("getBLEDeviceServices-fail=====>", res);
 						that.dealFailRes(res, reject, '初始化蓝牙模块失败')
 					},
 				})
@@ -1288,7 +1317,7 @@ export class CusBluetoothModuleClass {
 					deviceId,
 					serviceId,
 					success(res) {
-						console.log("getBLEDeviceCharacteristics-success=====>", res);
+						that.log("getBLEDeviceCharacteristics-success=====>", res);
 						const cRes = JSON.parse(JSON.stringify(res));
 						if (isNotEmptyArr(cRes.characteristics)) {
 							resolve(cRes.characteristics)
@@ -1297,7 +1326,7 @@ export class CusBluetoothModuleClass {
 						}
 					},
 					fail: (res) => {
-						console.log("getBLEDeviceCharacteristics-fail=====>", res);
+						that.log("getBLEDeviceCharacteristics-fail=====>", res);
 						that.dealFailRes(res, reject,
 							`取蓝牙设备【${name}】某个服务【${serviceId}】中所有特征值失败`)
 					},
@@ -1428,28 +1457,62 @@ export class CusBluetoothModuleClass {
 		}
 	}
 
+	// 将 ArrayBuffer 按 MTU 切分为包列表
+	splitBufferToChunks(buffer, chunkSize) {
+		const chunks = []
+		const length = buffer.byteLength
+		for (let i = 0; i < length; i += chunkSize) {
+			chunks.push(buffer.slice(i, Math.min(i + chunkSize, length)))
+		}
+		return chunks
+	}
+
+	// 统一 BLE 分包发送：顺序 await（鸿蒙禁止并发，否则易整单丢包不打印）
+	async sendBufferInChunks(options) {
+		const that = this
+		const { deviceId, serviceId, characteristicId, buffer, writeType } = options
+		const chunkSize = that.getWriteChunkSize(buffer.byteLength)
+		const chunks = that.splitBufferToChunks(buffer, chunkSize)
+		const finalWriteType = that.resolveWriteType(writeType)
+		const writeIntervalMs = Math.round(that.getWriteIntervalSec(finalWriteType) * 1000)
+
+		that.log('sendBufferInChunks=====>', {
+			byteLength: buffer.byteLength,
+			chunkSize,
+			chunks: chunks.length,
+			writeType: finalWriteType,
+			writeIntervalMs,
+			isHarmonyOS: that._isHarmonyOS,
+			negotiatedMtu: that._negotiatedMtu,
+		})
+
+		for (let i = 0; i < chunks.length; i++) {
+			await that.writeBLECharacteristicValue({
+				deviceId,
+				serviceId,
+				characteristicId,
+				buffer: chunks[i],
+				writeType: finalWriteType
+			})
+			if (writeIntervalMs > 0 && i < chunks.length - 1) {
+				await sleepMs(writeIntervalMs)
+			}
+		}
+	}
+
 	// CPCL 打印（汉印 HM-A300L/HM-A300E/HM-A300-668B 等）
 	async printCpclTaskItem(pTask) {
 		const that = this
 		const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
 		const bufferList = tfmbuffer(printDataStr)
-		const maxChunk = that._isHarmonyOS ? that.getWriteChunkSize() : 20
-		const writeInterval = that.getWriteIntervalSec()
-		const finalWriteType = that.resolveWriteType(writeType)
 		for (let c = 0; c < bufferList.length; c++) {
-			const buffer = bufferList[c]
-			const length = buffer.byteLength
-			for (let i = 0; i < length; i += maxChunk) {
-				const subPackage = buffer.slice(i, i + maxChunk <= length ? (i + maxChunk) : length)
-				await that.writeBLECharacteristicValue({
-					deviceId,
-					serviceId,
-					characteristicId,
-					buffer: subPackage,
-					writeType: finalWriteType
-				})
-				await sleep(writeInterval)
-			}
+			await that.sendBufferInChunks({
+				deviceId,
+				serviceId,
+				characteristicId,
+				buffer: bufferList[c],
+				writeType
+			})
 		}
 	}
 
@@ -1458,30 +1521,13 @@ export class CusBluetoothModuleClass {
 		const that = this
 		const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
 		const buffer = that.getBuffer(printDataStr)
-		console.log('buffer', buffer)
-		const chunkSize = that.getWriteChunkSize(buffer.byteLength)
-		var length = buffer.byteLength
-		var count = Math.ceil(length / chunkSize)
-		const writeInterval = that.getWriteIntervalSec()
-		const finalWriteType = that.resolveWriteType(writeType || 'write')
-		for (let i = 0; i < count; i++) {
-			let tempBuffer
-			if (((i + 1) * chunkSize) < length) {
-				tempBuffer = buffer.slice(i * chunkSize, (i + 1) * chunkSize)
-			} else {
-				tempBuffer = buffer.slice(i * chunkSize, length)
-			}
-			await that.writeBLECharacteristicValue({
-				deviceId,
-				serviceId,
-				characteristicId,
-				buffer: tempBuffer,
-				writeType: finalWriteType
-			})
-			if (count > 1) {
-				await sleep(writeInterval)
-			}
-		}
+		await that.sendBufferInChunks({
+			deviceId,
+			serviceId,
+			characteristicId,
+			buffer,
+			writeType
+		})
 	}
 
 	// 获取buffer,二进制数据
@@ -1498,13 +1544,13 @@ export class CusBluetoothModuleClass {
 				resolve(false)
 				return
 			}
-			// 鸿蒙上大 MTU 协商常失败或名不副实，请求较小值更稳
+			// 鸿蒙大 MTU 常名不副实，请求 128 更稳；失败回退默认 23
 			const requestMtu = that._isHarmonyOS ? 128 : that._mtu
 			uni.setBLEMTU({
 				deviceId,
 				mtu: requestMtu,
 				success(res) {
-					console.log('setBLEMTU-success======>', res)
+					that.log('setBLEMTU-success======>', res)
 					const mtu = Number(res?.mtu)
 					if (!isNaN(mtu) && mtu > 0) {
 						that._negotiatedMtu = mtu
@@ -1516,7 +1562,7 @@ export class CusBluetoothModuleClass {
 					resolve(true)
 				},
 				fail(res) {
-					console.log('setBLEMTU-fail======>', res)
+					that.log('setBLEMTU-fail======>', res)
 					that._negotiatedMtu = that._isHarmonyOS ? 23 : 0
 					resolve(false)
 				}
@@ -1544,21 +1590,28 @@ export class CusBluetoothModuleClass {
 					resolve(true)
 				},
 				fail(res) {
-					console.log('writeBLECharacteristicValue-fail======>', res, {
+					that.log('writeBLECharacteristicValue-fail======>', res, {
 						writeType,
 						retryCount,
 						byteLength: buffer?.byteLength
 					})
-					// 先尝试切换 write / writeNoResponse
+					// 鸿蒙：仅允许 write → writeNoResponse 单向回退；其它平台可双向切换
 					if (!retriedType && writeType) {
-						const altType = writeType === 'writeNoResponse' ? 'write' : 'writeNoResponse'
-						doWrite(altType, true, retryCount).then(resolve).catch(reject)
-						return
+						if (that._isHarmonyOS) {
+							if (writeType === 'write') {
+								doWrite('writeNoResponse', true, retryCount).then(resolve).catch(reject)
+								return
+							}
+						} else {
+							const altType = writeType === 'writeNoResponse' ? 'write' : 'writeNoResponse'
+							doWrite(altType, true, retryCount).then(resolve).catch(reject)
+							return
+						}
 					}
 					// 再按次数重试（鸿蒙常见 10008 拥塞）
 					if (retryCount < maxRetry) {
-						const delay = that._isHarmonyOS ? 0.12 : 0.05
-						sleep(delay).then(() => {
+						const delayMs = that._isHarmonyOS ? 80 : 25
+						sleepMs(delayMs).then(() => {
 							doWrite(writeType, retriedType, retryCount + 1).then(resolve).catch(reject)
 						})
 						return

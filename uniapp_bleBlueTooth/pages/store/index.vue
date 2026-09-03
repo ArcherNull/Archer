@@ -39,6 +39,15 @@
 
 			<!-- 打印标签 -->
 			<PrintItemBox title="打印标签" :isShowBottomLine="true">
+				<template #subTitle>
+					<picker :range="templateOptions" range-key="label" :value="labelTemplateIndex"
+						@change="onLabelTemplateChange">
+						<view class="tplSwitch">
+							{{ currentLabelTemplate.label }}
+							<text class="tplSwitch-arrow">▼</text>
+						</view>
+					</picker>
+				</template>
 				<template #right>
 					<SelectPrinter :selectedPrinter="connectedPrinter.labelPrinter"
 						@selected="selectedBTPrinter(connectedPrinter.labelPrinter, 'label')">
@@ -64,6 +73,15 @@
 
 			<!-- 打印运单 -->
 			<PrintItemBox title="打印运单" :isShowBottomLine="true">
+				<template #subTitle>
+					<picker :range="templateOptions" range-key="label" :value="waybillTemplateIndex"
+						@change="onWaybillTemplateChange">
+						<view class="tplSwitch">
+							{{ currentWaybillTemplate.label }}
+							<text class="tplSwitch-arrow">▼</text>
+						</view>
+					</picker>
+				</template>
 				<template #right>
 					<SelectPrinter :selectedPrinter="connectedPrinter.waybillPrinter"
 						@selected="selectedBTPrinter(connectedPrinter.waybillPrinter, 'waybill')">
@@ -136,11 +154,50 @@
 		showMsg,
 		convertNumber,
 		isNotEmptyArr
-	} from './comm/cusBluetooth.js'
+	} from '@/ble/comm/cusBluetooth.js'
 	import {
 		template1,
-		template2
-	} from './template/cpcl/index.js'
+		template2,
+		template3,
+		template4,
+		template5,
+		template6
+	} from '@/ble/template/cpcl/index.js'
+
+	const templateMap = {
+		template1,
+		template2,
+		template3,
+		template4,
+		template5,
+		template6
+	}
+
+	const templateOptions = [{
+			key: 'template1',
+			label: '模板1-运单'
+		},
+		{
+			key: 'template2',
+			label: '模板2-配军'
+		},
+		{
+			key: 'template3',
+			label: '模板3'
+		},
+		{
+			key: 'template4',
+			label: '模板4'
+		},
+		{
+			key: 'template5',
+			label: '模板5-配军标签'
+		},
+		{
+			key: 'template6',
+			label: '模板6-配军动态'
+		}
+	]
 
 	const loadingType = ref('normal')
 	const labelPrintChecked = ref(true)
@@ -149,6 +206,25 @@
 	const plEnd = ref(1)
 	const ydValue = ref(1)
 	const openPrintListPop = ref(false)
+	// 默认：标签用模板2，运单用模板1
+	const labelTemplateIndex = ref(1)
+	const waybillTemplateIndex = ref(0)
+
+	const currentLabelTemplate = computed(() => templateOptions[labelTemplateIndex.value] || templateOptions[0])
+	const currentWaybillTemplate = computed(() => templateOptions[waybillTemplateIndex.value] || templateOptions[0])
+
+	function onLabelTemplateChange(e) {
+		labelTemplateIndex.value = Number(e.detail.value)
+	}
+
+	function onWaybillTemplateChange(e) {
+		waybillTemplateIndex.value = Number(e.detail.value)
+	}
+
+	function getSelectedTemplateStr(index) {
+		const opt = templateOptions[index] || templateOptions[0]
+		return templateMap[opt.key] || ''
+	}
 
 	const printLoading = ref(false)
 	const selectedPrinterType = ref(undefined)
@@ -337,7 +413,7 @@
 					name: labelPrinter.name || labelPrinter.localName || '',
 					localName: labelPrinter.localName || '',
 					writeType: labelPrinter.writeType || '',
-					printDataStr: template2
+					printDataStr: getSelectedTemplateStr(labelTemplateIndex.value)
 				}
 				for (let i = 0; i < pCount; i++) {
 					printTaskList.push(pData)
@@ -356,7 +432,7 @@
 					name: waybillPrinter.name || waybillPrinter.localName || '',
 					localName: waybillPrinter.localName || '',
 					writeType: waybillPrinter.writeType || '',
-					printDataStr: template1
+					printDataStr: getSelectedTemplateStr(waybillTemplateIndex.value)
 				}
 				for (let i = 0; i < ydCount; i++) {
 					printTaskList.push(pData)
@@ -413,6 +489,19 @@
 </script>
 
 <style lang="scss" scoped>
+	.tplSwitch {
+		display: flex;
+		align-items: center;
+		gap: 6rpx;
+		color: $uni-color-primary;
+		font-size: 26rpx;
+
+		&-arrow {
+			font-size: 18rpx;
+			transform: scale(0.85);
+		}
+	}
+
 	.alertText {
 		color: #999;
 		font-size: 28rpx;

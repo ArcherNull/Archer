@@ -71,7 +71,7 @@
 	} from 'vue'
 	import {
 		showMsg,
-	} from '../comm/cusBluetooth.js'
+	} from '@/ble/comm/cusBluetooth.js'
 
 	const props = defineProps({
 		openPop: {
