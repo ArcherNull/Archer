@@ -53,29 +53,11 @@
 		</view>
 
 		<view class="footerBar">
-			<view class="footerStatus">
-				<view class="footerStatus-chips">
-					<text class="chip">{{ printStatusInfo.platformName }}</text>
-					<text class="chip">{{ printStatusInfo.deviceName }}</text>
-					<text class="chip chip--accent">蓝牙 {{ printStatusInfo.btDeviceName }}</text>
-					<text class="chip">信号 {{ printStatusInfo.btRssi }}dBm</text>
-					<text class="chip">MTU {{ printStatusInfo.mtu }}</text>
-					<text class="chip">包 {{ printStatusInfo.packetIntervalMs }}ms</text>
-					<text class="chip">重试 {{ printStatusInfo.retryIntervalMs }}ms</text>
-				</view>
-				<view class="footerStatus-meta">
-					<text>预计 {{ printProgressView.estimatedSec }}s</text>
-					<text>进度 {{ printProgressView.printProgress }}%</text>
-					<text>传输 {{ printProgressView.transferProgress }}%</text>
-					<text>耗时 {{ printProgressView.elapsedSec }}s</text>
-				</view>
-				<view class="footerProgress" v-if="printLoading || printProgressView.printProgress > 0">
-					<view
-						class="footerProgress-bar"
-						:style="{ width: Math.min(100, printProgressView.printProgress) + '%' }"
-					/>
-				</view>
-			</view>
+			<PrintTaskStatus
+				:print-status-info="printStatusInfo"
+				:print-progress-view="printProgressView"
+				:print-loading="printLoading"
+			/>
 			<view class="footerBar-row">
 				<button
 					class="cancelBtn"
@@ -101,6 +83,7 @@
 	import PrintSettings from '../components/PrintSettings.vue'
 	import DeviceInfo from '../components/DeviceInfo.vue'
 	import TemplateSelect from '../components/TemplateSelect.vue'
+	import PrintTaskStatus from '../components/PrintTaskStatus.vue'
 	import { createBluetoothAdapter } from '../ble/index.js'
 	import { resolvePrinterBrandInfo } from '../ble/config.js'
 	import { showMsg, isNotEmptyArr } from '../comm/utils.js'
@@ -130,6 +113,7 @@
 			PrintSettings,
 			DeviceInfo,
 			TemplateSelect,
+			PrintTaskStatus,
 		},
 		data() {
 			const defaultTplIndex = templateOptions.findIndex(function (item) {
@@ -640,7 +624,6 @@
 
 <style lang="scss" scoped>
 	$theme: #f9ae3d;
-	$theme-dark: #e09a2a;
 	$theme-soft: rgba(249, 174, 61, 0.14);
 	$page-bg: #faf6f0;
 
@@ -722,53 +705,6 @@
 			align-items: stretch;
 			gap: 16rpx;
 			margin-top: 14rpx;
-		}
-	}
-
-	.footerStatus {
-		&-chips {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10rpx;
-		}
-
-		&-meta {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 8rpx 20rpx;
-			margin-top: 12rpx;
-			color: #8a7a64;
-			font-size: 22rpx;
-		}
-	}
-
-	.chip {
-		padding: 6rpx 14rpx;
-		border-radius: 999rpx;
-		background: #f3eee6;
-		color: #666;
-		font-size: 20rpx;
-		line-height: 1.4;
-
-		&--accent {
-			background: $theme-soft;
-			color: #c4841a;
-			font-weight: 600;
-		}
-	}
-
-	.footerProgress {
-		margin-top: 14rpx;
-		height: 10rpx;
-		border-radius: 999rpx;
-		background: #f0e6d6;
-		overflow: hidden;
-
-		&-bar {
-			height: 100%;
-			border-radius: 999rpx;
-			background: linear-gradient(90deg, $theme, $theme-dark);
-			transition: width 0.25s ease;
 		}
 	}
 

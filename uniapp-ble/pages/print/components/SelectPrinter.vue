@@ -1,11 +1,22 @@
 <template>
-	<view class="selectPrinter" @click="onSelected">
-		<text class="selectPrinter-text">{{ displayName }}</text>
-		<text class="selectPrinter-arrow">›</text>
+	<view class="spBox">
+		<view
+			:class="[
+				'spBox-text',
+				hasPrinter ? 'spBox-text__active' : 'spBox-text__unactive',
+			]"
+			@click="openPrinterListPop"
+		>
+			{{ displayName }}
+			<text class="spBox-arrow">›</text>
+		</view>
 	</view>
 </template>
 
 <script>
+	/**
+	 * 对齐 kpsapp SelectPrinter：展示已绑定打印机 / 引导选择连接
+	 */
 	export default {
 		name: 'SelectPrinter',
 		props: {
@@ -17,13 +28,17 @@
 			},
 		},
 		computed: {
+			hasPrinter() {
+				const p = this.selectedPrinter || {}
+				return !!(p.name || p.localName || p.deviceId)
+			},
 			displayName() {
 				const p = this.selectedPrinter || {}
-				return p.name || p.localName || '选择打印机'
+				return p.name || p.localName || '请选择并连接打印机'
 			},
 		},
 		methods: {
-			onSelected() {
+			openPrinterListPop() {
 				this.$emit('selected')
 			},
 		},
@@ -31,23 +46,27 @@
 </script>
 
 <style lang="scss" scoped>
-	.selectPrinter {
-		display: flex;
-		align-items: center;
-		gap: 8rpx;
-		color: #ff9407;
-		font-size: 26rpx;
-
+	.spBox {
 		&-text {
-			max-width: 280rpx;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 6rpx;
+			font-size: 28rpx;
+
+			&__active {
+				color: #333;
+			}
+
+			&__unactive {
+				color: #999;
+			}
 		}
 
 		&-arrow {
 			font-size: 32rpx;
 			line-height: 1;
+			color: inherit;
 		}
 	}
 </style>

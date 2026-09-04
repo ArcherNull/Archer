@@ -1,30 +1,47 @@
 <template>
-	<view class="labelBox">
-		<view class="labelBox-left" @click="onCheck">
-			<checkbox
+	<view class="LabelBox">
+		<view class="LabelBox-left" @click="checkFun">
+			<view
 				v-if="showCheck"
-				color="#FF9407"
-				style="transform: scale(0.7)"
-				:checked="checked"
-			/>
-			<text class="labelBox-label">{{ label }}</text>
+				:class="[
+					'LabelBox-left__radio',
+					checked
+						? 'LabelBox-left__radio-active'
+						: 'LabelBox-left__radio-unactive',
+				]"
+			></view>
+			<view class="LabelBox-left__text">{{ label }}</view>
 		</view>
-		<view class="labelBox-right">
+		<view class="LabelBox-right">
 			<slot></slot>
 		</view>
 	</view>
 </template>
 
 <script>
+	/**
+	 * 对齐 kpsapp LabelBox：左侧圆点单选 + 右侧插槽
+	 * showCheck=false 时仅展示文案（运单份数等）
+	 */
 	export default {
 		name: 'LabelBox',
 		props: {
-			label: { type: String, default: '' },
-			checked: { type: Boolean, default: false },
-			showCheck: { type: Boolean, default: false },
+			label: {
+				type: String,
+				default: '',
+			},
+			checked: {
+				type: Boolean,
+				default: true,
+			},
+			showCheck: {
+				type: Boolean,
+				default: true,
+			},
 		},
 		methods: {
-			onCheck() {
+			checkFun() {
+				if (!this.showCheck) return
 				this.$emit('checked')
 			},
 		},
@@ -32,28 +49,55 @@
 </script>
 
 <style lang="scss" scoped>
-	.labelBox {
+	.LabelBox {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 20rpx;
-		padding: 16rpx 0;
+		row-gap: 20rpx;
+		padding: 10rpx 0;
+		flex-wrap: wrap;
 
 		&-left {
 			display: flex;
 			align-items: center;
-			gap: 4rpx;
-			flex-shrink: 0;
-		}
+			justify-content: flex-start;
+			gap: 16rpx;
 
-		&-label {
-			font-size: 28rpx;
-			color: #333;
+			&__radio {
+				width: 28rpx;
+				height: 28rpx;
+				border-radius: 14rpx;
+				box-sizing: border-box;
+
+				&-active {
+					border: solid 2rpx #ff9407;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+
+					&::after {
+						content: '';
+						background-color: #ff9407;
+						width: 16rpx;
+						height: 16rpx;
+						border-radius: 8rpx;
+					}
+				}
+
+				&-unactive {
+					border: solid 2rpx #999;
+				}
+			}
+
+			&__text {
+				font-size: 28rpx;
+				color: #333;
+			}
 		}
 
 		&-right {
-			flex: 1;
 			display: flex;
+			align-items: center;
 			justify-content: flex-end;
 		}
 	}
