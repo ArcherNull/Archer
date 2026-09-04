@@ -1,0 +1,41 @@
+<view class='search-btn' bindtap='research'>搜索添加打印机</view>
+<view class='p-box'>
+  <view class='l-title border-b'>搜索到的打印机</view>
+  <view class='p-box'>
+    <view class='p-item' wx:for="{{printList}}" bindtap='connectDevice'  data-index='{{index}}' wx:key="index">
+      <view>{{item.name == '' ? '未知设备': item.name}}</view>
+      <view> </view>
+      <!-- <view>{{item.deviceId}}</view> -->
+      <view class='p-add'>添加<text class='iconfont icon-xiangyou-copy'></text></view>
+    </view>
+  </view>
+</view>
+<view class='change-btn' wx:if="{{btnTitle !=''}}" bindtap='disconnect'>{{btnTitle}}</view>
+<view class='container'>
+  <view class='btn-list'>
+    <view class='print-btn' bindtap='print' data-index='{{cpclIndex}}'>{{cpcl}}【主要】</view>
+    <view class='print-btn' bindtap='print' data-index='{{escIndex}}'>{{esc}}</view>
+    <view class='print-btn' bindtap='print' data-index='{{tsplIndex}}'>{{tspl}}</view>
+  </view>
+  <view class='btn-list'>
+    <view class='print-btn' bindtap='print' data-index='{{cpclpicIndex}}'>CPCL(图片)</view>
+    <view class='print-btn' bindtap='print' data-index='{{escpicIndex}}'>ESC(图片)</view>
+    <view class='print-btn' bindtap='print' data-index='{{tsplIndex1}}'>TSPL(图片)</view>
+  </view> 
+  <view class='btn-list'>
+    <view class='print-btn' bindtap='print' data-index='{{zplIndex}}'>{{zpl}}</view>
+    <view class='print-btn' bindtap='print' data-index='{{dplIndex}}'>{{dpl}}</view>
+    <view class='print-btn' bindtap='print' data-index='{{eplIndex}}'>{{epl}}</view>
+  </view>
+  <view class='container'>
+下发数据包的大小<input class="input" name="printCount" placeholder="下发数据包的大小" value="{{datapackage}}"
+    bindinput ="datapackageInput"/>
+  </view>
+</view>
+<view style='width:0px;height:0px;visibility:hidden;'>
+    <canvas canvas-id="canvasIn" class="canvas" style="width:{{canvasWidth}}px;height:{{canvasHeight}}px"></canvas>   
+</view> 
+<popup showModal="{{showModal}}"  bind:cancel="cancel"    bind:confirm="confirm">
+</popup>
+
+

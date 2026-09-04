@@ -106,7 +106,9 @@
 		template3,
 		template4,
 		template5,
-		template6
+		template6,
+		template7,
+		template8
 	} from '@/ble/template/cpcl/index.js'
 
 	const templateMap = {
@@ -115,7 +117,9 @@
 		template3,
 		template4,
 		template5,
-		template6
+		template6,
+		template7,
+		template8
 	}
 
 	const templateOptions = [{
@@ -141,6 +145,14 @@
 		{
 			key: 'template6',
 			label: '模板6-配军动态'
+		},
+		{
+			key: 'template7',
+			label: '模板7-Hello World'
+		},
+		{
+			key: 'template8',
+			label: '模板8-汉印'
 		}
 	]
 
@@ -151,7 +163,8 @@
 	const platformDefaultConfig = ref({})
 	const platformName = ref('其它')
 	const deviceName = ref('未知设备')
-	const templateIndex = ref(0)
+	// 默认选中模板8-汉印
+	const templateIndex = ref(templateOptions.findIndex(item => item.key === 'template8'))
 	const printLoading = ref(false)
 	const searching = ref(false)
 	const scanning = ref(false)

@@ -1,0 +1,26 @@
+{
+	"pages": [ 
+		{
+			"path": "pages/print/index",
+			"style": {
+				"navigationBarTitleText": "蓝牙打印"
+			}
+		},
+		{
+			"path": "pages/print/debugPage/index",
+			"style": {
+				"navigationBarTitleText": "蓝牙调试界面",
+				"navigationBarBackgroundColor": "#f9ae3d",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#faf6f0"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}

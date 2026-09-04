@@ -55,3 +55,37 @@ MTU设置需要放在包间隔时间之前
 -80 至 -90 dBm：一般（边缘区域，可能掉线）。
 -90 至 -100 dBm：较弱（基本处于无信号边缘）。
 -100 以下：极弱（基本无法连接）。
+
+
+
+MTU，单包数据，最小23字节，最大512字节【先按最小的来设置，23字节】
+包间时间，每个包的传输间隔，越长，打印时间越慢【先按最长的来测试，80ms是最稳定的，最大设置300ms，最小设置20ms】
+重试间隔时间，包传输失败，重试包传输的时间间隔，越长，打印时间越慢【先按最长的来测试，80ms是最稳定的，最大设置300ms，最小设置50ms】
+
+
+汉印相关SDK：https://www.hprt.com.cn/search_keywork.html?search_key=HM-A300&search_num=21
+
+
+汉印手持蓝牙打印机使用的CPCL指令与“标准”CPCL指令并非完全一致，存在厂商特定的扩展和实现细节差异。
+可以这样理解两者的关系：
+
+基础同源：汉印打印机的CPCL指令集，源于Zebra Technologies为便携式打印机设计的CPCL（Compact Printer Command Language）。因此，大部分基础的CPCL指令（如TEXT、LINE、BOX、BARCODE等）在汉印打印机上是通用的。
+
+存在差异：不同打印机厂商在实现CPCL时，通常会有自己的“方言”。汉印也在标准指令基础上进行了封装、扩展或定制。部分资料也直接称CPCL为“汉印打印机专用的指令集”。
+
+并非100%兼容：不同品牌打印机对CPCL指令的支持程度不同，直接套用其他品牌（如斑马、芝柯）的CPCL指令可能会出现兼容性问题。
+
+参数行为差异：即使是相同的指令，某些参数的行为也可能因厂商而异。例如，有开发者发现“打印份数”这个参数在部分打印机上不生效
+
+
+
+portakal：一个“通用打印机语言SDK”，能以统一的API生成CPCL、ZPL、ESC/POS等9种指令。它采用纯TypeScript编写，零依赖。其设计理念是“一套代码，适配所有热敏打印机”，对于追求跨平台和代码复用的项目很有吸引力。
+github：https://github.com/productdevbook/portakal
+npm install portakal
+portakal 的适用场景：当你需要跨多种打印机语言（如同时支持 CPCL 和 ZPL），或需要在 H5 端 生成指令并通过 Web API 打印时，portakal 是一个强大的选择。
+
+
+CPCL 轻量面单打印；轻量 CPCL 面单。四端蓝牙/局域网；encoding、状态探测、已配对、短队列与 busy；dryRun 免 init。
+breao-cpclprint 插件在 uni-app 插件市场的链接是：https://ext.dcloud.net.cn/plugin?id=29241
+
+
