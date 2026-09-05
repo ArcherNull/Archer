@@ -340,30 +340,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$theme: #f9ae3d;
-$theme-soft: rgba(249, 174, 61, 0.12);
+@import '../comm/common.scss';
 
 .btBox {
-	display: flex;
-	gap: 12rpx;
-	flex-wrap: wrap;
 	justify-content: flex-end;
-	font-size: 24rpx;
-}
-
-.unactiveCss {
-	color: #dd524d;
-	font-weight: 600;
-}
-
-.activeingCss {
-	color: #c4841a;
-	font-weight: 600;
-}
-
-.activeCss {
-	color: #3bb54a;
-	font-weight: 600;
 }
 
 .ops {
@@ -375,65 +355,26 @@ $theme-soft: rgba(249, 174, 61, 0.12);
 	padding: 12rpx 0 20rpx;
 }
 
-.action-btn {
-	margin: 0;
-	padding: 0 28rpx;
-	height: 64rpx;
-	line-height: 64rpx;
-	font-size: 26rpx;
-	font-weight: 600;
-	border-radius: 999rpx;
-	border: none;
-	box-sizing: border-box;
-	text-align: center;
+.action-btn--sm {
+	height: 52rpx;
+	line-height: 52rpx;
+	padding: 0 22rpx;
+	font-size: 24rpx;
+	min-width: 120rpx;
+}
 
-	&::after {
-		border: none;
-	}
+.action-btn--primary {
+	box-shadow: 0 6rpx 16rpx rgba(249, 174, 61, 0.28);
+}
 
-	&[disabled] {
-		opacity: 0.45;
-	}
-
-	&--sm {
-		height: 52rpx;
-		line-height: 52rpx;
-		padding: 0 22rpx;
-		font-size: 24rpx;
-		min-width: 120rpx;
-	}
-
-	&--primary {
-		color: #fff !important;
-		background: $theme !important;
-		box-shadow: 0 6rpx 16rpx rgba(249, 174, 61, 0.28);
-	}
-
-	&--ghost {
-		color: #c4841a;
-		background: $theme-soft;
-	}
-
-	&--muted {
-		color: #666;
-		background: #f3eee6;
-	}
-
-	&--info {
-		color: #fff !important;
-		background: #5b8def !important;
-	}
-
-	&--danger {
-		color: #fff !important;
-		background: #dd524d !important;
-	}
+.action-btn--muted {
+	color: #666;
 }
 
 .cPTitle {
 	font-size: 28rpx;
 	font-weight: 700;
-	color: #2c2c2c;
+	color: $pr-text-main;
 	margin-bottom: 0;
 }
 
@@ -453,40 +394,19 @@ $theme-soft: rgba(249, 174, 61, 0.12);
 	}
 }
 
-.cPBox {
-	padding-top: 4rpx;
-}
-
-.cPList {
-	display: flex;
-	flex-direction: column;
-	gap: 12rpx;
-}
-
-.noMoreBox {
-	min-height: 100rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #a89880;
-	background: #fffaf3;
-	border-radius: 12rpx;
-	border: 1rpx dashed #eadfce;
-}
-
 .listBox {
 	margin-top: 28rpx;
 	padding-top: 20rpx;
-	border-top: 1rpx dashed #f0e6d6;
+	border-top: 1rpx dashed $pr-border-dashed;
 }
 
 .listScroll {
 	max-height: 420rpx;
-	border: 1rpx solid #efe6d8;
+	border: 1rpx solid $pr-border-color;
 	border-radius: 14rpx;
 	padding: 0 16rpx;
 	box-sizing: border-box;
-	background: #fffaf3;
+	background: $pr-surface-warm;
 
 	.noMoreBox {
 		border: none;

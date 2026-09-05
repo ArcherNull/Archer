@@ -1530,12 +1530,11 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$page-bg: #faf6f0;
+	@import './comm/common.scss';
 
 	.print {
 		padding-bottom: 150rpx;
-		background: $page-bg;
+		background: $pr-page-bg;
 		min-height: 100vh;
 	}
 
@@ -1546,9 +1545,9 @@
 		gap: 16rpx;
 		padding: 16rpx 24rpx;
 		background: #fff;
-		border-bottom: 1rpx solid #efe6d8;
+		border-bottom: 1rpx solid $pr-border-color;
 		font-size: 26rpx;
-		color: $theme;
+		color: $pr-theme;
 		box-sizing: border-box;
 		width: 100%;
 
@@ -1566,12 +1565,12 @@
 		}
 
 		&-item {
-			color: #c4841a;
+			color: $pr-theme-text;
 		}
 
 		&-link {
 			flex-shrink: 0;
-			color: #c4841a;
+			color: $pr-theme-text;
 			font-size: 26rpx;
 			font-weight: 600;
 			padding: 4rpx 0;
@@ -1579,7 +1578,7 @@
 	}
 
 	.alertBox {
-		color: #a89880;
+		color: $pr-text-muted;
 		font-size: 22rpx;
 		line-height: 1.45;
 		position: relative;
@@ -1595,7 +1594,7 @@
 		align-items: center;
 		gap: 12rpx;
 		font-size: 28rpx;
-		color: #333;
+		color: $pr-text-body;
 
 		&-box {
 			width: 32rpx;
@@ -1611,8 +1610,8 @@
 			}
 
 			&--active {
-				border: 2rpx solid $theme;
-				background: $theme;
+				border: 2rpx solid $pr-theme;
+				background: $pr-theme;
 
 				&::after {
 					content: '';
@@ -1636,19 +1635,19 @@
 		}
 
 		&--unactive &-title {
-			color: #2c2c2c;
+			color: $pr-text-main;
 		}
 
 		&--active &-title {
-			color: #c4841a;
+			color: $pr-theme-text;
 		}
 
 		&--unactive .sharePrinterRow-text {
-			color: #333;
+			color: $pr-text-body;
 		}
 
 		&--active .sharePrinterRow-text {
-			color: #c4841a;
+			color: $pr-theme-text;
 		}
 	}
 
@@ -1667,12 +1666,12 @@
 			justify-content: flex-start;
 
 			&__active {
-				color: #c4841a;
+				color: $pr-theme-text;
 				font-weight: 600;
 			}
 
 			&__unactive {
-				color: #333;
+				color: $pr-text-body;
 			}
 		}
 	}
@@ -1689,18 +1688,11 @@
 	}
 
 	.btBox {
-		display: flex;
-		gap: 12rpx;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: flex-end;
-		font-size: 24rpx;
-
 		&-link {
 			padding: 4rpx 12rpx;
 			border-radius: 8rpx;
-			background: rgba(249, 174, 61, 0.14);
-			color: #c4841a;
+			background: $pr-theme-soft-strong;
+			color: $pr-theme-text;
 			font-size: 22rpx;
 			font-weight: 600;
 			line-height: 1.4;
@@ -1720,40 +1712,15 @@
 
 		&-text {
 			font-size: 28rpx;
-			color: #333;
+			color: $pr-text-body;
 			font-weight: 600;
 		}
 
 		&-tip {
 			font-size: 22rpx;
-			color: #a89880;
+			color: $pr-text-muted;
 			margin-left: 4rpx;
 		}
-	}
-
-	.unactiveCss {
-		color: #dd524d;
-		font-weight: 600;
-	}
-
-	.activeingCss {
-		color: #c4841a;
-		font-weight: 600;
-	}
-
-	.activeCss {
-		color: #3bb54a;
-		font-weight: 600;
-	}
-
-	.cPBox {
-		padding-top: 4rpx;
-	}
-
-	.cPList {
-		display: flex;
-		flex-direction: column;
-		gap: 12rpx;
 	}
 
 	.cPClose {
@@ -1762,47 +1729,10 @@
 		line-height: 48rpx;
 		text-align: center;
 		font-size: 36rpx;
-		color: #a89880;
+		color: $pr-text-muted;
 		border-radius: 50%;
 		background: #fff;
-		border: 1rpx solid #efe6d8;
+		border: 1rpx solid $pr-border-color;
 		box-sizing: border-box;
-	}
-
-	.noMoreBox {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 100rpx;
-		color: #a89880;
-		font-size: 26rpx;
-		background: #fffaf3;
-		border-radius: 12rpx;
-		border: 1rpx dashed #eadfce;
-	}
-
-	.footerBtn {
-		position: fixed;
-		z-index: 100;
-		left: 0;
-		bottom: 0;
-		width: 100vw;
-		padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom));
-		background: rgba(255, 255, 255, 0.96);
-		border-top: 1rpx solid #efe6d8;
-		box-shadow: 0 -8rpx 28rpx rgba(249, 174, 61, 0.12);
-		box-sizing: border-box;
-	}
-
-	.printBtn {
-		margin: 0;
-		background: $theme !important;
-		color: #fff !important;
-		border-radius: 16rpx;
-		font-weight: 700;
-
-		&[disabled] {
-			opacity: 0.7;
-		}
 	}
 </style>

@@ -1,12 +1,16 @@
 <template>
 	<PrintItemBox title="打印模板选择" :isShowBottomLine="true">
 		<view slot="right">
-			<picker :range="templateOptions" range-key="label" :value="templateIndex" @change="onChange">
-				<view class="tplSwitch">
-					{{ currentTemplate.label }}
-					<text class="tplSwitch-arrow">▼</text>
-				</view>
-			</picker>
+			<view class="modeSwitch">
+				<view
+					:class="['modeSwitch-item', templateMode === 'common' ? 'modeSwitch-item--on' : '']"
+					@click="setMode('common')"
+				>通用</view>
+				<view
+					:class="['modeSwitch-item', templateMode === 'brand' ? 'modeSwitch-item--on' : '']"
+					@click="setMode('brand')"
+				>品牌</view>
+			</view>
 		</view>
 
 		<view class="tplList">
@@ -16,8 +20,15 @@
 				:class="['tplItem', index === templateIndex ? 'tplItem--active' : '']"
 				@click="selectIndex(index)"
 			>
-				<view class="tplItem-name">{{ item.label }}</view>
-				<view class="tplItem-key">{{ item.key }}</view>
+				<view class="tplItem-main">
+					<view class="tplItem-name">{{ item.label }}</view>
+					<view class="tplItem-key">{{ item.desc || item.key }}</view>
+				</view>
+				<view
+					v-if="templateMode === 'common'"
+					class="tplItem-preview"
+					@click.stop="onPreview(item, index)"
+				>预览</view>
 			</view>
 		</view>
 	</PrintItemBox>
@@ -42,46 +53,52 @@
 				type: Number,
 				default: 0,
 			},
-		},
-		computed: {
-			currentTemplate() {
-				return this.templateOptions[this.templateIndex] || this.templateOptions[0] || {
-					label: '请选择模板',
-					key: '',
-				}
+			/** common | brand */
+			templateMode: {
+				type: String,
+				default: 'brand',
 			},
 		},
 		methods: {
+			setMode(mode) {
+				if (mode === this.templateMode) return
+				this.$emit('update:templateMode', mode)
+				this.$emit('mode-change', mode)
+			},
 			selectIndex(index) {
 				this.$emit('update:templateIndex', index)
 				this.$emit('change', index)
 			},
-			onChange(e) {
-				const index = Number(e.detail.value)
-				this.selectIndex(index)
+			onPreview(item, index) {
+				this.$emit('preview', { item: item, index: index })
 			},
 		},
 	}
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$theme-soft: rgba(249, 174, 61, 0.12);
+	@import '../comm/common.scss';
 
-	.tplSwitch {
+	.modeSwitch {
 		display: flex;
 		align-items: center;
-		gap: 8rpx;
-		max-width: 360rpx;
-		padding: 8rpx 16rpx;
+		padding: 4rpx;
 		border-radius: 999rpx;
-		background: $theme-soft;
-		color: #c4841a;
-		font-size: 24rpx;
+		background: $pr-theme-soft;
 
-		&-arrow {
-			font-size: 16rpx;
-			opacity: 0.7;
+		&-item {
+			min-width: 88rpx;
+			padding: 8rpx 18rpx;
+			border-radius: 999rpx;
+			text-align: center;
+			font-size: 24rpx;
+			color: $pr-text-muted;
+			font-weight: 600;
+
+			&--on {
+				background: $pr-theme;
+				color: #fff;
+			}
 		}
 	}
 
@@ -93,28 +110,47 @@
 	}
 
 	.tplItem {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
 		padding: 20rpx 22rpx;
-		border: 2rpx solid #efe6d8;
+		border: 2rpx solid $pr-border-color;
 		border-radius: 14rpx;
-		background: #fffaf3;
+		background: $pr-surface-warm;
 		transition: border-color 0.2s ease, background 0.2s ease;
 
 		&--active {
-			border-color: $theme;
-			background: $theme-soft;
+			border-color: $pr-theme;
+			background: $pr-theme-soft;
 			box-shadow: 0 4rpx 12rpx rgba(249, 174, 61, 0.15);
+		}
+
+		&-main {
+			flex: 1;
+			min-width: 0;
 		}
 
 		&-name {
 			font-size: 28rpx;
-			color: #2c2c2c;
+			color: $pr-text-main;
 			font-weight: 700;
 		}
 
 		&-key {
 			margin-top: 8rpx;
 			font-size: 22rpx;
-			color: #a89880;
+			color: $pr-text-muted;
+		}
+
+		&-preview {
+			flex-shrink: 0;
+			padding: 10rpx 22rpx;
+			border-radius: 999rpx;
+			background: #fff;
+			border: 1rpx solid $pr-theme;
+			color: $pr-theme-text;
+			font-size: 24rpx;
+			font-weight: 600;
 		}
 	}
 </style>

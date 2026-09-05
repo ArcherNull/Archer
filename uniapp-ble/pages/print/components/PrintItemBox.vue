@@ -59,7 +59,7 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
+	@import '../comm/common.scss';
 
 	.box {
 		margin: 20rpx 24rpx;
@@ -74,7 +74,7 @@
 			justify-content: space-between;
 			gap: 20rpx;
 			padding: 20rpx 0 16rpx;
-			border-bottom: 1rpx solid #f3eee6;
+			border-bottom: 1rpx solid $pr-border-light;
 
 			&-left {
 				display: flex;
@@ -86,24 +86,7 @@
 				flex: 1;
 
 				&__text {
-					position: relative;
-					padding-left: 16rpx;
-					color: #2c2c2c;
-					font-size: 32rpx;
-					font-weight: 700;
-					line-height: 1.3;
-
-					&::before {
-						content: '';
-						position: absolute;
-						left: 0;
-						top: 50%;
-						transform: translateY(-50%);
-						width: 6rpx;
-						height: 28rpx;
-						border-radius: 6rpx;
-						background: $theme;
-					}
+					@include accent-title;
 				}
 
 				&__tag {
@@ -112,13 +95,13 @@
 					font-size: 20rpx;
 					line-height: 1.4;
 					font-weight: 600;
-					color: #c4841a;
-					background: rgba(249, 174, 61, 0.18);
+					color: $pr-theme-text;
+					background: $pr-theme-soft-tag;
 					border-radius: 8rpx;
 				}
 
 				&__subTitle {
-					color: #a89880;
+					color: $pr-text-muted;
 					font-size: 26rpx;
 				}
 			}

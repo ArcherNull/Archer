@@ -74,9 +74,7 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$theme-dark: #e09a2a;
-	$theme-soft: rgba(249, 174, 61, 0.14);
+	@import '../comm/common.scss';
 
 	.footerStatus {
 		&-chips {
@@ -90,7 +88,7 @@
 			flex-wrap: wrap;
 			gap: 8rpx 20rpx;
 			margin-top: 12rpx;
-			color: #8a7a64;
+			color: $pr-text-sub;
 			font-size: 22rpx;
 		}
 	}
@@ -104,8 +102,8 @@
 		line-height: 1.4;
 
 		&--accent {
-			background: $theme-soft;
-			color: #c4841a;
+			background: $pr-theme-soft-strong;
+			color: $pr-theme-text;
 			font-weight: 600;
 		}
 	}
@@ -120,7 +118,7 @@
 		&-bar {
 			height: 100%;
 			border-radius: 999rpx;
-			background: linear-gradient(90deg, $theme, $theme-dark);
+			background: linear-gradient(90deg, $pr-theme, $pr-theme-dark);
 			transition: width 0.25s ease;
 		}
 	}

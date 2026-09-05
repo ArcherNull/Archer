@@ -85,17 +85,16 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$theme-soft: rgba(249, 174, 61, 0.12);
+	@import '../comm/common.scss';
 
 	.numBox {
 		display: inline-flex;
 		align-items: center;
 		height: 56rpx;
-		border: 1rpx solid #efe6d8;
+		border: 1rpx solid $pr-border-color;
 		border-radius: 12rpx;
 		overflow: hidden;
-		background: #fffaf3;
+		background: $pr-surface-warm;
 
 		&-btn {
 			width: 56rpx;
@@ -103,8 +102,8 @@
 			line-height: 56rpx;
 			text-align: center;
 			font-size: 32rpx;
-			color: #c4841a;
-			background: $theme-soft;
+			color: $pr-theme-text;
+			background: $pr-theme-soft;
 			font-weight: 600;
 
 			&--disabled {
@@ -119,7 +118,7 @@
 			line-height: 56rpx;
 			text-align: center;
 			font-size: 28rpx;
-			color: #2c2c2c;
+			color: $pr-text-main;
 			background: #fff;
 		}
 	}

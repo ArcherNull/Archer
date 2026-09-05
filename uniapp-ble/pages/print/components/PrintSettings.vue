@@ -336,8 +336,7 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$theme-soft: rgba(249, 174, 61, 0.12);
+	@import '../comm/common.scss';
 
 	.platformTag {
 		display: flex;
@@ -346,8 +345,8 @@
 		gap: 8rpx;
 		padding: 6rpx 14rpx;
 		border-radius: 999rpx;
-		background: $theme-soft;
-		color: #c4841a;
+		background: $pr-theme-soft;
+		color: $pr-theme-text;
 		font-size: 24rpx;
 
 		&-split {
@@ -362,10 +361,10 @@
 	.sectionTitle {
 		margin: 24rpx 0 8rpx;
 		padding-top: 16rpx;
-		border-top: 1rpx dashed #f0e6d6;
+		border-top: 1rpx dashed $pr-border-dashed;
 		font-size: 28rpx;
 		font-weight: 700;
-		color: #2c2c2c;
+		color: $pr-text-main;
 	}
 
 	.form-row {
@@ -378,7 +377,7 @@
 	}
 
 	.form-label {
-		color: #333;
+		color: $pr-text-body;
 		font-size: 28rpx;
 
 		&.required::before {
@@ -401,9 +400,9 @@
 		text-align: center;
 		border: 1rpx solid #eadfce;
 		border-radius: 12rpx;
-		background: #fffaf3;
+		background: $pr-surface-warm;
 		font-size: 28rpx;
-		color: #333;
+		color: $pr-text-body;
 
 		&--step {
 			width: 100rpx;
@@ -439,7 +438,7 @@
 			line-height: 48rpx;
 			text-align: center;
 			border-radius: 12rpx;
-			background: $theme;
+			background: $pr-theme;
 			color: #fff;
 			font-size: 30rpx;
 			font-weight: 600;
@@ -452,7 +451,7 @@
 	}
 
 	.form-tip {
-		color: #a89880;
+		color: $pr-text-muted;
 		font-size: 22rpx;
 		line-height: 1.4;
 		padding: 0 0 8rpx;
@@ -472,7 +471,7 @@
 		align-items: center;
 		gap: 8rpx;
 		font-size: 28rpx;
-		color: #333;
+		color: $pr-text-body;
 	}
 
 	.form-actions {
@@ -483,35 +482,10 @@
 		gap: 16rpx;
 		margin-top: 20rpx;
 		padding-top: 20rpx;
-		border-top: 1rpx solid #f3eee6;
+		border-top: 1rpx solid $pr-border-light;
 	}
 
-	.action-btn {
-		margin: 0;
-		padding: 0 28rpx;
-		height: 64rpx;
-		line-height: 64rpx;
-		font-size: 26rpx;
-		font-weight: 600;
-		border-radius: 999rpx;
-		border: none;
-		box-sizing: border-box;
-
-		&::after {
-			border: none;
-		}
-
-		&--ghost {
-			min-width: 200rpx;
-			color: #c4841a;
-			background: $theme-soft;
-		}
-
-		&--primary {
-			min-width: 168rpx;
-			color: #fff !important;
-			background: $theme !important;
-			box-shadow: 0 6rpx 16rpx rgba(249, 174, 61, 0.35);
-		}
+	.action-btn--ghost {
+		min-width: 200rpx;
 	}
 </style>

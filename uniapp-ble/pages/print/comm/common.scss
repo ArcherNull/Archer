@@ -1,0 +1,287 @@
+/**
+ * print 模块公共样式 / 变量
+ * 在各 Vue 的 <style lang="scss"> 中 @import，减少重复定义
+ */
+
+/* ========== 主题变量 ========== */
+$pr-theme: #f9ae3d;
+$pr-theme-dark: #e09a2a;
+$pr-theme-soft: rgba(249, 174, 61, 0.12);
+$pr-theme-soft-strong: rgba(249, 174, 61, 0.14);
+$pr-theme-soft-tag: rgba(249, 174, 61, 0.18);
+$pr-page-bg: #faf6f0;
+$pr-theme-text: #c4841a;
+$pr-text-main: #2c2c2c;
+$pr-text-body: #333;
+$pr-text-muted: #a89880;
+$pr-text-sub: #8a7a64;
+$pr-border-color: #efe6d8;
+$pr-border-light: #f3eee6;
+$pr-border-dashed: #f0e6d6;
+$pr-surface-warm: #fffaf3;
+$pr-danger: #dd524d;
+$pr-success: #3bb54a;
+
+/* ========== Mixins ========== */
+@mixin accent-title {
+	position: relative;
+	padding-left: 16rpx;
+	font-size: 32rpx;
+	font-weight: 700;
+	color: $pr-text-main;
+	line-height: 1.3;
+
+	&::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 6rpx;
+		height: 28rpx;
+		border-radius: 6rpx;
+		background: $pr-theme;
+	}
+}
+
+@mixin reset-btn {
+	margin: 0;
+	border: none;
+	box-sizing: border-box;
+	text-align: center;
+
+	&::after {
+		border: none;
+	}
+}
+
+/* ========== 底部弹层外壳 ========== */
+.deviceMask {
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(44, 36, 24, 0.45);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+
+	&--elevated {
+		z-index: 1100;
+	}
+}
+
+.devicePanel {
+	width: 100%;
+	max-height: 82vh;
+	background: $pr-page-bg;
+	border-radius: 24rpx 24rpx 0 0;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+	box-shadow: 0 -8rpx 32rpx rgba(249, 174, 61, 0.12);
+
+	&--solid {
+		background: #fff;
+		max-height: 78vh;
+		padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+	}
+
+	&-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 28rpx 28rpx 16rpx;
+		background: #fff;
+		border-bottom: 1rpx solid $pr-border-light;
+		border-radius: 24rpx 24rpx 0 0;
+		flex-shrink: 0;
+	}
+
+	&-title {
+		@include accent-title;
+	}
+
+	&-close {
+		width: 56rpx;
+		height: 56rpx;
+		line-height: 52rpx;
+		text-align: center;
+		font-size: 40rpx;
+		color: $pr-text-muted;
+		border-radius: 50%;
+		background: $pr-page-bg;
+	}
+
+	&-body {
+		flex: 1;
+		box-sizing: border-box;
+	}
+
+	&-footer {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 16rpx;
+		padding: 20rpx 28rpx 0;
+		border-top: 1rpx solid $pr-border-light;
+		background: #fff;
+		flex-shrink: 0;
+	}
+
+	&-toolbar {
+		display: flex;
+		justify-content: flex-end;
+		padding: 12rpx 28rpx 0;
+		flex-shrink: 0;
+	}
+}
+
+/* ========== 通用按钮 ========== */
+.action-btn {
+	@include reset-btn;
+	padding: 0 28rpx;
+	height: 64rpx;
+	line-height: 64rpx;
+	font-size: 26rpx;
+	font-weight: 600;
+	border-radius: 999rpx;
+
+	&[disabled] {
+		opacity: 0.45;
+	}
+
+	&--sm {
+		padding: 0 20rpx;
+		height: 56rpx;
+		line-height: 56rpx;
+		font-size: 24rpx;
+		min-width: 112rpx;
+	}
+
+	&--lg {
+		padding: 0 40rpx;
+		height: 80rpx;
+		line-height: 80rpx;
+		font-size: 30rpx;
+	}
+
+	&--ghost {
+		min-width: 168rpx;
+		color: $pr-theme-text;
+		background: $pr-theme-soft;
+	}
+
+	&--primary {
+		min-width: 168rpx;
+		color: #fff !important;
+		background: $pr-theme !important;
+		box-shadow: 0 6rpx 16rpx rgba(249, 174, 61, 0.35);
+	}
+
+	&--muted {
+		color: $pr-text-sub;
+		background: #f3eee6;
+	}
+
+	&--info {
+		color: #fff !important;
+		background: #5b8def !important;
+	}
+
+	&--danger {
+		color: #fff !important;
+		background: $pr-danger !important;
+	}
+}
+
+/* ========== 状态色 ========== */
+.unactiveCss {
+	color: $pr-danger;
+	font-weight: 600;
+}
+
+.activeingCss {
+	color: $pr-theme-text;
+	font-weight: 600;
+}
+
+.activeCss {
+	color: $pr-success;
+	font-weight: 600;
+}
+
+/* ========== 列表空态 / 设备区块 ========== */
+.emptyBox {
+	padding: 80rpx 24rpx;
+	text-align: center;
+	color: $pr-text-muted;
+	font-size: 28rpx;
+}
+
+.noMoreBox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100rpx;
+	color: $pr-text-muted;
+	font-size: 26rpx;
+	background: $pr-surface-warm;
+	border-radius: 12rpx;
+	border: 1rpx dashed #eadfce;
+}
+
+.btBox {
+	display: flex;
+	gap: 12rpx;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	font-size: 24rpx;
+}
+
+.cPBox {
+	padding-top: 4rpx;
+}
+
+.cPList {
+	display: flex;
+	flex-direction: column;
+	gap: 12rpx;
+}
+
+/* ========== 底部固定栏 ========== */
+.footerBar,
+.footerBtn {
+	position: fixed;
+	z-index: 100;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+	background: rgba(255, 255, 255, 0.96);
+	border-top: 1rpx solid $pr-border-color;
+	box-shadow: 0 -8rpx 28rpx rgba(249, 174, 61, 0.12);
+	box-sizing: border-box;
+}
+
+.footerBtn {
+	width: 100vw;
+	padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom));
+}
+
+.printBtn {
+	margin: 0;
+	background: $pr-theme !important;
+	color: #fff !important;
+	border-radius: 16rpx;
+	font-weight: 700;
+
+	&[disabled] {
+		opacity: 0.7;
+	}
+}

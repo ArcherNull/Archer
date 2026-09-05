@@ -108,8 +108,7 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$theme-soft: rgba(249, 174, 61, 0.12);
+	@import '../comm/common.scss';
 
 	.bdi {
 		display: flex;
@@ -120,9 +119,9 @@
 
 		&--connected {
 			padding: 16rpx 18rpx;
-			border: 2rpx solid $theme;
+			border: 2rpx solid $pr-theme;
 			border-radius: 14rpx;
-			background: $theme-soft;
+			background: $pr-theme-soft;
 		}
 
 		&--search {
@@ -130,7 +129,7 @@
 		}
 
 		&--border {
-			border-bottom: solid 2rpx #efe6d8;
+			border-bottom: solid 2rpx $pr-border-color;
 		}
 
 		&-main {
@@ -170,7 +169,7 @@
 		&-name {
 			font-size: 28rpx;
 			font-weight: 700;
-			color: #2c2c2c;
+			color: $pr-text-main;
 			line-height: 1.3;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -184,26 +183,26 @@
 			font-size: 20rpx;
 			line-height: 1.4;
 			font-weight: 600;
-			color: #c4841a;
-			background: rgba(249, 174, 61, 0.18);
+			color: $pr-theme-text;
+			background: $pr-theme-soft-tag;
 			border-radius: 8rpx;
 		}
 
 		&-brand {
 			margin-top: 4rpx;
-			color: #c4841a;
+			color: $pr-theme-text;
 			font-size: 24rpx;
 		}
 
 		&-rssi {
 			margin-top: 6rpx;
 			font-size: 24rpx;
-			color: #a89880;
+			color: $pr-text-muted;
 		}
 
 		&-deviceId {
 			margin-top: 4rpx;
-			color: #a89880;
+			color: $pr-text-muted;
 			font-size: 22rpx;
 			word-break: break-all;
 		}

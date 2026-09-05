@@ -49,7 +49,7 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
+	@import '../comm/common.scss';
 
 	.LabelBox {
 		display: flex;
@@ -72,14 +72,14 @@
 				box-sizing: border-box;
 
 				&-active {
-					border: solid 2rpx $theme;
+					border: solid 2rpx $pr-theme;
 					display: flex;
 					align-items: center;
 					justify-content: center;
 
 					&::after {
 						content: '';
-						background-color: $theme;
+						background-color: $pr-theme;
 						width: 16rpx;
 						height: 16rpx;
 						border-radius: 8rpx;
@@ -93,7 +93,7 @@
 
 			&__text {
 				font-size: 28rpx;
-				color: #2c2c2c;
+				color: $pr-text-main;
 			}
 		}
 

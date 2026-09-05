@@ -23,8 +23,12 @@
 			<TemplateSelect
 				:template-options="templateOptions"
 				:template-index="templateIndex"
+				:template-mode="templateMode"
 				@update:templateIndex="onTemplateIndexUpdate"
+				@update:templateMode="onTemplateModeUpdate"
 				@change="onTemplateIndexUpdate"
+				@mode-change="onTemplateModeUpdate"
+				@preview="onCommonTemplatePreview"
 			/>
 
 			<PrintSettings
@@ -75,6 +79,14 @@
 				</button>
 			</view>
 		</view>
+
+		<PreviewPopup
+			:visible="previewVisible"
+			:title="previewTitle"
+			:ops="previewOps"
+			@update:visible="onPreviewVisibleUpdate"
+			@close="previewVisible = false"
+		/>
 	</view>
 </template>
 
@@ -83,14 +95,21 @@
 	import DeviceInfo from '../components/DeviceInfo.vue'
 	import TemplateSelect from '../components/TemplateSelect.vue'
 	import PrintTaskStatus from '../components/PrintTaskStatus.vue'
+	import PreviewPopup from '../template-comm/preivew/PreviewPopup.vue'
 	import { createBluetoothAdapter } from '../ble/index.js'
 	import { resolvePrinterBrandInfo } from '../ble/config.js'
 	import { showMsg, isNotEmptyArr } from '../comm/utils.js'
 	import { SIGNAL_TIP_LIST } from '../help/index.js'
 	import { template5 } from './template/CC3/template5.js'
 	import { template8 } from './template/HM/template8.js'
+	import {
+		COMMON_TEMPLATE_OPTIONS,
+		buildCommonTemplate,
+		getCommonTemplateCpcl,
+	} from '../template-comm/template/index.js'
+	import { getMockByTemplateKey } from '../template-comm/mock/index.js'
 
-	const templateMap = {
+	const brandTemplateMap = {
 		template5: template5,
 		template8: template8,
 	}
@@ -101,10 +120,12 @@
 		HM: 'template8',
 	}
 
-	const templateOptions = [
-		{ key: 'template5', label: '模板5-芝柯', brand: 'CC3' },
-		{ key: 'template8', label: '模板8-汉印', brand: 'HM' },
+	const brandTemplateOptions = [
+		{ key: 'template5', label: '模板5-芝柯', brand: 'CC3', desc: 'template5' },
+		{ key: 'template8', label: '模板8-汉印', brand: 'HM', desc: 'template8' },
 	]
+
+	const commonTemplateOptions = COMMON_TEMPLATE_OPTIONS.slice()
 
 	export default {
 		name: 'PrintDebugPage',
@@ -113,13 +134,15 @@
 			DeviceInfo,
 			TemplateSelect,
 			PrintTaskStatus,
+			PreviewPopup,
 		},
 		data() {
-			const defaultTplIndex = templateOptions.findIndex(function (item) {
+			const defaultTplIndex = brandTemplateOptions.findIndex(function (item) {
 				return item.key === 'template8'
 			})
 			return {
-				templateOptions: templateOptions,
+				templateMode: 'brand',
+				templateOptions: brandTemplateOptions,
 				signalTipList: SIGNAL_TIP_LIST,
 				cusBModuleInstance: null,
 				btVersion: 0,
@@ -131,6 +154,9 @@
 				platformName: '其它',
 				deviceName: '未知设备',
 				templateIndex: defaultTplIndex >= 0 ? defaultTplIndex : 0,
+				previewVisible: false,
+				previewTitle: '',
+				previewOps: [],
 				printLoading: false,
 				searching: false,
 				scanning: false,
@@ -194,6 +220,11 @@
 					this.previewEstimatedTime()
 				}
 			},
+			templateMode: function () {
+				if (!this.printLoading) {
+					this.previewEstimatedTime()
+				}
+			},
 			printConfig: {
 				deep: true,
 				handler: function () {
@@ -230,6 +261,50 @@
 		methods: {
 			onTemplateIndexUpdate(index) {
 				this.templateIndex = Number(index)
+			},
+			onTemplateModeUpdate(mode) {
+				const next = mode === 'common' ? 'common' : 'brand'
+				if (next === this.templateMode) return
+				this.templateMode = next
+				this.templateOptions =
+					next === 'common' ? commonTemplateOptions : brandTemplateOptions
+				this.templateIndex = 0
+				if (next === 'brand') {
+					this.syncTemplateByConnectedDevice()
+				}
+			},
+			onPreviewVisibleUpdate(v) {
+				this.previewVisible = !!v
+			},
+			resolveConnectedBrand() {
+				const btDevice = this.connectedBtDevice
+				if (!btDevice) return 'common'
+				const deviceName = btDevice.name || btDevice.localName || ''
+				const brandInfo = resolvePrinterBrandInfo(deviceName, btDevice.deviceId || '')
+				if (brandInfo.brand) return brandInfo.brand
+				// 与 ble 编码分支对齐：GBK 机→CC3，其余已连接设备按汉印，避免结尾指令用错多走纸
+				const bt = this.cusBModuleInstance
+				if (bt && typeof bt.isGbkPrinter === 'function' && bt.isGbkPrinter(deviceName, btDevice.deviceId || '')) {
+					return 'CC3'
+				}
+				return 'HM'
+			},
+			onCommonTemplatePreview(payload) {
+				const item = (payload && payload.item) || this.currentTemplate
+				if (!item || !item.key) {
+					showMsg('无法预览该模板')
+					return
+				}
+				const mock = getMockByTemplateKey(item.key) || {}
+				const brand = this.resolveConnectedBrand()
+				const built = buildCommonTemplate(item.key, mock, { brand: brand })
+				if (!built || !built.ops || !built.ops.length) {
+					showMsg('预览数据为空')
+					return
+				}
+				this.previewTitle = item.label || '模板预览'
+				this.previewOps = built.ops
+				this.previewVisible = true
 			},
 			previewEstimatedTime() {
 				const bt = this.cusBModuleInstance
@@ -271,9 +346,10 @@
 				}
 			},
 			/**
-			 * 按已连接打印机品牌自动选择模板：芝柯→模板5，汉印→模板8
+			 * 按已连接打印机品牌自动选择模板：芝柯→模板5，汉印→模板8（仅品牌模式）
 			 */
 			syncTemplateByConnectedDevice() {
+				if (this.templateMode !== 'brand') return
 				const btDevice = this.connectedBtDevice
 				if (!btDevice) return
 				const deviceName = btDevice.name || btDevice.localName || ''
@@ -579,7 +655,13 @@
 			},
 			getSelectedTemplateStr() {
 				const opt = this.currentTemplate
-				const tpl = opt && templateMap[opt.key]
+				if (!opt || !opt.key) return ''
+				if (this.templateMode === 'common') {
+					const mock = getMockByTemplateKey(opt.key) || {}
+					const brand = this.resolveConnectedBrand()
+					return getCommonTemplateCpcl(opt.key, mock, { brand: brand }) || ''
+				}
+				const tpl = brandTemplateMap[opt.key]
 				if (typeof tpl === 'function') {
 					return tpl() || ''
 				}
@@ -658,13 +740,11 @@
 </script>
 
 <style lang="scss" scoped>
-	$theme: #f9ae3d;
-	$theme-soft: rgba(249, 174, 61, 0.14);
-	$page-bg: #faf6f0;
+	@import '../comm/common.scss';
 
 	.printPage {
 		min-height: 100vh;
-		background: $page-bg;
+		background: $pr-page-bg;
 		padding-bottom: calc(280rpx + env(safe-area-inset-bottom));
 		box-sizing: border-box;
 
@@ -682,15 +762,15 @@
 		padding: 20rpx 22rpx;
 		background: #fff;
 		border-radius: 16rpx;
-		border: 1rpx solid #efe6d8;
+		border: 1rpx solid $pr-border-color;
 		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
 
 		&-badge {
 			flex-shrink: 0;
 			padding: 4rpx 14rpx;
 			border-radius: 8rpx;
-			background: $theme-soft;
-			color: #c4841a;
+			background: $pr-theme-soft-strong;
+			color: $pr-theme-text;
 			font-size: 22rpx;
 			font-weight: 700;
 			line-height: 1.4;
@@ -702,7 +782,7 @@
 		}
 
 		&-title {
-			color: #2c2c2c;
+			color: $pr-text-main;
 			font-size: 26rpx;
 			line-height: 1.3;
 			margin-bottom: 8rpx;
@@ -716,23 +796,13 @@
 		}
 
 		&-item {
-			color: #a89880;
+			color: $pr-text-muted;
 			font-size: 22rpx;
 			line-height: 1.45;
 		}
 	}
 
 	.footerBar {
-		position: fixed;
-		z-index: 100;
-		left: 0;
-		bottom: 0;
-		width: 100%;
-		padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
-		background: rgba(255, 255, 255, 0.96);
-		border-top: 1rpx solid #efe6d8;
-		box-shadow: 0 -8rpx 28rpx rgba(249, 174, 61, 0.12);
-		box-sizing: border-box;
 		backdrop-filter: blur(8px);
 
 		&-row {
@@ -764,24 +834,15 @@
 
 	.printBtn {
 		flex: 1;
-		margin: 0;
 		height: 88rpx;
 		line-height: 88rpx;
 		padding: 0 24rpx;
 		font-size: 32rpx;
-		font-weight: 700;
-		border-radius: 16rpx;
 		border: none;
-		background: $theme !important;
-		color: #fff !important;
-
-		&[disabled] {
-			opacity: 0.7;
-		}
 	}
 
 	.primary-btn {
-		background: $theme !important;
+		background: $pr-theme !important;
 		color: #fff !important;
 	}
 </style>
