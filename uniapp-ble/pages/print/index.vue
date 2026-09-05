@@ -11,7 +11,11 @@
 		</view>
 
 		<!-- 手机蓝牙模块 -->
-		<PrintItemBox title="手机蓝牙模块" :isShowBottomLine="true">
+		<PrintItemBox
+			title="蓝牙模块"
+			:tag="sharePrinter ? '共用' : ''"
+			:isShowBottomLine="true"
+		>
 			<view slot="right">
 				<view class="btBox" v-if="cusBModuleInstance">
 					<view
@@ -33,19 +37,44 @@
 				<view class="unactiveCss" v-else @click="initBlueTooth">未启动</view>
 			</view>
 
+			<view
+				:class="[
+					'sharePrinterRow',
+					'checkRow',
+					sharePrinter ? 'checkRow--active' : 'checkRow--unactive',
+				]"
+				@click="toggleSharePrinter"
+			>
+				<view
+					:class="[
+						'checkRow-box',
+						sharePrinter ? 'checkRow-box--active' : 'checkRow-box--unactive',
+					]"
+				></view>
+				<text class="sharePrinterRow-text">共用打印机</text>
+				<text class="sharePrinterRow-tip">标签/运单/回单共用一台</text>
+			</view>
+
 			<view class="cPBox">
 				<view
 					class="cPList"
-					v-if="cusBModuleInstance && connectedList.length"
+					v-if="cusBModuleInstance && displayConnectedList.length"
 				>
-					<view
-						class="cPList-item"
-						v-for="(item, index) in connectedList"
-						:key="item.deviceId || index"
-						@click="closeConnect(item)"
+					<BluetoothDeviceItem
+						v-for="(item, index) in displayConnectedList"
+						:key="item.deviceId"
+						:device="item"
+						:index="index"
+						variant="connected"
+						:show-print-type="true"
 					>
-						{{ item.name || item.localName || '已连接设备' }}
-					</view>
+						<template #actions>
+							<view
+								class="cPClose"
+								@click.stop="onConnectedClose(item)"
+							>×</view>
+						</template>
+					</BluetoothDeviceItem>
 				</view>
 				<view class="noMoreBox" v-else @click="jumpOldPage">
 					暂无连接蓝牙打印机
@@ -54,7 +83,23 @@
 		</PrintItemBox>
 
 		<!-- 打印标签 -->
-		<PrintItemBox title="打印标签" :isShowBottomLine="true">
+		<PrintItemBox :isShowBottomLine="true">
+			<view
+				slot="title"
+				:class="[
+					'checkRow',
+					selectedPrintLabel ? 'checkRow--active' : 'checkRow--unactive',
+				]"
+				@click="selectedPrintLabel = !selectedPrintLabel"
+			>
+				<view
+					:class="[
+						'checkRow-box',
+						selectedPrintLabel ? 'checkRow-box--active' : 'checkRow-box--unactive',
+					]"
+				></view>
+				<text class="checkRow-title">打印标签</text>
+			</view>
 			<view slot="right">
 				<SelectPrinter
 					:selectedPrinter="connectedPrinter.labelPrinter"
@@ -100,7 +145,23 @@
 		</PrintItemBox>
 
 		<!-- 打印运单 -->
-		<PrintItemBox title="打印运单" :isShowBottomLine="true">
+		<PrintItemBox :isShowBottomLine="true">
+			<view
+				slot="title"
+				:class="[
+					'checkRow',
+					selectedPrintWaybill ? 'checkRow--active' : 'checkRow--unactive',
+				]"
+				@click="selectedPrintWaybill = !selectedPrintWaybill"
+			>
+				<view
+					:class="[
+						'checkRow-box',
+						selectedPrintWaybill ? 'checkRow-box--active' : 'checkRow-box--unactive',
+					]"
+				></view>
+				<text class="checkRow-title">打印运单</text>
+			</view>
 			<view slot="right">
 				<SelectPrinter
 					:selectedPrinter="connectedPrinter.waybillPrinter"
@@ -126,7 +187,7 @@
 						>
 							<view>
 								<checkbox
-									color="#FF9407"
+									color="#f9ae3d"
 									style="transform: scale(0.7)"
 									:value="item.name"
 									:checked="item.checked"
@@ -148,11 +209,23 @@
 		</PrintItemBox>
 
 		<!-- 打印回单 -->
-		<PrintItemBox
-			title="打印回单"
-			:isShowBottomLine="true"
-			v-if="enablePrintReceipt"
-		>
+		<PrintItemBox :isShowBottomLine="true" v-if="enablePrintReceipt">
+			<view
+				slot="title"
+				:class="[
+					'checkRow',
+					selectedPrintReceipt ? 'checkRow--active' : 'checkRow--unactive',
+				]"
+				@click="selectedPrintReceipt = !selectedPrintReceipt"
+			>
+				<view
+					:class="[
+						'checkRow-box',
+						selectedPrintReceipt ? 'checkRow-box--active' : 'checkRow-box--unactive',
+					]"
+				></view>
+				<text class="checkRow-title">打印回单</text>
+			</view>
 			<view slot="right">
 				<SelectPrinter
 					:selectedPrinter="connectedPrinter.receiptPrinter"
@@ -188,18 +261,27 @@
 			</view>
 		</view>
 
-		<!-- 搜索得到的蓝牙打印机列表 -->
-		<PrintListPop
-			ref="printListPopRef"
-			:openPop="openPrintListPop"
-			:type="selectedPrinterType"
-			:printInstance="cusBModuleInstance"
-			:connectingId="connectingId"
-			@update:openPop="onPopOpenChange"
-			@connect="connectPrinter"
-			@research="onPopResearch"
-			@continue-search="onPopContinueSearch"
-			@stop-search="onPopStopSearch"
+		<!-- 设备信息弹层（蓝牙实例仅在本页持有，组件只收 props / 发事件） -->
+		<DeviceInfoPopup
+			:visible="openPrintListPop"
+			:title="devicePopTitle"
+			:module-state="moduleState"
+			:search-state="searchState"
+			:device-list="deviceList"
+			:searching="searching"
+			:scanning="scanning"
+			:connecting-id="connectingId"
+			@update:visible="onPopOpenChange"
+			@open-search="openBluetoothAndSearch"
+			@research="reSearchNearByBlueTooth"
+			@restart="restartOpenBluetoothAdapter"
+			@scan-join="scanJoinDevice"
+			@device-connect="onDeviceConnect"
+			@device-disconnect="onDeviceDisconnect"
+			@disconnect-all="disconnectAllDevices"
+			@toggle-search="toggleContinuousSearch"
+			@clear-search="clearSearchResults"
+			@brand-bind="onBrandBind"
 		/>
 
 		<view class="footerBtn">
@@ -225,7 +307,8 @@
 	import SelectPrinter from './components/SelectPrinter.vue'
 	import LabelBox from './components/LabelBox.vue'
 	import NumberBox from './components/NumberBox.vue'
-	import PrintListPop from './components/PrintListPop.vue'
+	import DeviceInfoPopup from './components/DeviceInfoPopup.vue'
+	import BluetoothDeviceItem from './components/BluetoothDeviceItem.vue'
 	import { ALERT_TEXT_LIST } from './help/index.js'
 	import { getBluetoothAdapter } from './ble/index.js'
 	import { showMsg, convertNumber, isNotEmptyArr, showModal } from './comm/utils.js'
@@ -249,7 +332,8 @@
 			SelectPrinter,
 			LabelBox,
 			NumberBox,
-			PrintListPop,
+			DeviceInfoPopup,
+			BluetoothDeviceItem,
 		},
 		data() {
 			return {
@@ -268,6 +352,12 @@
 				selectedPrinterType: '',
 				cusBModuleInstance: null,
 				printReceiptChecked: true,
+				/** 共用打印机：标签/运单/回单共用一台，默认勾选 */
+				sharePrinter: true,
+				/** 是否打印该模板：默认不勾选 */
+				selectedPrintLabel: false,
+				selectedPrintWaybill: false,
+				selectedPrintReceipt: false,
 				// O097：0普通运单；1多联；2多联且托运客户联/回单用配军模板
 				parameterO097: '0',
 				parameterO098: '0',
@@ -286,12 +376,50 @@
 				moduleState: 'notStarted',
 				searchState: 'notSearched',
 				searchCount: 0,
-				connectedList: [],
+				deviceList: [],
+				searching: false,
+				scanning: false,
 				connectingId: '',
 				_btStateHandler: null,
 			}
 		},
 		computed: {
+			devicePopTitle() {
+				if (this.sharePrinter || this.selectedPrinterType === 'shared') {
+					return '选择共用打印机'
+				}
+				if (this.selectedPrinterType === 'label') return '选择标签打印机'
+				if (this.selectedPrinterType === 'waybill') return '选择运单打印机'
+				if (this.selectedPrinterType === 'receipt') return '选择回单打印机'
+				return '选择打印机'
+			},
+			connectedList() {
+				return (this.deviceList || []).filter(function (item) {
+					return !!(item && item.isConnect && item.deviceId)
+				})
+			},
+			/** 共用模式下只展示一台已连接打印机 */
+			sharedPrinter() {
+				void this.btVersion
+				const list = this.connectedList || []
+				if (!list.length) return {}
+				const shared = list.find(function (ele) {
+					return ele && ele.printType === 'shared'
+				})
+				return shared || list[0] || {}
+			},
+			displayConnectedList() {
+				if (!this.sharePrinter) {
+					return this.connectedList
+				}
+				const p = this.sharedPrinter
+				if (!p || !p.deviceId) return []
+				return [
+					Object.assign({}, p, {
+						printType: 'shared',
+					}),
+				]
+			},
 			moduleStateText() {
 				if (this.moduleState === 'started') return '已启动'
 				if (this.moduleState === 'starting') return '正在启动...'
@@ -318,6 +446,17 @@
 					labelPrinter: {},
 					waybillPrinter: {},
 					receiptPrinter: {},
+				}
+				if (this.sharePrinter) {
+					const shared = this.sharedPrinter
+					if (shared && shared.deviceId) {
+						obj.labelPrinter = shared
+						obj.waybillPrinter = shared
+						if (this.enablePrintReceipt) {
+							obj.receiptPrinter = shared
+						}
+					}
+					return obj
 				}
 				if (this.cusBModuleInstance) {
 					const cList = this.cusBModuleInstance._connectedDevicesList
@@ -422,8 +561,24 @@
 			bumpBtVersion() {
 				this.btVersion += 1
 				this.syncDeviceViewFromBt()
-				if (this.openPrintListPop && this.$refs.printListPopRef) {
-					this.$refs.printListPopRef.initCInstance(this.cusBModuleInstance)
+				if (this.cusBModuleInstance && this.cusBModuleInstance._continuousDiscovering) {
+					this.searching = true
+				}
+			},
+			mapDeviceForView(item, connectedIds) {
+				if (!item) return null
+				const deviceId = item.deviceId || ''
+				if (!deviceId) return null
+				const isConnect = connectedIds
+					? connectedIds.indexOf(deviceId) !== -1
+					: !!item.isConnect
+				return {
+					deviceId: deviceId,
+					name: item.name || '',
+					localName: item.localName || '',
+					RSSI: item.RSSI,
+					isConnect: isConnect,
+					printType: item.printType || '',
 				}
 			},
 			syncDeviceViewFromBt() {
@@ -432,13 +587,32 @@
 					this.moduleState = 'notStarted'
 					this.searchState = 'notSearched'
 					this.searchCount = 0
-					this.connectedList = []
+					this.deviceList = []
 					return
 				}
 				this.moduleState = bt._bluetoothModuleState || 'notStarted'
 				this.searchState = bt._bluetoothModuleSearchState || 'notSearched'
-				this.searchCount = (bt._searchDevicesResultList || []).length
-				this.connectedList = (bt._connectedDevicesList || []).slice()
+				const sList = bt._searchDevicesResultList || []
+				const cList = bt._connectedDevicesList || []
+				const connectedIds = cList
+					.map(function (ele) {
+						return (ele && ele.deviceId) || ''
+					})
+					.filter(Boolean)
+				const fromSearch = sList
+					.map((item) => this.mapDeviceForView(item, connectedIds))
+					.filter(Boolean)
+				const searchIds = fromSearch.map(function (ele) {
+					return ele.deviceId
+				})
+				const fromConnectedOnly = cList
+					.filter(function (item) {
+						return item && item.deviceId && searchIds.indexOf(item.deviceId) === -1
+					})
+					.map((item) => this.mapDeviceForView(item, connectedIds))
+					.filter(Boolean)
+				this.deviceList = fromSearch.concat(fromConnectedOnly)
+				this.searchCount = this.deviceList.length
 				if (bt.getPlatformDisplayName) {
 					this.platformName = bt.getPlatformDisplayName() || this.platformName
 				}
@@ -546,6 +720,7 @@
 			},
 			async reSearchNearByBlueTooth() {
 				try {
+					this.searching = true
 					const bt = await this.initBlueTooth()
 					if (bt && bt.reSearchNearByBlueTooth) {
 						await bt.reSearchNearByBlueTooth()
@@ -555,6 +730,10 @@
 					this.bumpBtVersion()
 				} catch (err) {
 					showMsg((err && err.message) || '搜索失败')
+				} finally {
+					this.searching = !!(
+						this.cusBModuleInstance && this.cusBModuleInstance._continuousDiscovering
+					)
 				}
 			},
 
@@ -616,32 +795,52 @@
 
 			// ─── 打印机选择 / 连接 ───
 			jumpOldPage() {
-				this.selectedBTPrinter({}, 'label')
+				this.selectedBTPrinter({}, this.sharePrinter ? 'shared' : 'label')
+			},
+			async toggleSharePrinter() {
+				const next = !this.sharePrinter
+				this.sharePrinter = next
+				if (!this.cusBModuleInstance) {
+					this.bumpBtVersion()
+					return
+				}
+				const list = (this.cusBModuleInstance._connectedDevicesList || []).slice()
+				if (next) {
+					// 共用模式：只保留一台，并标记为 shared
+					if (list.length > 1) {
+						const keep = list[0]
+						for (let i = 1; i < list.length; i++) {
+							try {
+								await this.cusBModuleInstance.closeBlueToothPrinter(list[i])
+							} catch (e) {}
+						}
+						if (keep) keep.printType = 'shared'
+					} else if (list.length === 1) {
+						list[0].printType = 'shared'
+					}
+				}
+				this.bumpBtVersion()
+			},
+			resolveConnectType(type) {
+				if (this.sharePrinter) return 'shared'
+				return type || ''
 			},
 			async selectedBTPrinter(item, type) {
-				const instance = await this.initBlueTooth()
-				if (
-					instance._bluetoothModuleState === 'started' &&
-					!(instance._searchDevicesResultList || []).length
-				) {
-					try {
-						await instance.searchNearByBlueTooth('finded')
-					} catch (e) {
-						showMsg((e && e.message) || '搜索失败')
-					}
-					this.bumpBtVersion()
-				}
-				this.openPrintListPopFun(type)
+				await this.initBlueTooth()
+				this.openPrintListPopFun(this.resolveConnectType(type))
+				// 已有搜索结果或已连接设备时不再自动搜索
+				this.$nextTick(() => {
+					const hasSearched = (this.deviceList || []).length > 0
+					const hasConnected = (this.connectedList || []).length > 0
+					if (hasSearched || hasConnected) return
+					this.openBluetoothAndSearch()
+				})
 			},
 			openPrintListPopFun(type) {
 				if (this.cusBModuleInstance) {
 					this.selectedPrinterType = type || ''
 					this.openPrintListPop = true
-					this.$nextTick(() => {
-						if (this.$refs.printListPopRef) {
-							this.$refs.printListPopRef.initCInstance(this.cusBModuleInstance)
-						}
-					})
+					this.bumpBtVersion()
 				} else {
 					showMsg('请先启动蓝牙模块适配器')
 				}
@@ -649,20 +848,195 @@
 			onPopOpenChange(val) {
 				this.openPrintListPop = !!val
 			},
+			resolveDeviceItem(payload) {
+				if (!payload) return null
+				if (payload.deviceId) return payload
+				const detail = payload.detail
+				if (detail && detail.deviceId) return detail
+				if (detail && detail.__args__ && detail.__args__[0]) {
+					return detail.__args__[0]
+				}
+				return null
+			},
+			onDeviceConnect(payload) {
+				const item = this.resolveDeviceItem(payload)
+				this.connectPrinter({
+					item: item,
+					type: this.selectedPrinterType,
+				})
+			},
+			onDeviceDisconnect(payload) {
+				const item = this.resolveDeviceItem(payload)
+				if (item) {
+					this.closeConnect(item)
+				}
+			},
+			onBrandBind() {
+				this.bumpBtVersion()
+			},
+			async openBluetoothAndSearch() {
+				try {
+					this.searching = true
+					const bt = await this.initBlueTooth()
+					if (bt && bt.searchNearByBlueTooth) {
+						await bt.searchNearByBlueTooth('finded', 'refresh')
+					}
+					this.bumpBtVersion()
+				} catch (err) {
+					showMsg((err && err.message) || '搜索蓝牙设备失败')
+				} finally {
+					this.searching = !!(
+						this.cusBModuleInstance && this.cusBModuleInstance._continuousDiscovering
+					)
+				}
+			},
+			async toggleContinuousSearch() {
+				try {
+					const bt = await this.initBlueTooth()
+					if (this.searching || bt._continuousDiscovering) {
+						if (bt.stopContinuousDeviceDiscovery) {
+							await bt.stopContinuousDeviceDiscovery()
+						} else if (bt.stopBluetoothDevicesDiscovery) {
+							await bt.stopBluetoothDevicesDiscovery()
+						}
+						this.searching = false
+						this.bumpBtVersion()
+						return
+					}
+					this.searching = true
+					if (bt.startContinuousDeviceDiscovery) {
+						const ok = await bt.startContinuousDeviceDiscovery('continue')
+						if (!ok) {
+							this.searching = false
+						}
+					} else if (bt.searchNearByBlueTooth) {
+						await bt.searchNearByBlueTooth('finded', 'continue')
+					}
+					this.bumpBtVersion()
+				} catch (err) {
+					this.searching = false
+					showMsg((err && err.message) || '搜索失败')
+				}
+			},
+			async clearSearchResults() {
+				const bt = this.cusBModuleInstance
+				if (!bt) {
+					this.deviceList = []
+					return
+				}
+				if (bt._continuousDiscovering || this.searching) {
+					try {
+						if (bt.stopContinuousDeviceDiscovery) {
+							await bt.stopContinuousDeviceDiscovery()
+						} else if (bt.stopBluetoothDevicesDiscovery) {
+							await bt.stopBluetoothDevicesDiscovery()
+						}
+					} catch (e) {}
+					this.searching = false
+				}
+				if (bt.clearSearchDevicesResultList) {
+					bt.clearSearchDevicesResultList()
+				}
+				this.bumpBtVersion()
+			},
+			async disconnectAllDevices() {
+				try {
+					const bt = await this.initBlueTooth()
+					if (bt && bt.disconnectAllConnectedDevices) {
+						await bt.disconnectAllConnectedDevices()
+					}
+					this.bumpBtVersion()
+				} catch (err) {
+					showMsg((err && err.message) || '全部中断失败')
+				}
+			},
+			async scanJoinDevice() {
+				const that = this
+				this.scanning = true
+				uni.scanCode({
+					onlyFromCamera: false,
+					success: async function (res) {
+						try {
+							const code = String((res && res.result) || '').trim()
+							if (!code) {
+								showMsg('扫码结果为空')
+								return
+							}
+							const bt = await that.initBlueTooth()
+							if (bt && bt.searchNearByBlueTooth) {
+								await bt.searchNearByBlueTooth('finded', 'refresh')
+							}
+							that.bumpBtVersion()
+							const list = (bt && bt._searchDevicesResultList) || []
+							const matched = list.find(function (ele) {
+								const name = (ele && (ele.name || ele.localName)) || ''
+								const deviceId = (ele && ele.deviceId) || ''
+								return (
+									deviceId === code ||
+									name === code ||
+									deviceId.toLowerCase() === code.toLowerCase() ||
+									name.indexOf(code) !== -1 ||
+									deviceId.indexOf(code) !== -1
+								)
+							})
+							if (matched) {
+								await that.connectPrinter({
+									item: matched,
+									type: that.selectedPrinterType,
+								})
+							} else {
+								showMsg('未匹配到设备：' + code)
+							}
+						} catch (err) {
+							showMsg((err && err.message) || '扫码加入设备失败')
+						} finally {
+							that.scanning = false
+						}
+					},
+					fail: function () {
+						that.scanning = false
+						showMsg('扫码取消或失败')
+					},
+				})
+			},
 			async connectPrinter(options) {
-				const { item, type } = options || {}
+				const { item } = options || {}
+				let type = (options && options.type) || ''
 				if (!item || !item.deviceId) {
 					showMsg('设备信息不完整')
 					return
 				}
+				type = this.resolveConnectType(type || this.selectedPrinterType)
 				const bt = await this.initBlueTooth()
-				const newItem = Object.assign({}, item, { printType: type })
 				try {
 					this.connectingId = item.deviceId
+					// 共用模式：连接前断开其它打印机，保证只保留一台
+					if (this.sharePrinter || type === 'shared') {
+						const others = (bt._connectedDevicesList || []).filter(function (ele) {
+							return ele && ele.deviceId && ele.deviceId !== item.deviceId
+						})
+						for (let i = 0; i < others.length; i++) {
+							try {
+								await bt.closeBlueToothPrinter(others[i])
+							} catch (e) {}
+						}
+					}
+					const newItem = Object.assign({}, item, { printType: type })
 					if (newItem.isConnect) {
-						await bt.closeBlueToothPrinter(newItem)
+						const full =
+							(bt._connectedDevicesList || []).find(function (ele) {
+								return ele && ele.deviceId === item.deviceId
+							}) || newItem
+						await bt.closeBlueToothPrinter(full)
 					} else {
 						await bt.connectBlueToothPrinter(newItem)
+						// 确保已连接列表上的 printType 已更新为当前绑定类型
+						const connected = (bt._connectedDevicesList || []).find(function (ele) {
+							return ele && ele.deviceId === item.deviceId
+						})
+						if (connected) {
+							connected.printType = type
+						}
 					}
 					this.openPrintListPop = false
 					this.bumpBtVersion()
@@ -673,51 +1047,75 @@
 					this.bumpBtVersion()
 				}
 			},
+			onConnectedClose(payload) {
+				const item = this.resolveDeviceItem(payload)
+				if (item) {
+					this.closeConnect(item)
+				}
+			},
 			async closeConnect(item) {
+				const deviceId = item && item.deviceId
+				if (!deviceId) {
+					showMsg('设备信息不完整')
+					return
+				}
 				const res = await showModal({
 					title: '温馨提示',
 					content: '您确定断开该打印机连接？',
 				})
-				if (res && res.confirm && this.cusBModuleInstance && item) {
-					await this.cusBModuleInstance.closeBlueToothPrinter(item)
+				if (res && res.confirm && this.cusBModuleInstance) {
+					const full =
+						(this.cusBModuleInstance._connectedDevicesList || []).find(
+							function (ele) {
+								return ele && ele.deviceId === deviceId
+							}
+						) || item
+					await this.cusBModuleInstance.closeBlueToothPrinter(full)
 					this.bumpBtVersion()
 				}
-			},
-			async onPopResearch() {
-				await this.reSearchNearByBlueTooth()
-			},
-			async onPopContinueSearch() {
-				this.bumpBtVersion()
-			},
-			async onPopStopSearch() {
-				this.bumpBtVersion()
 			},
 
 			// ─── 打印前校验（对齐 newPrint.validateForm） ───
 			validateForm() {
 				const that = this
 				const errLog = []
+				const needLabel = that.selectedPrintLabel
+				const needWaybill = that.selectedPrintWaybill
+				const needReceipt =
+					that.enablePrintReceipt && that.selectedPrintReceipt
+				if (!needLabel && !needWaybill && !needReceipt) {
+					errLog.push('请至少勾选一项要打印的模板')
+					return errLog
+				}
 				const { labelPrinter, waybillPrinter, receiptPrinter } =
 					that.connectedPrinter
-				if (
-					labelPrinter.deviceId ||
-					waybillPrinter.deviceId ||
-					receiptPrinter.deviceId
-				) {
-					if (labelPrinter.deviceId) {
-						if (that.labelPrintChecked) {
-							if (convertNumber(that.bqValue) < 1) {
-								errLog.push('打印标签打印份数至少为1张')
-							}
-						} else {
-							const start = convertNumber(that.assignBqValueStart)
-							const end = convertNumber(that.assignBqValueEnd)
-							if (end < start) {
-								errLog.push('打印标签结束份数不能小于开始份数')
-							}
+				if (needLabel) {
+					if (!labelPrinter.deviceId) {
+						errLog.push(
+							that.sharePrinter
+								? '请先连接共用打印机'
+								: '请先给打印标签绑定打印机'
+						)
+					} else if (that.labelPrintChecked) {
+						if (convertNumber(that.bqValue) < 1) {
+							errLog.push('打印标签打印份数至少为1张')
+						}
+					} else {
+						const start = convertNumber(that.assignBqValueStart)
+						const end = convertNumber(that.assignBqValueEnd)
+						if (end < start) {
+							errLog.push('打印标签结束份数不能小于开始份数')
 						}
 					}
-					if (waybillPrinter.deviceId) {
+				}
+				if (needWaybill) {
+					if (!waybillPrinter.deviceId) {
+						errLog.push(
+							that.sharePrinter
+								? '请先连接共用打印机'
+								: '请先给打印运单绑定打印机'
+						)
+					} else {
 						if (convertNumber(that.ydValue) < 1) {
 							errLog.push('打印运单打印份数至少为1张')
 						}
@@ -730,17 +1128,21 @@
 							}
 						}
 					}
-					if (receiptPrinter.deviceId) {
-						if (that.printReceiptChecked) {
-							if (convertNumber(that.printReceiptNum) < 1) {
-								errLog.push('打印回单打印份数至少为1张')
-							}
-						} else if (convertNumber(that.printReceiptNum) > 0) {
-							errLog.push('请勾选打印回单份数')
+				}
+				if (needReceipt) {
+					if (!receiptPrinter.deviceId) {
+						errLog.push(
+							that.sharePrinter
+								? '请先连接共用打印机'
+								: '请先给打印回单绑定打印机'
+						)
+					} else if (that.printReceiptChecked) {
+						if (convertNumber(that.printReceiptNum) < 1) {
+							errLog.push('打印回单打印份数至少为1张')
 						}
+					} else if (convertNumber(that.printReceiptNum) > 0) {
+						errLog.push('请勾选打印回单份数')
 					}
-				} else {
-					errLog.push('请先给打印标签或打印运单绑定打印机')
 				}
 				return errLog
 			},
@@ -776,7 +1178,7 @@
 					mask: true,
 				})
 
-				if (waybillPrinter.deviceId) {
+				if (that.selectedPrintWaybill && waybillPrinter.deviceId) {
 					const printData = {
 						waybillCopies: that.ydValue,
 						waybillInfo: that.waybillInfo,
@@ -787,7 +1189,7 @@
 					await that.doPrintTask(waybillPrinter, printData, osName)
 				}
 
-				if (labelPrinter.deviceId) {
+				if (that.selectedPrintLabel && labelPrinter.deviceId) {
 					const printData = {
 						copiesState: that.labelPrintChecked,
 						assignState: !that.labelPrintChecked,
@@ -801,7 +1203,12 @@
 					await that.doPrintTask(labelPrinter, printData, osName)
 				}
 
-				if (receiptPrinter.deviceId && that.printReceiptChecked) {
+				if (
+					that.enablePrintReceipt &&
+					that.selectedPrintReceipt &&
+					receiptPrinter.deviceId &&
+					that.printReceiptChecked
+				) {
 					await that.printReceiptTask(receiptPrinter)
 				}
 
@@ -983,13 +1390,12 @@
 </script>
 
 <style lang="scss" scoped>
-	$dk-color: #ff9407;
-	$text-danger: #dd524d;
-	$text-success: #4cd964;
+	$theme: #f9ae3d;
+	$page-bg: #faf6f0;
 
 	.print {
 		padding-bottom: 150rpx;
-		background: #f5f5f5;
+		background: $page-bg;
 		min-height: 100vh;
 	}
 
@@ -1000,9 +1406,11 @@
 		gap: 16rpx;
 		padding: 16rpx 24rpx;
 		background: #fff;
-		border-bottom: 1rpx solid #eee;
+		border-bottom: 1rpx solid #efe6d8;
 		font-size: 26rpx;
-		color: $dk-color;
+		color: $theme;
+		box-sizing: border-box;
+		width: 100%;
 
 		&-left {
 			display: flex;
@@ -1014,30 +1422,93 @@
 		}
 
 		&-split {
-			color: #ccc;
+			color: rgba(196, 132, 26, 0.45);
 		}
 
 		&-item {
-			color: #333;
+			color: #c4841a;
 		}
 
 		&-link {
 			flex-shrink: 0;
-			color: $dk-color;
+			color: #c4841a;
 			font-size: 26rpx;
+			font-weight: 600;
 			padding: 4rpx 0;
 		}
 	}
 
 	.alertBox {
-		color: #999;
-		font-size: 24rpx;
-		line-height: 32rpx;
+		color: #a89880;
+		font-size: 22rpx;
+		line-height: 1.45;
 		position: relative;
-		padding: 20rpx;
+		padding: 20rpx 24rpx;
 
 		&_item {
 			margin-bottom: 4rpx;
+		}
+	}
+
+	.checkRow {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		font-size: 28rpx;
+		color: #333;
+
+		&-box {
+			width: 32rpx;
+			height: 32rpx;
+			border-radius: 6rpx;
+			box-sizing: border-box;
+			flex-shrink: 0;
+			position: relative;
+
+			&--unactive {
+				border: 2rpx solid #cbbfae;
+				background: #fff;
+			}
+
+			&--active {
+				border: 2rpx solid $theme;
+				background: $theme;
+
+				&::after {
+					content: '';
+					position: absolute;
+					left: 10rpx;
+					top: 4rpx;
+					width: 8rpx;
+					height: 16rpx;
+					border: solid #fff;
+					border-width: 0 3rpx 3rpx 0;
+					transform: rotate(45deg);
+					box-sizing: border-box;
+				}
+			}
+		}
+
+		&-title {
+			font-size: 32rpx;
+			font-weight: 700;
+			line-height: 1.3;
+		}
+
+		&--unactive &-title {
+			color: #2c2c2c;
+		}
+
+		&--active &-title {
+			color: #c4841a;
+		}
+
+		&--unactive .sharePrinterRow-text {
+			color: #333;
+		}
+
+		&--active .sharePrinterRow-text {
+			color: #c4841a;
 		}
 	}
 
@@ -1056,7 +1527,8 @@
 			justify-content: flex-start;
 
 			&__active {
-				color: $dk-color;
+				color: #c4841a;
+				font-weight: 600;
 			}
 
 			&__unactive {
@@ -1081,42 +1553,77 @@
 		gap: 12rpx;
 		flex-wrap: wrap;
 		justify-content: flex-end;
-		font-size: 26rpx;
+		font-size: 24rpx;
+	}
+
+	.sharePrinterRow {
+		display: flex;
+		align-items: center;
+		gap: 8rpx;
+		padding: 8rpx 0 12rpx;
+		flex-wrap: wrap;
+
+		&-text {
+			font-size: 28rpx;
+			color: #333;
+			font-weight: 600;
+		}
+
+		&-tip {
+			font-size: 22rpx;
+			color: #a89880;
+			margin-left: 4rpx;
+		}
 	}
 
 	.unactiveCss {
-		color: $text-danger;
+		color: #dd524d;
+		font-weight: 600;
 	}
 
 	.activeingCss {
-		color: $dk-color;
+		color: #c4841a;
+		font-weight: 600;
 	}
 
 	.activeCss {
-		color: $text-success;
+		color: #3bb54a;
+		font-weight: 600;
+	}
+
+	.cPBox {
+		padding-top: 4rpx;
 	}
 
 	.cPList {
 		display: flex;
-		gap: 20rpx;
-		justify-content: flex-start;
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: 12rpx;
+	}
 
-		&-item {
-			padding: 10rpx 20rpx;
-			border: solid 1px $dk-color;
-			border-radius: 6rpx;
-			color: #333;
-			font-size: 28rpx;
-		}
+	.cPClose {
+		width: 52rpx;
+		height: 52rpx;
+		line-height: 48rpx;
+		text-align: center;
+		font-size: 36rpx;
+		color: #a89880;
+		border-radius: 50%;
+		background: #fff;
+		border: 1rpx solid #efe6d8;
+		box-sizing: border-box;
 	}
 
 	.noMoreBox {
 		display: flex;
 		align-items: center;
-		color: #999;
 		justify-content: center;
-		height: 100rpx;
+		min-height: 100rpx;
+		color: #a89880;
+		font-size: 26rpx;
+		background: #fffaf3;
+		border-radius: 12rpx;
+		border: 1rpx dashed #eadfce;
 	}
 
 	.footerBtn {
@@ -1126,18 +1633,21 @@
 		bottom: 0;
 		width: 100vw;
 		padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom));
-		background-color: #fff;
-		box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.08);
+		background: rgba(255, 255, 255, 0.96);
+		border-top: 1rpx solid #efe6d8;
+		box-shadow: 0 -8rpx 28rpx rgba(249, 174, 61, 0.12);
 		box-sizing: border-box;
 	}
 
 	.printBtn {
 		margin: 0;
-		background: $dk-color;
-		color: #fff;
+		background: $theme !important;
+		color: #fff !important;
+		border-radius: 16rpx;
+		font-weight: 700;
 
 		&[disabled] {
-			opacity: 0.6;
+			opacity: 0.7;
 		}
 	}
 </style>

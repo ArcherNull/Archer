@@ -14,7 +14,7 @@
 					<view
 						:class="['pItem', index !== printerList.length - 1 ? 'borderBtm' : '']"
 						v-for="(item, index) in printerList"
-						:key="item.deviceId || index"
+						:key="item.deviceId"
 					>
 						<view class="pItem-left">
 							<view class="pItem-left__name">
@@ -121,6 +121,7 @@
 		},
 		methods: {
 			printTypeText(type) {
+				if (type === 'shared') return '共用打印机'
 				if (type === 'label') return '打印标签'
 				if (type === 'waybill') return '打印运单'
 				if (type === 'receipt') return '打印回单'

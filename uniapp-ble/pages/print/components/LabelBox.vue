@@ -49,6 +49,8 @@
 </script>
 
 <style lang="scss" scoped>
+	$theme: #f9ae3d;
+
 	.LabelBox {
 		display: flex;
 		align-items: center;
@@ -70,14 +72,14 @@
 				box-sizing: border-box;
 
 				&-active {
-					border: solid 2rpx #ff9407;
+					border: solid 2rpx $theme;
 					display: flex;
 					align-items: center;
 					justify-content: center;
 
 					&::after {
 						content: '';
-						background-color: #ff9407;
+						background-color: $theme;
 						width: 16rpx;
 						height: 16rpx;
 						border-radius: 8rpx;
@@ -85,13 +87,13 @@
 				}
 
 				&-unactive {
-					border: solid 2rpx #999;
+					border: solid 2rpx #cbbfae;
 				}
 			}
 
 			&__text {
 				font-size: 28rpx;
-				color: #333;
+				color: #2c2c2c;
 			}
 		}
 

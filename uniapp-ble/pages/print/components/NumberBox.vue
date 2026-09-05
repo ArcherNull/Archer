@@ -85,14 +85,17 @@
 </script>
 
 <style lang="scss" scoped>
+	$theme: #f9ae3d;
+	$theme-soft: rgba(249, 174, 61, 0.12);
+
 	.numBox {
 		display: inline-flex;
 		align-items: center;
 		height: 56rpx;
-		border: 1rpx solid #e3e3e3;
-		border-radius: 8rpx;
+		border: 1rpx solid #efe6d8;
+		border-radius: 12rpx;
 		overflow: hidden;
-		background: #fafafa;
+		background: #fffaf3;
 
 		&-btn {
 			width: 56rpx;
@@ -100,11 +103,13 @@
 			line-height: 56rpx;
 			text-align: center;
 			font-size: 32rpx;
-			color: #333;
-			background: #f0f0f0;
+			color: #c4841a;
+			background: $theme-soft;
+			font-weight: 600;
 
 			&--disabled {
-				color: #ccc;
+				color: #cbbfae;
+				background: #f3eee6;
 			}
 		}
 
@@ -114,6 +119,7 @@
 			line-height: 56rpx;
 			text-align: center;
 			font-size: 28rpx;
+			color: #2c2c2c;
 			background: #fff;
 		}
 	}

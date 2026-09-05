@@ -1,10 +1,13 @@
 <template>
 	<view :class="['box', isShowBottomLine ? 'borderBtm' : '']">
-		<view class="box-header" v-if="title">
+		<view class="box-header" v-if="showHeader">
 			<view class="box-header-left">
-				<view class="box-header-left__text">
-					{{ title }}
-				</view>
+				<slot name="title">
+					<view class="box-header-left__text" v-if="title">
+						{{ title }}
+					</view>
+				</slot>
+				<view class="box-header-left__tag" v-if="tag">{{ tag }}</view>
 				<slot name="subTitle">
 					<view class="box-header-left__subTitle" v-if="subTitle">
 						{{ subTitle }}
@@ -33,9 +36,23 @@
 				type: String,
 				default: '',
 			},
+			/** 标题旁标签文案，如「共用」 */
+			tag: {
+				type: String,
+				default: '',
+			},
 			isShowBottomLine: {
 				type: Boolean,
 				default: false,
+			},
+		},
+		computed: {
+			showHeader() {
+				const hasTitleSlot = !!(
+					(this.$slots && this.$slots.title) ||
+					(this.$scopedSlots && this.$scopedSlots.title)
+				)
+				return !!(this.title || this.tag || this.subTitle || hasTitleSlot)
 			},
 		},
 	}
@@ -63,7 +80,7 @@
 				display: flex;
 				align-items: center;
 				justify-content: flex-start;
-				gap: 16rpx;
+				gap: 12rpx;
 				flex-wrap: wrap;
 				min-width: 0;
 				flex: 1;
@@ -89,8 +106,19 @@
 					}
 				}
 
+				&__tag {
+					flex-shrink: 0;
+					padding: 2rpx 12rpx;
+					font-size: 20rpx;
+					line-height: 1.4;
+					font-weight: 600;
+					color: #c4841a;
+					background: rgba(249, 174, 61, 0.18);
+					border-radius: 8rpx;
+				}
+
 				&__subTitle {
-					color: #999;
+					color: #a89880;
 					font-size: 26rpx;
 				}
 			}

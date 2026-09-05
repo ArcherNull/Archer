@@ -5,7 +5,6 @@
 				:module-state="moduleState"
 				:search-state="searchState"
 				:device-list="deviceList"
-				:connected-list="connectedList"
 				:searching="searching"
 				:scanning="scanning"
 				:connecting-id="connectingId"
@@ -127,7 +126,6 @@
 				moduleState: 'notStarted',
 				searchState: 'notSearched',
 				deviceList: [],
-				connectedList: [],
 				printConfig: {},
 				platformDefaultConfig: {},
 				platformName: '其它',
@@ -292,14 +290,20 @@
 			onBrandBind() {
 				this.bumpBtVersion()
 			},
-			mapDeviceForView(item) {
+			mapDeviceForView(item, connectedIds) {
 				if (!item) return null
+				const deviceId = item.deviceId || ''
+				if (!deviceId) return null
+				const isConnect = connectedIds
+					? connectedIds.indexOf(deviceId) !== -1
+					: !!item.isConnect
 				return {
-					deviceId: item.deviceId || '',
+					deviceId: deviceId,
 					name: item.name || '',
 					localName: item.localName || '',
 					RSSI: item.RSSI,
-					isConnect: !!item.isConnect,
+					isConnect: isConnect,
+					printType: item.printType || '',
 				}
 			},
 			syncDeviceViewFromBt() {
@@ -308,13 +312,30 @@
 					this.moduleState = 'notStarted'
 					this.searchState = 'notSearched'
 					this.deviceList = []
-					this.connectedList = []
 					return
 				}
 				this.moduleState = bt._bluetoothModuleState || 'notStarted'
 				this.searchState = bt._bluetoothModuleSearchState || 'notSearched'
-				this.deviceList = (bt._searchDevicesResultList || []).map(this.mapDeviceForView).filter(Boolean)
-				this.connectedList = (bt._connectedDevicesList || []).map(this.mapDeviceForView).filter(Boolean)
+				const sList = bt._searchDevicesResultList || []
+				const cList = bt._connectedDevicesList || []
+				const connectedIds = cList
+					.map(function (ele) {
+						return (ele && ele.deviceId) || ''
+					})
+					.filter(Boolean)
+				const fromSearch = sList
+					.map((item) => this.mapDeviceForView(item, connectedIds))
+					.filter(Boolean)
+				const searchIds = fromSearch.map(function (ele) {
+					return ele.deviceId
+				})
+				const fromConnectedOnly = cList
+					.filter(function (item) {
+						return item && item.deviceId && searchIds.indexOf(item.deviceId) === -1
+					})
+					.map((item) => this.mapDeviceForView(item, connectedIds))
+					.filter(Boolean)
+				this.deviceList = fromSearch.concat(fromConnectedOnly)
 			},
 			syncConfigFromBt() {
 				const bt = this.cusBModuleInstance
@@ -501,10 +522,18 @@
 			},
 			async disconnectDevice(deviceId) {
 				const bt = this.cusBModuleInstance
-				if (!bt || !deviceId) return
+				if (!bt || !deviceId) {
+					showMsg('设备信息不完整')
+					return
+				}
 				const item = (bt._connectedDevicesList || []).find(function (ele) {
 					return ele && ele.deviceId === deviceId
-				}) || { deviceId: deviceId }
+				})
+				if (!item) {
+					showMsg('设备未连接或不存在')
+					this.bumpBtVersion()
+					return
+				}
 				await bt.closeBlueToothPrinter(item)
 				this.bumpBtVersion()
 			},
@@ -516,12 +545,17 @@
 				const bt = await this.initBlueTooth()
 				const item = (bt._searchDevicesResultList || []).find(function (ele) {
 					return ele && ele.deviceId === deviceId
+				}) || (bt._connectedDevicesList || []).find(function (ele) {
+					return ele && ele.deviceId === deviceId
 				})
 				if (!item || !item.deviceId) {
 					showMsg('设备信息不完整')
 					return
 				}
-				if (item.isConnect) {
+				const alreadyConnected = (bt._connectedDevicesList || []).some(function (ele) {
+					return ele && ele.deviceId === deviceId
+				})
+				if (alreadyConnected) {
 					await this.disconnectDevice(item.deviceId)
 					return
 				}
@@ -540,6 +574,7 @@
 					showMsg((err && err.message) || '连接失败')
 				} finally {
 					this.connectingId = ''
+					this.bumpBtVersion()
 				}
 			},
 			getSelectedTemplateStr() {

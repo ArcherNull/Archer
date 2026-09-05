@@ -53,13 +53,14 @@
 			justify-content: flex-end;
 			gap: 6rpx;
 			font-size: 28rpx;
+			font-weight: 600;
 
 			&__active {
-				color: #333;
+				color: #c4841a;
 			}
 
 			&__unactive {
-				color: #999;
+				color: #a89880;
 			}
 		}
 

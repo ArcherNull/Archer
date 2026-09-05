@@ -1604,17 +1604,24 @@ export class BleBlueTooth {
         this.log('新增连接的设备', item)
         if (item?.serviceId && item?.characteristicId) {
             const findInd = this._searchDevicesResultList.findIndex(ele => ele.deviceId === item.deviceId)
-            if (findInd !== -1) {
-                this._searchDevicesResultList.splice(findInd, 1, item)
-                const hasInd = this._connectedDevicesList.findIndex(ele => ele.deviceId === item.deviceId)
-                // 如果在已连接列表里存在，则添加
-                if (hasInd === -1) {
-                    this._connectedDevicesList.push(item)
+            const hasInd = this._connectedDevicesList.findIndex(ele => ele.deviceId === item.deviceId)
+            // 不在已连接列表：加入；已在列表：断开移除
+            if (hasInd === -1) {
+                item.isConnect = true
+                item.connectState = 'connected'
+                if (findInd !== -1) {
+                    this._searchDevicesResultList.splice(findInd, 1, item)
                 } else {
-                    this._connectedDevicesList.splice(hasInd, 1)
+                    this._searchDevicesResultList.push(item)
                 }
+                this._connectedDevicesList.push(item)
             } else {
-                showMsg('未在搜索结果列表中找到该设备信息')
+                item.isConnect = false
+                item.connectState = 'notConnected'
+                if (findInd !== -1) {
+                    this._searchDevicesResultList.splice(findInd, 1, item)
+                }
+                this._connectedDevicesList.splice(hasInd, 1)
             }
         } else {
             showMsg('服务ID或特征ID缺失，请重新连接蓝牙打印机')
