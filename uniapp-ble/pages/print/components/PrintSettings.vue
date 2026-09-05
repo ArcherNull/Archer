@@ -160,7 +160,7 @@
 			</view>
 			<view class="form-tip">范围 0–6</view>
 
-			<view class="form-actions">
+			<view class="form-actions" v-if="!hideActions">
 				<button
 					size="mini"
 					class="action-btn action-btn--ghost"
@@ -206,6 +206,11 @@
 				default: function () {
 					return {}
 				},
+			},
+			/** 嵌入弹窗时隐藏底部按钮，由弹窗 footer 调用 resetPlatformDefault / applyConfig */
+			hideActions: {
+				type: Boolean,
+				default: false,
 			},
 		},
 		data() {

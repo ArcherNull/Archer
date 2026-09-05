@@ -18,7 +18,7 @@ export const listParamValueMock = [
 		companyId: null,
 		parameterDescribe: null,
 		parameterType: 'O097',
-		parameterValue: '2',
+		parameterValue: '1',
 		webId: '5706',
 		tradeOrganizationId: null,
 	},

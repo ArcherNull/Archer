@@ -17,24 +17,20 @@
 			:isShowBottomLine="true"
 		>
 			<view slot="right">
-				<view class="btBox" v-if="cusBModuleInstance">
+				<view class="btBox">
+					<template v-if="moduleState === 'started'">
+						<view class="btBox-link" @click.stop="openHistoryPopup = true">连接历史</view>
+						<view class="btBox-link" @click.stop="openSettingsPopup = true">传输设置</view>
+					</template>
 					<view
+						v-if="cusBModuleInstance"
 						@click="restartOpenBluetoothAdapter"
 						:class="['btBox-start', moduleStateClass]"
 					>
 						{{ moduleStateText }}
 					</view>
-					<view
-						@click="reSearchNearByBlueTooth"
-						:class="['btBox-search', searchStateClass]"
-					>
-						{{ searchStateText }}
-					</view>
-					<view v-if="moduleState === 'started'">
-						已搜索{{ searchCount }}设备
-					</view>
+					<view class="unactiveCss" v-else @click="initBlueTooth">未启动</view>
 				</view>
-				<view class="unactiveCss" v-else @click="initBlueTooth">未启动</view>
 			</view>
 
 			<view
@@ -284,6 +280,25 @@
 			@brand-bind="onBrandBind"
 		/>
 
+		<ConnectHistoryPopup
+			:visible="openHistoryPopup"
+			:connecting-id="connectingId"
+			@update:visible="openHistoryPopup = $event"
+			@device-connect="onHistoryConnect"
+			@clear="onHistoryClear"
+		/>
+
+		<PrintSettingsPopup
+			:visible="openSettingsPopup"
+			:platform-name="platformName"
+			:device-name="deviceName"
+			:config="printConfig"
+			:platform-default-config="platformDefaultConfig"
+			@update:visible="openSettingsPopup = $event"
+			@update:config="onConfigUpdate"
+			@apply="applyPrintConfig"
+		/>
+
 		<view class="footerBtn">
 			<button
 				type="primary"
@@ -309,14 +324,17 @@
 	import NumberBox from './components/NumberBox.vue'
 	import DeviceInfoPopup from './components/DeviceInfoPopup.vue'
 	import BluetoothDeviceItem from './components/BluetoothDeviceItem.vue'
+	import ConnectHistoryPopup from './components/ConnectHistoryPopup.vue'
+	import PrintSettingsPopup from './components/PrintSettingsPopup.vue'
 	import { ALERT_TEXT_LIST } from './help/index.js'
 	import { getBluetoothAdapter } from './ble/index.js'
+	import { STORAGE_KEY, resolvePrinterBrandInfo } from './ble/config.js'
 	import { showMsg, convertNumber, isNotEmptyArr, showModal } from './comm/utils.js'
 	import {
 		resolveLabelTemplate,
 		resolveWaybillTemplate,
 		resolveReceiptTemplate,
-	} from './template/CC3/index.js'
+	} from './template/index.js'
 	import {
 		getListParamValue,
 		queryTrackByWayBillCode,
@@ -334,11 +352,15 @@
 			NumberBox,
 			DeviceInfoPopup,
 			BluetoothDeviceItem,
+			ConnectHistoryPopup,
+			PrintSettingsPopup,
 		},
 		data() {
 			return {
 				platformName: '其它',
 				deviceName: '未知设备',
+				printConfig: {},
+				platformDefaultConfig: {},
 				userInfo: {},
 				zoneId: 0,
 				labelPrintChecked: true,
@@ -348,6 +370,8 @@
 				ydValue: 1,
 				printReceiptNum: 1,
 				openPrintListPop: false,
+				openHistoryPopup: false,
+				openSettingsPopup: false,
 				printLoading: false,
 				selectedPrinterType: '',
 				cusBModuleInstance: null,
@@ -447,8 +471,20 @@
 					waybillPrinter: {},
 					receiptPrinter: {},
 				}
+				// 必须从 _connectedDevicesList 取完整设备（含 serviceId / characteristicId），
+				// 不可用 mapDeviceForView 后的展示对象，否则打印任务会缺写入特征值而空转
+				const cList =
+					(this.cusBModuleInstance &&
+						this.cusBModuleInstance._connectedDevicesList) ||
+					[]
+				if (!isNotEmptyArr(cList)) {
+					return obj
+				}
 				if (this.sharePrinter) {
-					const shared = this.sharedPrinter
+					const shared =
+						cList.find(function (ele) {
+							return ele && ele.printType === 'shared'
+						}) || cList[0]
 					if (shared && shared.deviceId) {
 						obj.labelPrinter = shared
 						obj.waybillPrinter = shared
@@ -458,21 +494,16 @@
 					}
 					return obj
 				}
-				if (this.cusBModuleInstance) {
-					const cList = this.cusBModuleInstance._connectedDevicesList
-					if (isNotEmptyArr(cList)) {
-						cList.forEach((ele) => {
-							const printType = ele.printType
-							if (printType === 'label') {
-								obj.labelPrinter = ele
-							} else if (printType === 'waybill') {
-								obj.waybillPrinter = ele
-							} else if (printType === 'receipt' && this.enablePrintReceipt) {
-								obj.receiptPrinter = ele
-							}
-						})
+				cList.forEach((ele) => {
+					const printType = ele.printType
+					if (printType === 'label') {
+						obj.labelPrinter = ele
+					} else if (printType === 'waybill') {
+						obj.waybillPrinter = ele
+					} else if (printType === 'receipt' && this.enablePrintReceipt) {
+						obj.receiptPrinter = ele
 					}
-				}
+				})
 				return obj
 			},
 		},
@@ -561,9 +592,69 @@
 			bumpBtVersion() {
 				this.btVersion += 1
 				this.syncDeviceViewFromBt()
+				this.syncConfigFromBt()
 				if (this.cusBModuleInstance && this.cusBModuleInstance._continuousDiscovering) {
 					this.searching = true
 				}
+			},
+			syncConfigFromBt() {
+				const bt = this.cusBModuleInstance
+				if (!bt) return
+				if (bt.getPlatformDisplayName) {
+					this.platformName = bt.getPlatformDisplayName() || this.platformName
+				}
+				if (bt.getDeviceDisplayName) {
+					this.deviceName = bt.getDeviceDisplayName() || this.deviceName
+				}
+				if (bt.getPlatformDefaultConfig) {
+					this.platformDefaultConfig = bt.getPlatformDefaultConfig() || {}
+				}
+				if (bt.getPrintConfig) {
+					this.printConfig = bt.getPrintConfig() || {}
+				}
+			},
+			onConfigUpdate(cfg) {
+				this.printConfig = Object.assign({}, cfg)
+			},
+			applyPrintConfig(cfg) {
+				const bt = this.cusBModuleInstance
+				if (!bt) {
+					showMsg('请先启动蓝牙模块')
+					return
+				}
+				bt.updatePrintConfig(cfg)
+				this.syncConfigFromBt()
+			},
+			async onHistoryConnect(payload) {
+				const item = this.resolveDeviceItem(payload)
+				if (!item || !item.deviceId) {
+					showMsg('设备信息不完整')
+					return
+				}
+				const bt = await this.initBlueTooth()
+				const existsInSearch = (bt._searchDevicesResultList || []).some(function (ele) {
+					return ele && ele.deviceId === item.deviceId
+				})
+				if (!existsInSearch) {
+					bt._searchDevicesResultList.push(Object.assign({}, item, {
+						isConnect: false,
+						connectState: 'notConnected',
+					}))
+				}
+				await this.connectPrinter({
+					item: item,
+					type: this.sharePrinter ? 'shared' : (this.selectedPrinterType || 'shared'),
+				})
+			},
+			onHistoryClear() {
+				const bt = this.cusBModuleInstance
+				if (bt) {
+					bt._historyPrintDeviceList = []
+				}
+				try {
+					uni.setStorageSync(STORAGE_KEY, '')
+				} catch (e) {}
+				showMsg('已清空连接历史', 'success')
 			},
 			mapDeviceForView(item, connectedIds) {
 				if (!item) return null
@@ -1039,6 +1130,7 @@
 						}
 					}
 					this.openPrintListPop = false
+					this.openHistoryPopup = false
 					this.bumpBtVersion()
 				} catch (err) {
 					showMsg((err && err.message) || '连接失败')
@@ -1157,11 +1249,12 @@
 				try {
 					that.printLoading = true
 					await that.buildPrintQueue()
+				} catch (err) {
+					uni.hideLoading()
+					showMsg((err && err.message) || '打印失败')
+				} finally {
 					that.printLoading = false
 					uni.hideLoading()
-				} catch (err) {
-					showMsg((err && err.message) || '打印失败')
-					that.printLoading = false
 				}
 			},
 
@@ -1225,26 +1318,71 @@
 				await this.doPrintTaskItem(device, options, osName)
 			},
 
+			/** 从已连接列表补齐 BLE 写入字段，避免共用模式等场景丢 serviceId */
+			resolvePrintDevice(device) {
+				const bt = this.cusBModuleInstance
+				const cList = (bt && bt._connectedDevicesList) || []
+				const deviceId = device && device.deviceId
+				if (!deviceId) return device || {}
+				const full = cList.find(function (ele) {
+					return ele && ele.deviceId === deviceId
+				})
+				if (!full) return device
+				return Object.assign({}, device, {
+					serviceId: device.serviceId || full.serviceId,
+					characteristicId: device.characteristicId || full.characteristicId,
+					writeType: device.writeType || full.writeType || '',
+					name: device.name || full.name || '',
+					localName: device.localName || full.localName || '',
+				})
+			},
+
 			createPrintTask(device, printDataStr) {
+				const d = this.resolvePrintDevice(device)
 				return {
-					deviceId: device.deviceId,
-					serviceId: device.serviceId,
-					characteristicId: device.characteristicId,
-					name: device.name || device.localName || '',
-					localName: device.localName || '',
-					writeType: device.writeType || '',
+					deviceId: d.deviceId,
+					serviceId: d.serviceId,
+					characteristicId: d.characteristicId,
+					name: d.name || d.localName || '',
+					localName: d.localName || '',
+					writeType: d.writeType || '',
 					printDataStr: printDataStr,
 				}
 			},
 
 			async printCpclList(device, pList) {
 				if (!isNotEmptyArr(pList)) {
-					showMsg('未获取到打印数据')
-					return false
+					throw new Error('未获取到打印数据')
 				}
 				const bt = this.cusBModuleInstance
-				const printTaskList = pList.map((str) => this.createPrintTask(device, str))
-				return bt.print(printTaskList)
+				if (!bt) {
+					throw new Error('请先启动蓝牙模块')
+				}
+				const printDevice = this.resolvePrintDevice(device)
+				if (!printDevice.serviceId || !printDevice.characteristicId) {
+					throw new Error('打印机未就绪，请重新连接后再打印')
+				}
+				const printTaskList = pList.map((str) =>
+					this.createPrintTask(printDevice, str)
+				)
+				const ok = await bt.print(printTaskList)
+				if (!ok) {
+					throw new Error('打印失败')
+				}
+				return true
+			},
+
+			/** 按已连接打印机解析模板品牌（CC3 / HM） */
+			resolvePrintTemplateCtx(device, baseCtx) {
+				const d = this.resolvePrintDevice(device) || {}
+				const deviceName = d.name || d.localName || ''
+				const deviceId = d.deviceId || ''
+				const brandInfo = resolvePrinterBrandInfo(deviceName, deviceId)
+				return Object.assign({}, baseCtx || {}, {
+					brand: (brandInfo && brandInfo.brand) || '',
+					deviceName: deviceName,
+					deviceId: deviceId,
+				})
 			},
 
 			// 对齐 newPrint.doPrintTaskItem：按 options 组装标签/运单 CPCL 列表
@@ -1278,11 +1416,11 @@
 					const WayBillInfoVO =
 						(waybillInfo && waybillInfo.appletWayBillCodeInfoVO) || {}
 					const pList = []
-					const tplCtx = {
+					const tplCtx = that.resolvePrintTemplateCtx(device, {
 						parameterO097: parameterO097,
 						parameterO098: parameterO098,
 						zoneId: that.zoneId,
-					}
+					})
 
 					// 打印标签
 					if (amountOfSheets > 0) {
@@ -1345,7 +1483,7 @@
 				} catch (err) {
 					const errMsg = (err && err.message) || err || '蓝牙打印数据写入失败'
 					console.log('doPrintTask-errMsg=====>', errMsg)
-					showMsg(String(errMsg))
+					throw (err instanceof Error ? err : new Error(String(errMsg)))
 				}
 			},
 
@@ -1359,8 +1497,10 @@
 				try {
 					const rows = await that.receiptTask()
 					const receiptTpl = resolveReceiptTemplate(rows[0] || {}, {
-						parameterO097: that.parameterO097,
-						zoneId: that.zoneId,
+						...that.resolvePrintTemplateCtx(receiptPrinter, {
+							parameterO097: that.parameterO097,
+							zoneId: that.zoneId,
+						}),
 					})
 					const pList = []
 					const num = convertNumber(that.printReceiptNum)
@@ -1552,8 +1692,23 @@
 		display: flex;
 		gap: 12rpx;
 		flex-wrap: wrap;
+		align-items: center;
 		justify-content: flex-end;
 		font-size: 24rpx;
+
+		&-link {
+			padding: 4rpx 12rpx;
+			border-radius: 8rpx;
+			background: rgba(249, 174, 61, 0.14);
+			color: #c4841a;
+			font-size: 22rpx;
+			font-weight: 600;
+			line-height: 1.4;
+		}
+
+		&-start {
+			margin-left: 4rpx;
+		}
 	}
 
 	.sharePrinterRow {

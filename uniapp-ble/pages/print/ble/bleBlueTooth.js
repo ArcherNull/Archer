@@ -21,6 +21,7 @@ import {
     tipBluetoothError,
     getPlatformDefaultConfigByOs,
     clampPrintConfigValues,
+    resolvePrinterBrandInfo,
 } from './config.js'
 
 
@@ -361,7 +362,7 @@ export class BleBlueTooth {
         let packetCount = 0
         let chunkSize = 20
 
-        if (this.isGbkPrinter(deviceName)) {
+        if (this.isGbkPrinter(deviceName, pTask.deviceId)) {
             // 芝柯 CC3 / K319：printUtil-GBK
             const buffer = this.getBuffer(printDataStr)
             totalBytes = buffer.byteLength || 0
@@ -1951,14 +1952,19 @@ export class BleBlueTooth {
         })
     }
 
-    // 根据设备名称前缀判断是否为 GBK 打印设备（芝柯 CC3_ / 优博讯 K319）
-    isGbkPrinter(deviceName) {
-        if (!deviceName) return false
-        const name = String(deviceName).trim().toUpperCase()
-        return this._gbkDeviceNamePrefixes.some(prefix => {
-            const p = String(prefix).trim().toUpperCase()
-            return p && (name.startsWith(p) || name.includes(p))
-        })
+    // 判断是否走 GBK 编码写入（芝柯 CC3 / 优博讯 K319；含手动绑定品牌）
+    isGbkPrinter(deviceName, deviceId = '') {
+        if (deviceName) {
+            const name = String(deviceName).trim().toUpperCase()
+            const byPrefix = this._gbkDeviceNamePrefixes.some(prefix => {
+                const p = String(prefix).trim().toUpperCase()
+                return p && (name.startsWith(p) || name.includes(p))
+            })
+            if (byPrefix) return true
+        }
+        // 名称不含 CC3/K319 时，按手动绑定或已识别品牌兜底
+        const brandInfo = resolvePrinterBrandInfo(deviceName || '', deviceId)
+        return !!(brandInfo && brandInfo.brand === 'CC3')
     }
 
     // CPCL 指令通常以 "! " 开头，可作为设备名缺失时的兜底判断
@@ -2094,11 +2100,11 @@ export class BleBlueTooth {
         try {
             const { deviceId, name, localName, printDataStr } = pTask
             const deviceName = that.getPrinterDeviceName(deviceId, name, localName)
-            // 1. 优先：芝柯（CC3_）/ 优博讯（K319）→ GBK
-            if (that.isGbkPrinter(deviceName)) {
+            // 1. 优先：芝柯（CC3_）/ 优博讯（K319）/ 手动绑定芝柯 → GBK
+            if (that.isGbkPrinter(deviceName, deviceId)) {
                 await that.printGbkTaskItem(pTask)
             } else {
-                // 2. 其余情况 → CPCL
+                // 2. 其余情况 → 汉印 CPCL hex
                 await that.printCpclTaskItem(pTask)
             }
         } catch (err) {

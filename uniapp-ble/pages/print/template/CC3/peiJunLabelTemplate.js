@@ -40,12 +40,6 @@ function textLines(x, startY, lineGap, lines, font = "0 24") {
 		.join("\n");
 }
 
-/** 二维码内容：去掉空格，# → %23 */
-function encodeQrContent(url) {
-	if (!url) return "";
-	return String(url).replace(/\s+/g, "").replace(/#/g, "%23");
-}
-
 const limitValList = [undefined, "", null];
 
 function createGetVal(json) {
@@ -94,6 +88,7 @@ const peiJunLabelEmptyData = {
 	senderName: "",
 	senderPhone: "",
 	valueAdded: "增值服务：",
+	customerCode: "客户单号：",
 	footerOutlet: "",
 	printDate: "",
 	promiseTime: "兑现时间：",
@@ -153,7 +148,7 @@ function buildValueAdded(getVal) {
 	if (getVal("beLoading") == "1") parts.push("装卸");
 	if (getVal("isUpfloor")) parts.push(getVal("isUpfloor"));
 	// 无增值服务时仍展示文案
-	return parts.length ? `增值服务：${parts.join("")}` : "增值服务：";
+	return parts.length ? `增值服务：${parts.join("")}` : "";
 }
 
 /** 收件地址：路由街道 + 详细地址 */
@@ -176,6 +171,7 @@ export function mapBizToPeiJunLabel(biz = {}) {
 	const qty = getVal("quantity");
 	const goodsQty = qty !== "" ? (String(qty).includes("件") ? String(qty) : `${qty}件`) : "";
 	const lastArrived = getVal("lastArrivedTime");
+	const customerCodeVal = getVal("customerCode");
 
 	return {
 		orderNo,
@@ -204,6 +200,9 @@ export function mapBizToPeiJunLabel(biz = {}) {
 		senderPhone:
 			getVal("shipManPhoneMasked") || getVal("shipManPhone"),
 		valueAdded: buildValueAdded(getVal),
+		customerCode: customerCodeVal
+			? `${customerCodeVal}`
+			: "",
 		// footerOutlet: getVal("startPoint"),
 		footerOutlet: getVal("orderLabelName"),
 		printDate: getVal("orderDate"),
@@ -241,10 +240,11 @@ export function peiJunLabelTemplateJson(params = {}) {
 	const senderAddrLines = wrapText(d.senderAddress, 10, 2);
 	const deliveryLines = wrapText(d.deliveryType, 6, 3);
 	const payTypeLines = wrapText(d.payType, 6, 2);
-	const valueAddedLines = wrapText(d.valueAdded, 7, 4);
+	const valueAddedLines = wrapText(d.valueAdded, 7, 3);
+	const customerCodeLines = wrapText(d.customerCode, 12, 2);
 
 	const orderNo = String(d.orderNo || "");
-	const qrContent = encodeQrContent(d.qrcode);
+	const qrContent = d.qrcode
 
 	const lines = [];
 
@@ -253,8 +253,12 @@ export function peiJunLabelTemplateJson(params = {}) {
 	lines.push(`PAGE-WIDTH ${PAGE_W}`);
 	lines.push(LOGO_EG);
 	lines.push(`B 128 2 1 50 82 5 ${orderNo}`);
+	// 条码下运单号：字号对齐 Common.getJCLabelTemplate（SETMAG 2 2 + TEXT 3 0）
+	lines.push("SETMAG 2 2");
+	lines.push("SETBOLD 1");
+	lines.push(`T 3 0 182 60 ${orderNo}`);
+	lines.push("SETBOLD 0");
 	lines.push("SETMAG 1 1");
-	lines.push(`T 0 24 82 60 ${orderNo}`);
 	lines.push(`VB 128 2 1 50 510 ${Y_BOX_BOTTOM} ${orderNo}`);
 	lines.push(`BOX 5 100 500 ${Y_BOX_BOTTOM} ${LINE_W}`);
 
@@ -322,6 +326,10 @@ export function peiJunLabelTemplateJson(params = {}) {
 
 	// ── 增值服务：无值也保留「增值服务：」文案 ──
 	lines.push(textLines(328, ySendContent, SMALL_GAP, valueAddedLines));
+	// ── 客户单号：紧挨增值服务下方 ──
+	const yCustomerCode =
+		ySendContent + valueAddedLines.length * SMALL_GAP;
+	lines.push(textLines(328, yCustomerCode, SMALL_GAP, customerCodeLines));
 
 	// ── 分隔线 ──
 	lines.push(`L 5 160 500 160 ${LINE_W}`);
@@ -336,7 +344,7 @@ export function peiJunLabelTemplateJson(params = {}) {
 
 	// ── 页脚 ──
 	const yFooter1 = Y_BOX_BOTTOM + 15;
-	const yFooter2 = Y_BOX_BOTTOM + 55;
+	const yFooter2 = Y_BOX_BOTTOM + 40;
 	lines.push(`T 0 24 5 ${yFooter1} ${d.footerOutlet}`);
 	lines.push(`T 0 24 320 ${yFooter1} ${d.printDate}`);
 	lines.push(`T 0 24 5 ${yFooter2} ${d.promiseTime}`);
