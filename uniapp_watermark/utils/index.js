@@ -1222,11 +1222,12 @@ function calcRatioHeightAndWight(options) {
 		oWidth,
 		oHeight,
 		quality,
-		orientation
+		orientation = 'up'
 	} = options
 
 	let cWidth = Math.floor(oWidth * quality)
 	let cHeight = Math.floor(oHeight * quality)
+
 
 	if (orientation === 'up') {
 		return {
@@ -1262,6 +1263,7 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 			uni.getImageInfo({ // 获取图片信息，以便获取图片的真实宽高信息
 				src: imagePath,
 				success: (info) => {
+					console.log('info1323', info)
 					const {
 						width: oWidth,
 						height: oHeight,
