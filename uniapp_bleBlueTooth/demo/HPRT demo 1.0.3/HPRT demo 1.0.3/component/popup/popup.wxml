@@ -1,0 +1,20 @@
+<view class="modal-mask" wx:if="{{showModal}}"></view>
+<view class="modal-dialog"  wx:if="{{showModal}}">
+  <view class="modal-title">输入高宽</view>
+  <view class="modal-content">
+    <view class="modal-input">
+      <view class="modal-input-div">
+        <view class="text">宽度</view>
+        <input type="number"  value="{{width}}" bindinput="inputValueWidth" maxlength="5" class="input" placeholder="请输入宽度"/>
+      </view>
+      <!-- <view class="modal-input-div">
+        <view class="text">高度</view>
+        <input type="number"  value="{{height}}" bindinput="inputValueHeight" maxlength="5" class="input" placeholder="请输入高度" />
+      </view> -->
+    </view>
+  </view>
+  <view class="modal-footer">
+    <view class="btn-cancel" catchtap="onCancel">取消</view>
+    <view class="btn-confirm" catchtap="onConfirm">确定</view>
+  </view>
+</view>

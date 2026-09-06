@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "HPRT小程序蓝牙打印",
+  "usingComponents": {
+    "popup": "/component/popup/popup"
+  }
+}

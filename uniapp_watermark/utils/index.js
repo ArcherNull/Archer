@@ -277,9 +277,7 @@ function dealWatermarkConfig(options) {
 			}
 		})
 		errLog.push(...nErrLog)
-	} else {
-		errLog.push('水印项是必填的且为数组')
-	}
+	} 
 
 	return {
 		errLog,
@@ -401,13 +399,13 @@ export function addWatermark(options, that) {
 					that.watermarkCanvasOption.width = width
 					that.watermarkCanvasOption.height = height
 
-					that.$nextTick(() => {
+					runAfterCanvasReady(that, () => {
 						const ctx = uni.createCanvasContext(canvasId,
 							that); // 获取canvas绘图上下文
 
 						console.log('ctx', ctx)
 
-						ctx.drawImage(imagePath, 0, 0, width, height); // 绘制原始图片到canvas上\
+						drawImageScale(ctx, imagePath, width, height, width, height); // 绘制原始图片到canvas上
 						// 绘制水印项
 						const drawWMItem = (ctx, options) => {
 
@@ -865,7 +863,7 @@ export function getFileInfoFun(options) {
 	})
 }
 
-// 压缩图片
+// 压缩图片（复用 addWatermarkAndCompress 的 canvas 压缩逻辑，兼容 iOS / Android / 鸿蒙）
 export function compressImg(options, that) {
 	console.log('压缩图片=====>')
 	return new Promise((resolve, reject) => {
@@ -873,121 +871,31 @@ export function compressImg(options, that) {
 			errLog,
 			config
 		} = dealCompressImgConfig(options)
-		if (!errLog.length) {
-			const {
-				canvasId,
-				imagePath,
-				// 文件尺寸
-				quality = 0.6
-			} = config
 
-			that.watermarkCanvasOption.width = 0
-			that.watermarkCanvasOption.height = 0
-
-			// 获取图片信息，以便获取图片的真实宽高信息
-			uni.getImageInfo({
-				src: imagePath,
-				success: (info) => {
-					const {
-						width: oWidth,
-						height: oHeight,
-						type,
-						orientation
-					} = info; // 获取图片的原始宽高
-					const fileTypeObj = {
-						'jpeg': 'jpg',
-						'jpg': 'jpg',
-						'png': 'png',
-					}
-					const fileType = fileTypeObj[type] || 'png'
-
-					let width = oWidth
-					let height = oHeight
-
-					if (quality < 1) {
-						const {
-							cWidth,
-							cHeight
-						} = calcRatioHeightAndWight({
-							oWidth,
-							oHeight,
-							quality,
-							orientation
-						})
-
-						// 按对折比例缩小
-						width = cWidth
-						height = cHeight
-
-						// 按对折比例缩小
-						that.watermarkCanvasOption.width = width
-						that.watermarkCanvasOption.height = height
-
-						that.$nextTick(() => {
-							// 获取canvas绘图上下文
-							const ctx = uni.createCanvasContext(canvasId, that);
-
-							// 绘制原始图片到canvas上
-							ctx.drawImage(imagePath, 0, 0, width, height);
-
-							// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
-							ctx.draw(false, () => {
-								// #ifndef MP-ALIPAY
-								uni.canvasToTempFilePath({ // 将画布内容导出为图片
-									canvasId,
-									x: 0,
-									y: 0,
-									width,
-									height,
-									fileType,
-									quality, // 图片的质量，目前仅对 jpg 有效。取值范围为 (0, 1]，不在范围内时当作 1.0 处理。
-									destWidth: width,
-									destHeight: height,
-									success: (res) => {
-										console.log('res.tempFilePath',
-											res)
-										resolve(res.tempFilePath)
-									},
-									fail() {
-										reject(false)
-									}
-								}, that);
-								// #endif
-
-								// #ifdef MP-ALIPAY
-								ctx.toTempFilePath({ // 将画布内容导出为图片
-									canvasId,
-									x: 0,
-									y: 0,
-									width: width,
-									height: height,
-									destWidth: width,
-									destHeight: height,
-									quality,
-									fileType,
-									success: (res) => {
-										console.log('res.tempFilePath',
-											res)
-										resolve(res.tempFilePath)
-									},
-									fail() {
-										reject(false)
-									}
-								}, that);
-								// #endif 
-							});
-						})
-					} else {
-						resolve(imagePath)
-					}
-				}
-			})
-
-		} else {
+		if (errLog.length) {
 			const errStr = errLog.join(';')
 			showMsg(errStr)
 			reject(errStr)
+			return
 		}
+
+		const {
+			canvasId,
+			imagePath,
+			quality = 0.6
+		} = config
+
+		if (quality >= 1) {
+			resolve(imagePath)
+			return
+		}
+
+		addWatermarkAndCompress({
+			canvasId,
+			imagePath,
+			watermarkList: [],
+			quality,
+		}, that, true).then(resolve).catch(reject)
 	})
 }
 
@@ -1138,7 +1046,7 @@ export function clipImg(options, that) {
 
 						that.watermarkCanvasOption.width = width
 						that.watermarkCanvasOption.height = height
-						that.$nextTick(() => {
+						runAfterCanvasReady(that, () => {
 							// 获取canvas绘图上下文
 							const ctx = uni.createCanvasContext(canvasId, that);
 
@@ -1155,8 +1063,7 @@ export function clipImg(options, that) {
 								height
 							})
 
-							// 绘制原始图片到canvas上
-							ctx.drawImage(imagePath, 0, 0, width, height);
+							drawImageScale(ctx, imagePath, width, height, width, height);
 
 							// 绘制完成后执行的操作，这里不等待绘制完成就继续执行后续操作，因为我们要导出为图片
 							ctx.draw(false, () => {
@@ -1216,7 +1123,49 @@ export function clipImg(options, that) {
 	})
 }
 
-// 计算等比缩放的宽高
+// 是否为原生 App（iOS / Android / 鸿蒙）
+function isNativeApp() {
+	try {
+		let uniPlatform = ''
+		let osName = ''
+		if (typeof uni.getAppBaseInfo === 'function') {
+			uniPlatform = uni.getAppBaseInfo().uniPlatform || ''
+		}
+		if (typeof uni.getDeviceInfo === 'function') {
+			osName = uni.getDeviceInfo().osName || ''
+		}
+		return uniPlatform === 'app' ||
+			uniPlatform === 'app-plus' ||
+			uniPlatform === 'app-harmony' ||
+			osName === 'harmonyos'
+	} catch (e) {
+		return false
+	}
+}
+
+// 等待 canvas 尺寸更新完成后再绘制（iOS/Android/鸿蒙 需额外延迟）
+function runAfterCanvasReady(that, fn) {
+	that.$nextTick(() => {
+		if (isNativeApp()) {
+			setTimeout(fn, 50)
+		} else {
+			fn()
+		}
+	})
+}
+
+// 等比缩放绘制图片（兼容 iOS / Android / 鸿蒙 / 小程序）
+function drawImageScale(ctx, imagePath, srcWidth, srcHeight, destWidth, destHeight) {
+	if (srcWidth === destWidth && srcHeight === destHeight) {
+		// 无缩放：5 参数写法，兼容 iOS / Android 传统行为
+		ctx.drawImage(imagePath, 0, 0, destWidth, destHeight)
+	} else {
+		// 有缩放：9 参数写法，显式指定源区域与目标区域，避免鸿蒙等平台裁剪变形
+		ctx.drawImage(imagePath, 0, 0, srcWidth, srcHeight, 0, 0, destWidth, destHeight)
+	}
+}
+
+// 计算等比缩放的宽高（保持原始纵横比，不按 orientation 交换宽高）
 function calcRatioHeightAndWight(options) {
 	const {
 		oWidth,
@@ -1267,8 +1216,7 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 					const {
 						width: oWidth,
 						height: oHeight,
-						type,
-						orientation
+						type
 					} = info; // 获取图片的原始宽高
 					const fileTypeObj = {
 						'jpeg': 'jpg',
@@ -1287,11 +1235,10 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 						} = calcRatioHeightAndWight({
 							oWidth,
 							oHeight,
-							quality,
-							orientation
+							quality
 						})
 
-						// 按对折比例缩小
+						// 按等比比例缩小
 						width = cWidth
 						height = cHeight
 					}
@@ -1299,11 +1246,11 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 					that.watermarkCanvasOption.width = width
 					that.watermarkCanvasOption.height = height
 
-					that.$nextTick(() => {
+					runAfterCanvasReady(that, () => {
 						// 获取canvas绘图上下文
 						const ctx = uni.createCanvasContext(canvasId, that);
-						// 绘制原始图片到canvas上
-						ctx.drawImage(imagePath, 0, 0, width, height);
+						// 从原图尺寸等比缩放绘制到目标 canvas
+						drawImageScale(ctx, imagePath, oWidth, oHeight, width, height);
 						// 绘制水印项
 						const drawWMItem = (ctx, options) => {
 							const {
@@ -1354,7 +1301,7 @@ export function addWatermarkAndCompress(options, that, isCompress = false) {
 									textMetrics
 								})
 								// 在图片底部添加水印文字
-								ctx.fillText(text, calcX, calcY, width);
+								ctx.fillText(cText, calcX, calcY, width);
 							}
 						}
 

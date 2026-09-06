@@ -1,0 +1,20 @@
+{
+	"name": "DCloud-RichAlert",
+	"id": "DCloud-RichAlert",
+	"version": "1.0",
+	"description": "原生弹窗",
+	"_dp_type":"nativeplugin",
+	"_dp_nativeplugin":{
+		"android": {
+			"plugins": [
+				{
+					"type": "module",
+					"name": "DCloud-RichAlert",
+					"class": "uni.dcloud.io.uniplugin_richalert.RichAlertModule"
+				}
+			],
+			"integrateType": "aar",
+			"minSdkVersion" : 16
+		}
+	}
+}

@@ -97,11 +97,21 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "wx4f68723468c11738",
+        "appid" : "wx4f68723468c11738", // 掌上紫光
         "setting" : {
             "urlCheck" : false
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "__usePrivacyCheck__" : true,
+        "permission" : {
+            "scope.bluetooth" : {
+                "desc" : "用于连接蓝牙打印机并完成打印"
+            },
+            "scope.userLocation" : {
+                "desc" : "用于搜索附近的蓝牙打印机设备"
+            }
+        },
+        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ]
     },
     "mp-alipay" : {
         "usingComponents" : true

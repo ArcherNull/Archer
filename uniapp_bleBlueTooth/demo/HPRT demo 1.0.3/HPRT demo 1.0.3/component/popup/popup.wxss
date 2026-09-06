@@ -1,0 +1,119 @@
+/* component/popup.wxss */
+.show-btn {
+  margin-top: 100rpx;
+  color: #22cc22;
+}
+
+.modal-mask {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #000;
+  opacity: 0.5;
+  overflow: hidden;
+  z-index: 9000;
+  color: #fff;
+}
+
+.modal-dialog {
+  /* width: 540rpx; */
+  width: 86%;
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
+  left: 0;
+  z-index: 9999;
+  background: #f9f9f9;
+  /* margin: -180rpx 105rpx; */
+  margin-left: 7%;
+  margin-top: -180px;
+  border-radius: 36rpx;
+}
+
+.modal-title {
+  padding-top: 50rpx;
+  font-size: 36rpx;
+  color: #030303;
+  text-align: center;
+}
+
+.modal-content {
+  padding: 10rpx 32rpx 30rpx 32rpx;
+}
+
+.modal-input {
+  display: flex;
+  background: #fff;
+  /* border: 2rpx solid #ddd; */
+  border-radius: 4rpx;
+  font-size: 28rpx;
+  flex-direction: column;
+  background: #f9f9f9;
+}
+
+.modal-input-div {
+  display: flex;
+  /* background: #fff; */
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: #f9f9f9;
+  margin-top: 20px;
+  /* border: 2rpx solid #ddd; */
+  /* border-radius: 4rpx; */
+  /* font-size: 28rpx; */
+
+  height: 40px;
+}
+.text {
+  flex: 0 0 60px;
+  background: #f9f9f9;
+  text-align: left;
+}
+.btn-text {
+  background-color: #fd4343;
+  width: 60px;
+  height: 40px;
+  flex: 0 0 100px;
+  color: white;
+  border-radius: 40px;
+  margin-left: 20px;
+  line-height: 40px;
+}
+.input {
+  width: 100%;
+  height: 82rpx;
+  font-size: 28rpx;
+  line-height: 28rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  color: #333;
+  border: 2rpx solid #ddd;
+  background-color: white;
+  text-align: left;
+}
+
+.modal-footer {
+  display: flex;
+  flex-direction: row;
+  height: 105rpx;
+  border-top: 1px solid #dedede;
+  font-size: 34rpx;
+  line-height: 105rpx;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  width: 50%;
+  color: #666;
+  text-align: center;
+  border-right: 1px solid #dedede;
+}
+
+.btn-confirm {
+  width: 50%;
+  color: #1e4599;
+  text-align: center;
+}

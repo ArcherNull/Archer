@@ -1,0 +1,73 @@
+/* pages/print/print.wxss */
+.page-title {
+  text-align: center;
+}
+canvas {
+  position:fixed;left:100%;
+  /* width: 100px; */
+  /* height: 100px; */
+  /* display: none; */
+}
+.container{
+  padding: 2% 0;
+}
+.print-btn {
+  width:185rpx;
+  height:185rpx;
+  line-height:185rpx;
+  text-align:center;
+  background-color:#1e4599;
+  color:#fff;
+  font-size:26rpx;
+  border-radius:50%;
+  margin: 20rpx;
+}
+.btn-list{
+  margin-top: 8%;
+  display: flex;
+  justify-content: center
+}
+
+.p-list{
+  padding-left: 30rpx;
+}
+.p-item{
+  padding-left: 0;
+}
+.p-item:last-child{
+  border: none;
+}
+.p-add{
+  font-size: 30rpx;
+  color: #999999;
+}
+.tip-box{
+  padding-top: 20rpx;
+}
+.t-title{
+  padding:30rpx;
+}
+.tip-item{
+  color: #888888;
+  padding-left: 30rpx;
+  line-height: 50rpx;
+}
+.color-b{
+  color: #1d6ae4
+}
+.e-title{
+  color: #353535;
+}
+.e-c{
+  color: #757575;
+}
+.btn-box{
+  margin-top: 20rpx;
+}
+.c-btn{
+  width: 100%;
+}
+
+.c-text{
+  color: #000;
+}

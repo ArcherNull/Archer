@@ -31,6 +31,15 @@ export const baseData = [
           cache: true // 是否缓存
         },
         component: () => import('@/views/pages/base-data/user/index.vue')
+      },
+      {
+        path: '/base-data/test',
+        name: 'test',
+        meta: {
+          title: '测试列表',
+          cache: true // 是否缓存
+        },
+        component: () => import('@/views/pages/base-data/test/index.vue')
       }
     ]
   }

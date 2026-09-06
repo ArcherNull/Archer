@@ -9,21 +9,25 @@ export const userUserInfoStore = defineStore('userInfoStore', {
   }),
   actions: {
     // 登入
-    login (data) {
-      return api.login.login(data).then(userInfo => {
-        console.log('userInfo======>', userInfo)
-        if (userInfo?.token) {
-          this.userInfo = userInfo
-          storage.set('token', userInfo?.token)
-          storage.set('userInfo', JSON.stringify(userInfo))
-          return Promise.resolve(userInfo)
-        } else {
-          return Promise.reject('未获取到token')
-        }
+    async login(data) {
+      // const userInfo = await api.login.login(data)
+      const userInfo = await new Promise(resolve => {
+        resolve({
+          token: '13123',
+          userName: '测试'
+        })
       })
+      if (userInfo?.token) {
+        this.userInfo = userInfo
+        storage.set('token', userInfo?.token)
+        storage.set('userInfo', JSON.stringify(userInfo))
+        return userInfo
+      } else {
+        return Promise.reject('未获取到token')
+      }
     },
     // 登出
-    async logOut () {
+    async logOut() {
       const userInfo = storage.get('userInfo')
       console.log('userInfo=====>', userInfo)
 
