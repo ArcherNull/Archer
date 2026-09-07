@@ -40,10 +40,132 @@ export const BLUETOOTH_MODULE_SEARCH_STATE = {
 }
 
 // 本地存储键
-export const STORAGE_KEY = 'kps-history-print-devices'
+/** @deprecated 已废弃：历史设备改从打印任务中提取 */
+export const STORAGE_KEY_LEGACY_DEVICES = 'kps-history-print-devices'
+/** 一周内打印任务缓存 */
+export const STORAGE_KEY = 'kps-history-print-tasks'
+export const STORAGE_PRINT_TASKS_KEY = STORAGE_KEY
 export const STORAGE_SYSTEM_CONFIG_KEY = 'kps-system-config'
 // 未识别设备手动绑定品牌（按 deviceId）
 export const STORAGE_DEVICE_BRAND_BIND_KEY = 'kps-device-brand-bindings'
+
+/** 打印任务保留时长：7 天 */
+export const PRINT_TASK_RETENTION_MS = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * 读取一周内打印任务列表（新→旧）
+ * @returns {Array<Object>}
+ */
+export function loadPrintTasks() {
+	try {
+		const raw = uni.getStorageSync(STORAGE_PRINT_TASKS_KEY)
+		if (!raw) return []
+		const list = typeof raw === 'string' ? JSON.parse(raw) : raw
+		if (!Array.isArray(list)) return []
+		const minTs = Date.now() - PRINT_TASK_RETENTION_MS
+		return list
+			.filter(function (item) {
+				const t = Number(item && item.printTime) || 0
+				return t >= minTs
+			})
+			.sort(function (a, b) {
+				return (Number(b.printTime) || 0) - (Number(a.printTime) || 0)
+			})
+	} catch (e) {
+		return []
+	}
+}
+
+/**
+ * 写入打印任务列表（自动裁剪一周外数据）
+ * @param {Array<Object>} list
+ */
+export function savePrintTasks(list) {
+	const minTs = Date.now() - PRINT_TASK_RETENTION_MS
+	const next = (Array.isArray(list) ? list : [])
+		.filter(function (item) {
+			const t = Number(item && item.printTime) || 0
+			return t >= minTs
+		})
+		.sort(function (a, b) {
+			return (Number(b.printTime) || 0) - (Number(a.printTime) || 0)
+		})
+		.slice(0, 200)
+	try {
+		uni.setStorageSync(STORAGE_PRINT_TASKS_KEY, JSON.stringify(next))
+	} catch (e) {}
+	// 清理旧键，避免继续读写历史设备列表
+	try {
+		uni.removeStorageSync(STORAGE_KEY_LEGACY_DEVICES)
+	} catch (e) {}
+	return next
+}
+
+/**
+ * 追加一条打印任务
+ * @param {Object} task
+ */
+export function appendPrintTask(task) {
+	if (!task || !task.deviceId) return loadPrintTasks()
+	const list = loadPrintTasks()
+	list.unshift(
+		Object.assign(
+			{
+				id: '',
+				templateName: '打印任务',
+				printTime: Date.now(),
+				printDataStr: '',
+			},
+			task,
+			{
+				id: task.id || String(Date.now()) + '_' + Math.floor(Math.random() * 10000),
+				printTime: Number(task.printTime) || Date.now(),
+			}
+		)
+	)
+	return savePrintTasks(list)
+}
+
+/**
+ * 从打印任务中提取历史设备（按 deviceId 去重，保留最近一次）
+ * @returns {Array<Object>}
+ */
+export function extractDevicesFromPrintTasks(taskList) {
+	const list = Array.isArray(taskList) ? taskList : loadPrintTasks()
+	const map = {}
+	const order = []
+	list.forEach(function (task) {
+		if (!task || !task.deviceId) return
+		const id = String(task.deviceId)
+		if (!map[id]) {
+			order.push(id)
+			map[id] = {
+				deviceId: id,
+				name: task.name || '',
+				localName: task.localName || '',
+				serviceId: task.serviceId || '',
+				characteristicId: task.characteristicId || '',
+				writeType: task.writeType || '',
+				isConnect: false,
+				connectState: 'notConnected',
+				lastPrintTime: Number(task.printTime) || 0,
+			}
+		} else {
+			const t = Number(task.printTime) || 0
+			if (t > (map[id].lastPrintTime || 0)) {
+				map[id].name = task.name || map[id].name
+				map[id].localName = task.localName || map[id].localName
+				map[id].serviceId = task.serviceId || map[id].serviceId
+				map[id].characteristicId = task.characteristicId || map[id].characteristicId
+				map[id].writeType = task.writeType || map[id].writeType
+				map[id].lastPrintTime = t
+			}
+		}
+	})
+	return order.map(function (id) {
+		return map[id]
+	})
+}
 
 // 汉印 CPCL 设备名称前缀
 export const CPCL_DEVICE_NAME_PREFIXES = ['HM-', 'HPRT', 'HM-A300', 'HM-A300L']
@@ -261,7 +383,7 @@ export function getPlatformDefaultConfigByOs(osName, isHarmonyOS) {
     if (isHarmonyOS) {
         return {
             ...base,
-            mtu: 23,
+            mtu: 20,
             mtuStep: 20,
             packetIntervalMs: 80,
             packetStepMs: 20,

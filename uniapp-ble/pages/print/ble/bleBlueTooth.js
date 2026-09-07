@@ -22,6 +22,10 @@ import {
     getPlatformDefaultConfigByOs,
     clampPrintConfigValues,
     resolvePrinterBrandInfo,
+    loadPrintTasks,
+    savePrintTasks,
+    appendPrintTask,
+    extractDevicesFromPrintTasks,
 } from './config.js'
 
 
@@ -438,13 +442,48 @@ export class BleBlueTooth {
         })
     }
 
-    // 获取历史打印机
+    // 获取历史打印机（从一周内打印任务提取设备）
     getHistoryPrintDevices() {
-        const pStr = uni.getStorageSync(this._storageKey)
-        if (pStr) {
-            const pList = JSON.parse(pStr)
-            this._historyPrintDeviceList = pList
+        try {
+            const tasks = loadPrintTasks()
+            // 若仍有旧设备缓存，迁移后清理
+            try {
+                const legacy = uni.getStorageSync('kps-history-print-devices')
+                if (legacy) {
+                    uni.removeStorageSync('kps-history-print-devices')
+                }
+            } catch (e) {}
+            this._historyPrintDeviceList = extractDevicesFromPrintTasks(tasks)
+        } catch (e) {
+            this._historyPrintDeviceList = []
         }
+    }
+
+    /** 刷新内存中的历史设备列表 */
+    refreshHistoryDevicesFromTasks() {
+        this._historyPrintDeviceList = extractDevicesFromPrintTasks(loadPrintTasks())
+        return this._historyPrintDeviceList
+    }
+
+    /**
+     * 真正执行打印后缓存任务（仅保留一周）
+     * @param {Object} task
+     */
+    cachePrintTaskHistory(task) {
+        if (!task || !task.deviceId || !task.printDataStr) return
+        appendPrintTask({
+            deviceId: task.deviceId,
+            name: task.name || '',
+            localName: task.localName || '',
+            serviceId: task.serviceId || '',
+            characteristicId: task.characteristicId || '',
+            writeType: task.writeType || '',
+            templateName: task.templateName || '打印任务',
+            printTime: task.printTime || Date.now(),
+            printDataStr: task.printDataStr || '',
+            printType: task.printType || '',
+        })
+        this.refreshHistoryDevicesFromTasks()
     }
 
     /** 蓝牙模块调试日志（受 _debugLogEnabled 控制） */
@@ -1410,18 +1449,9 @@ export class BleBlueTooth {
         })
     }
 
-    // 保存已连接的蓝牙打印机
+    // 历史设备已改为从打印任务提取，关闭蓝牙时不再写入独立设备缓存
     saveConnectedDevices() {
-        if (isNotEmptyArr(this._connectedDevicesList)) {
-            const cNList = this._connectedDevicesList.map(ele => {
-                ele.isConnect = false
-                return ele
-            })
-            const cListJson = JSON.stringify(cNList)
-            uni.setStorageSync(this._storageKey, cListJson)
-        } else {
-            uni.setStorageSync(this._storageKey, "")
-        }
+        this.refreshHistoryDevicesFromTasks()
     }
 
     // 关闭蓝牙模块
@@ -2008,6 +2038,12 @@ export class BleBlueTooth {
                         throw new Error(`第【${i + 1}】打印任务，${errLog.join(';')}`)
                     }
                     await that.printTaskWithRetry(pTask, i)
+                    // 真正执行成功后写入本地打印任务缓存（一周内）
+                    that.cachePrintTaskHistory(
+                        Object.assign({}, pTask, {
+                            printTime: Date.now(),
+                        })
+                    )
                     that.updatePrintProgress({
                         finishedTasks: i + 1
                     })
@@ -2187,10 +2223,10 @@ export class BleBlueTooth {
                 return
             }
             const cfgMtu = convertNumber(that.getPrintConfig().mtu)
-            // 优先用界面配置；鸿蒙过大易乱码，未配置时回退 23
+            // 优先用界面配置；鸿蒙过大易乱码，未配置时回退 20
             let requestMtu = cfgMtu || that._mtu || 23
             if (that._isHarmonyOS && !cfgMtu) {
-                requestMtu = 23
+                requestMtu = 20
             }
             requestMtu = Math.min(512, Math.max(20, Math.round(requestMtu)))
             that._mtu = requestMtu
@@ -2203,7 +2239,7 @@ export class BleBlueTooth {
                     if (!isNaN(mtu) && mtu > 0) {
                         that._negotiatedMtu = mtu
                     } else if (that._isHarmonyOS) {
-                        that._negotiatedMtu = Math.min(requestMtu, 23)
+                        that._negotiatedMtu = Math.min(requestMtu, 20)
                     } else {
                         that._negotiatedMtu = requestMtu
                     }
@@ -2211,7 +2247,7 @@ export class BleBlueTooth {
                 },
                 fail(res) {
                     that.log('setBLEMTU-fail======>', res)
-                    that._negotiatedMtu = that._isHarmonyOS ? 23 : 0
+                    that._negotiatedMtu = that._isHarmonyOS ? 20 : 0
                     resolve(false)
                 }
             })

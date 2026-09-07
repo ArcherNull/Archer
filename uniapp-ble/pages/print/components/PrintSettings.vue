@@ -9,6 +9,20 @@
 		</view>
 
 		<view class="form">
+			<view class="speedRow">
+				<view class="speedRow-label">传输快捷设置</view>
+				<view class="speedRow-btns">
+					<button
+						v-for="item in speedPresets"
+						:key="item.key"
+						size="mini"
+						:class="['speedBtn', activeSpeedKey === item.key ? 'speedBtn--active' : '']"
+						@click="applySpeedPreset(item.key)"
+					>{{ item.label }}</button>
+				</view>
+			</view>
+			<view class="form-tip">慢 / 中 / 快 / 特快：一键设置 MTU、包间隔、重试间隔</view>
+
 			<view class="form-row">
 				<view class="form-label required">打印任务超时时间</view>
 				<view class="form-field">
@@ -215,6 +229,12 @@
 		},
 		data() {
 			return {
+				speedPresets: [
+					{ key: 'slow', label: '慢', mtu: 20, packetIntervalMs: 80, retryIntervalMs: 120 },
+					{ key: 'medium', label: '中', mtu: 20, packetIntervalMs: 50, retryIntervalMs: 100 },
+					{ key: 'fast', label: '快', mtu: 20, packetIntervalMs: 20, retryIntervalMs: 50 },
+					{ key: 'turbo', label: '特快', mtu: 512, packetIntervalMs: 20, retryIntervalMs: 50 },
+				],
 				localConfig: {
 					printTimeoutSec: 40,
 					enableRecursivePrint: true,
@@ -237,12 +257,26 @@
 					return 'iOS 不可设置 MTU，由系统默认分配'
 				}
 				if (this.platformName === '鸿蒙') {
-					return 'MTU 20–512，默认 23；步进 10–100；鸿蒙单包约 23 字节，过大易乱码'
+					return 'MTU 20–512，默认 20；步进 10–100；鸿蒙单包建议 20 字节，过大易乱码'
 				}
 				if (this.platformName === '安卓') {
 					return 'MTU 20–512，默认 512；步进 10–100；安卓单包传输速率默认 512 字节'
 				}
 				return 'MTU 20–512，默认 23；步进 10–100；右侧加减按步进调整 MTU'
+			},
+			activeSpeedKey() {
+				const cfg = this.localConfig || {}
+				const mtu = convertNumber(cfg.mtu)
+				const packet = convertNumber(cfg.packetIntervalMs)
+				const retry = convertNumber(cfg.retryIntervalMs)
+				const hit = this.speedPresets.find(function (item) {
+					return (
+						mtu === item.mtu &&
+						packet === item.packetIntervalMs &&
+						retry === item.retryIntervalMs
+					)
+				})
+				return hit ? hit.key : ''
 			},
 			canMtuStepSub() {
 				return convertNumber(this.localConfig.mtu) > 20
@@ -272,6 +306,19 @@
 			},
 			emitConfig() {
 				this.$emit('update:config', Object.assign({}, this.localConfig))
+			},
+			applySpeedPreset(key) {
+				const preset = this.speedPresets.find(function (item) {
+					return item.key === key
+				})
+				if (!preset) return
+				if (!this.mtuReadonly) {
+					this.localConfig.mtu = preset.mtu
+				}
+				this.localConfig.packetIntervalMs = preset.packetIntervalMs
+				this.localConfig.retryIntervalMs = preset.retryIntervalMs
+				this.emitConfig()
+				showMsg('已切换为「' + preset.label + '」传输设置', 'success')
 			},
 			onNumberInput(key, e, min, max) {
 				if ((key === 'mtu' || key === 'mtuStep') && this.mtuReadonly) return
@@ -356,6 +403,51 @@
 
 	.form {
 		padding: 8rpx 0 4rpx;
+	}
+
+	.speedRow {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16rpx;
+		padding: 12rpx 0 4rpx;
+		flex-wrap: wrap;
+
+		&-label {
+			color: $pr-text-body;
+			font-size: 28rpx;
+			font-weight: 600;
+		}
+
+		&-btns {
+			display: flex;
+			align-items: center;
+			gap: 12rpx;
+		}
+	}
+
+	.speedBtn {
+		margin: 0;
+		min-width: 72rpx;
+		height: 56rpx;
+		line-height: 56rpx;
+		padding: 0 16rpx;
+		border-radius: 12rpx;
+		font-size: 24rpx;
+		font-weight: 600;
+		color: $pr-theme-text !important;
+		background: $pr-theme-soft !important;
+		border: 2rpx solid transparent;
+
+		&::after {
+			border: none;
+		}
+
+		&--active {
+			color: #fff !important;
+			background: $pr-theme !important;
+			border-color: $pr-theme;
+		}
 	}
 
 	.sectionTitle {

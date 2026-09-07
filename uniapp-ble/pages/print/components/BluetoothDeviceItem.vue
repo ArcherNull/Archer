@@ -18,7 +18,7 @@
 					{{ brandInfo.brandName || (variant === 'search' ? '未知品牌' : '') }}
 					<text v-if="brandInfo.model"> · {{ brandInfo.model }}</text>
 				</view>
-				<view class="bdi-rssi" v-if="variant === 'search'">
+				<view class="bdi-rssi" v-if="variant === 'search' && device.RSSI != null && device.RSSI !== ''">
 					信号：{{ device.RSSI || 0 }} dBm
 				</view>
 				<view class="bdi-deviceId">设备ID：{{ device.deviceId || '--' }}</view>

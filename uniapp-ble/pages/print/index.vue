@@ -285,7 +285,22 @@
 			:connecting-id="connectingId"
 			@update:visible="openHistoryPopup = $event"
 			@device-connect="onHistoryConnect"
+			@preview="onPrintTaskPreview"
 			@clear="onHistoryClear"
+		/>
+
+		<PrintTasksPopup
+			:visible="openPrintTasksPopup"
+			:tasks="pendingPrintTasks"
+			@update:visible="openPrintTasksPopup = $event"
+			@preview="onPrintTaskPreview"
+		/>
+
+		<PreviewPopup
+			:visible="previewVisible"
+			:title="previewTitle"
+			:ops="previewOps"
+			@update:visible="previewVisible = $event"
 		/>
 
 		<PrintSettingsPopup
@@ -299,7 +314,14 @@
 			@apply="applyPrintConfig"
 		/>
 
-		<view class="footerBtn">
+		<view class="footerBtn footerBtn--row">
+			<button
+				class="taskBtn"
+				:disabled="printLoading"
+				@click="openPendingPrintTasks"
+			>
+				打印任务
+			</button>
 			<button
 				type="primary"
 				class="printBtn"
@@ -316,7 +338,7 @@
 <script>
 	/**
 	 * 业务主页：深度对齐 kpsapp newPrint.vue 交互与打印队列
-	 * BLE 走本项目 getBluetoothAdapter；模板走 template/CC3；接口走 mock
+	 * BLE 走本项目 getBluetoothAdapter；模板走 template-comm 通用版式；接口走 mock
 	 */
 	import PrintItemBox from './components/PrintItemBox.vue'
 	import SelectPrinter from './components/SelectPrinter.vue'
@@ -325,16 +347,21 @@
 	import DeviceInfoPopup from './components/DeviceInfoPopup.vue'
 	import BluetoothDeviceItem from './components/BluetoothDeviceItem.vue'
 	import ConnectHistoryPopup from './components/ConnectHistoryPopup.vue'
+	import PrintTasksPopup from './components/PrintTasksPopup.vue'
 	import PrintSettingsPopup from './components/PrintSettingsPopup.vue'
 	import { ALERT_TEXT_LIST } from './help/index.js'
 	import { getBluetoothAdapter } from './ble/index.js'
-	import { STORAGE_KEY, resolvePrinterBrandInfo } from './ble/config.js'
+	import {
+		resolvePrinterBrandInfo,
+	} from './ble/config.js'
 	import { showMsg, convertNumber, isNotEmptyArr, showModal } from './comm/utils.js'
 	import {
 		resolveLabelTemplate,
 		resolveWaybillTemplate,
 		resolveReceiptTemplate,
-	} from './template/index.js'
+	} from './template-comm/index.js'
+	import { cpclToOps } from './template-comm/builder/cpclToOps.js'
+	import PreviewPopup from './template-comm/preivew/PreviewPopup.vue'
 	import {
 		getListParamValue,
 		queryTrackByWayBillCode,
@@ -342,6 +369,36 @@
 		receiptTask as receiptTaskApi,
 		DEFAULT_WAY_BILL_CODE,
 	} from '../../mock/api.js'
+
+	function resolveLabelTemplateName(ctx) {
+		const parameterO098 = String((ctx && ctx.parameterO098) == null ? '0' : ctx.parameterO098)
+		const zoneId = Number((ctx && ctx.zoneId) || 0)
+		if (parameterO098 === '1') return '浩运标签'
+		if (parameterO098 === '2') return '配军标签'
+		if (zoneId === 23) return '战区标签'
+		return '德坤普通标签'
+	}
+
+	function resolveWaybillTemplateName(ctx) {
+		const parameterO097 = String((ctx && ctx.parameterO097) == null ? '0' : ctx.parameterO097)
+		const zoneId = Number((ctx && ctx.zoneId) || 0)
+		const isMulti = !!(ctx && ctx.isMulti)
+		const multiType = (ctx && ctx.multiType) || ''
+		if (isMulti) {
+			if (parameterO097 === '2' && multiType === '托运客户联') return '配军运单/回单'
+			return multiType ? '多联运单-' + multiType : '多联运单'
+		}
+		if (zoneId === 23) return '战区标签'
+		return '普通运单'
+	}
+
+	function resolveReceiptTemplateName(ctx) {
+		const parameterO097 = String((ctx && ctx.parameterO097) == null ? '0' : ctx.parameterO097)
+		const zoneId = Number((ctx && ctx.zoneId) || 0)
+		if (parameterO097 === '2') return '配军运单/回单'
+		if (zoneId === 23) return '德坤回单'
+		return '浩运回单'
+	}
 
 	export default {
 		name: 'PrintIndex',
@@ -353,7 +410,9 @@
 			DeviceInfoPopup,
 			BluetoothDeviceItem,
 			ConnectHistoryPopup,
+			PrintTasksPopup,
 			PrintSettingsPopup,
+			PreviewPopup,
 		},
 		data() {
 			return {
@@ -371,7 +430,12 @@
 				printReceiptNum: 1,
 				openPrintListPop: false,
 				openHistoryPopup: false,
+				openPrintTasksPopup: false,
+				pendingPrintTasks: [],
 				openSettingsPopup: false,
+				previewVisible: false,
+				previewTitle: '',
+				previewOps: [],
 				printLoading: false,
 				selectedPrinterType: '',
 				cusBModuleInstance: null,
@@ -650,11 +714,127 @@
 				const bt = this.cusBModuleInstance
 				if (bt) {
 					bt._historyPrintDeviceList = []
+					if (typeof bt.refreshHistoryDevicesFromTasks === 'function') {
+						bt.refreshHistoryDevicesFromTasks()
+					}
 				}
+				showMsg('已清空历史记录', 'success')
+			},
+			onPrintTaskPreview(task) {
+				const raw =
+					(task && (task.printDataStr || task.cpcl)) || ''
+				const cpcl =
+					typeof raw === 'string'
+						? raw
+						: (raw && raw.cpcl) || ''
+				if (!cpcl) {
+					showMsg('该任务无预览数据')
+					return
+				}
+				const brandInfo = resolvePrinterBrandInfo(
+					(task && (task.name || task.localName)) || '',
+					(task && task.deviceId) || ''
+				)
+				const brand = (brandInfo && brandInfo.brand) || 'CC3'
+				const ops = cpclToOps(cpcl, brand)
+				if (!ops || !ops.length) {
+					showMsg('预览数据为空')
+					return
+				}
+				this.previewTitle = (task && task.templateName) || '打印预览'
+				this.previewOps = ops
+				this.previewVisible = true
+			},
+			/** 打开待执行打印任务弹窗 */
+			async openPendingPrintTasks() {
+				const errLog = this.validateForm()
+				if (errLog.length) {
+					showMsg(errLog.join(';'))
+					return
+				}
+				uni.showLoading({
+					title: '生成任务...',
+					mask: true,
+				})
 				try {
-					uni.setStorageSync(STORAGE_KEY, '')
-				} catch (e) {}
-				showMsg('已清空连接历史', 'success')
+					this.pendingPrintTasks = await this.buildPendingPrintTasks()
+					if (!this.pendingPrintTasks.length) {
+						showMsg('暂无待打印任务')
+						return
+					}
+					this.openPrintTasksPopup = true
+				} catch (err) {
+					showMsg((err && err.message) || '生成打印任务失败')
+				} finally {
+					uni.hideLoading()
+				}
+			},
+			/**
+			 * 按当前页面选项组装「即将打印」任务（不执行写入）
+			 * 顺序与正式打印一致：运单 → 标签 → 回单
+			 */
+			async buildPendingPrintTasks() {
+				const that = this
+				const { labelPrinter, waybillPrinter, receiptPrinter } =
+					that.connectedPrinter
+				const now = Date.now()
+				const result = []
+				let seq = 0
+
+				const appendItems = function (device, items) {
+					;(items || []).forEach(function (item) {
+						seq += 1
+						const rawCpcl = item && (item.cpcl || item.printDataStr)
+						const cpclText =
+							typeof rawCpcl === 'string'
+								? rawCpcl
+								: (rawCpcl && rawCpcl.cpcl) || ''
+						const task = that.createPrintTask(device, cpclText, {
+							templateName: (item && item.templateName) || '打印任务',
+							printType: (item && item.printType) || '',
+							printTime: now,
+						})
+						task.id = 'pending_' + seq
+						result.push(task)
+					})
+				}
+
+				if (that.selectedPrintWaybill && waybillPrinter.deviceId) {
+					const items = await that.collectCpclItems(waybillPrinter, {
+						waybillCopies: that.ydValue,
+						waybillInfo: that.waybillInfo,
+						parameterO097: that.parameterO097,
+						multiSelectList: that.dealMultiSelectList(),
+						parameterO098: that.parameterO098,
+					})
+					appendItems(waybillPrinter, items)
+				}
+
+				if (that.selectedPrintLabel && labelPrinter.deviceId) {
+					const items = await that.collectCpclItems(labelPrinter, {
+						copiesState: that.labelPrintChecked,
+						assignState: !that.labelPrintChecked,
+						labelCopies: that.bqValue,
+						assignBqValueStartValue: that.assignBqValueStart,
+						assignBqValueEndValue: that.assignBqValueEnd,
+						waybillInfo: that.waybillInfo,
+						parameterO097: that.parameterO097,
+						parameterO098: that.parameterO098,
+					})
+					appendItems(labelPrinter, items)
+				}
+
+				if (
+					that.enablePrintReceipt &&
+					that.selectedPrintReceipt &&
+					receiptPrinter.deviceId &&
+					that.printReceiptChecked
+				) {
+					const items = await that.collectReceiptItems(receiptPrinter)
+					appendItems(receiptPrinter, items)
+				}
+
+				return result
 			},
 			mapDeviceForView(item, connectedIds) {
 				if (!item) return null
@@ -1311,8 +1491,7 @@
 
 			/**
 			 * 执行打印任务
-			 * 原项目 CC3 走 $Common.newPrint，其它走 doPrintTaskItem；
-			 * 本项目统一走 CC3 模板选择器 + ble.print
+			 * 统一走 template-comm 通用模板（按已连接机型 brand=CC3|HM 适配方言）+ ble.print
 			 */
 			async doPrintTask(device, options, osName) {
 				await this.doPrintTaskItem(device, options, osName)
@@ -1337,8 +1516,9 @@
 				})
 			},
 
-			createPrintTask(device, printDataStr) {
+			createPrintTask(device, printDataStr, meta) {
 				const d = this.resolvePrintDevice(device)
+				const m = meta || {}
 				return {
 					deviceId: d.deviceId,
 					serviceId: d.serviceId,
@@ -1347,6 +1527,9 @@
 					localName: d.localName || '',
 					writeType: d.writeType || '',
 					printDataStr: printDataStr,
+					templateName: m.templateName || '打印任务',
+					printType: m.printType || '',
+					printTime: m.printTime || Date.now(),
 				}
 			},
 
@@ -1362,9 +1545,19 @@
 				if (!printDevice.serviceId || !printDevice.characteristicId) {
 					throw new Error('打印机未就绪，请重新连接后再打印')
 				}
-				const printTaskList = pList.map((str) =>
-					this.createPrintTask(printDevice, str)
-				)
+				const printTaskList = pList.map((item) => {
+					if (typeof item === 'string') {
+						return this.createPrintTask(printDevice, item)
+					}
+					return this.createPrintTask(
+						printDevice,
+						(item && (item.cpcl || item.printDataStr)) || '',
+						{
+							templateName: (item && item.templateName) || '打印任务',
+							printType: (item && item.printType) || '',
+						}
+					)
+				})
 				const ok = await bt.print(printTaskList)
 				if (!ok) {
 					throw new Error('打印失败')
@@ -1372,14 +1565,15 @@
 				return true
 			},
 
-			/** 按已连接打印机解析模板品牌（CC3 / HM） */
+			/** 按已连接打印机解析模板品牌（供 template-comm 方言适配） */
 			resolvePrintTemplateCtx(device, baseCtx) {
 				const d = this.resolvePrintDevice(device) || {}
 				const deviceName = d.name || d.localName || ''
 				const deviceId = d.deviceId || ''
 				const brandInfo = resolvePrinterBrandInfo(deviceName, deviceId)
 				return Object.assign({}, baseCtx || {}, {
-					brand: (brandInfo && brandInfo.brand) || '',
+					// 未知品牌默认芝柯方言，与历史主路径一致
+					brand: (brandInfo && brandInfo.brand) || 'CC3',
 					deviceName: deviceName,
 					deviceId: deviceId,
 				})
@@ -1387,98 +1581,9 @@
 
 			// 对齐 newPrint.doPrintTaskItem：按 options 组装标签/运单 CPCL 列表
 			async doPrintTaskItem(device, options) {
-				const that = this
 				try {
-					const {
-						copiesState,
-						assignState,
-						labelCopies,
-						assignBqValueStartValue,
-						assignBqValueEndValue,
-						waybillCopies,
-						waybillInfo,
-						parameterO097,
-						multiSelectList,
-						parameterO098,
-					} = options || {}
-
-					let amountOfSheets = 0
-					let whichOne = 1
-					if (copiesState) {
-						amountOfSheets = convertNumber(labelCopies)
-						whichOne = 1
-					}
-					if (assignState) {
-						amountOfSheets = convertNumber(assignBqValueEndValue)
-						whichOne = convertNumber(assignBqValueStartValue)
-					}
-
-					const WayBillInfoVO =
-						(waybillInfo && waybillInfo.appletWayBillCodeInfoVO) || {}
-					const pList = []
-					const tplCtx = that.resolvePrintTemplateCtx(device, {
-						parameterO097: parameterO097,
-						parameterO098: parameterO098,
-						zoneId: that.zoneId,
-					})
-
-					// 打印标签
-					if (amountOfSheets > 0) {
-						for (let i = whichOne; i <= amountOfSheets; i++) {
-							const data = Object.assign({}, WayBillInfoVO, {
-								currentCopyCode: i,
-							})
-							if (data.startPoint == '盛聚拼多多项目部') {
-								data.QRCode =
-									i < 10
-										? data.code + '000' + i.toString()
-										: i >= 10
-											? data.code + '00' + i.toString()
-											: data.code + '0' + i.toString()
-							} else {
-								data.QRCode = data.code
-							}
-							pList.push(resolveLabelTemplate(data, tplCtx))
-						}
-					}
-
-					// 打印运单
-					const waybillValue = convertNumber(waybillCopies)
-					if (waybillValue > 0) {
-						if (
-							parameterO097 != '0' &&
-							multiSelectList &&
-							multiSelectList.length
-						) {
-							for (let m = 0; m < multiSelectList.length; m++) {
-								const item = multiSelectList[m]
-								const res = await getFaceOrderReport({
-									codes: WayBillInfoVO.code,
-									printType: item,
-								})
-								const table1 = (res && res.data && res.data.table1) || []
-								const paramValue = table1[0] || {}
-								const tData = resolveWaybillTemplate(paramValue, {
-									...tplCtx,
-									isMulti: true,
-									multiType: item,
-								})
-								for (let i = 0; i < waybillValue; i++) {
-									pList.push(tData)
-								}
-							}
-						} else {
-							const tData = resolveWaybillTemplate(WayBillInfoVO, {
-								...tplCtx,
-								isMulti: false,
-							})
-							for (let i = 0; i < waybillValue; i++) {
-								pList.push(tData)
-							}
-						}
-					}
-
-					await that.printCpclList(device, pList)
+					const pList = await this.collectCpclItems(device, options)
+					await this.printCpclList(device, pList)
 					return true
 				} catch (err) {
 					const errMsg = (err && err.message) || err || '蓝牙打印数据写入失败'
@@ -1487,27 +1592,145 @@
 				}
 			},
 
+			/** 组装标签/运单 CPCL 项（不写入蓝牙） */
+			async collectCpclItems(device, options) {
+				const that = this
+				const {
+					copiesState,
+					assignState,
+					labelCopies,
+					assignBqValueStartValue,
+					assignBqValueEndValue,
+					waybillCopies,
+					waybillInfo,
+					parameterO097,
+					multiSelectList,
+					parameterO098,
+				} = options || {}
+
+				let amountOfSheets = 0
+				let whichOne = 1
+				if (copiesState) {
+					amountOfSheets = convertNumber(labelCopies)
+					whichOne = 1
+				}
+				if (assignState) {
+					amountOfSheets = convertNumber(assignBqValueEndValue)
+					whichOne = convertNumber(assignBqValueStartValue)
+				}
+
+				const WayBillInfoVO =
+					(waybillInfo && waybillInfo.appletWayBillCodeInfoVO) || {}
+				const pList = []
+				const tplCtx = that.resolvePrintTemplateCtx(device, {
+					parameterO097: parameterO097,
+					parameterO098: parameterO098,
+					zoneId: that.zoneId,
+				})
+
+				if (amountOfSheets > 0) {
+					const labelName = resolveLabelTemplateName(tplCtx)
+					for (let i = whichOne; i <= amountOfSheets; i++) {
+						const data = Object.assign({}, WayBillInfoVO, {
+							currentCopyCode: i,
+						})
+						if (data.startPoint == '盛聚拼多多项目部') {
+							data.QRCode =
+								i < 10
+									? data.code + '000' + i.toString()
+									: i >= 10
+										? data.code + '00' + i.toString()
+										: data.code + '0' + i.toString()
+						} else {
+							data.QRCode = data.code
+						}
+						pList.push({
+							cpcl: resolveLabelTemplate(data, tplCtx),
+							templateName: labelName,
+							printType: 'label',
+						})
+					}
+				}
+
+				const waybillValue = convertNumber(waybillCopies)
+				if (waybillValue > 0) {
+					if (
+						parameterO097 != '0' &&
+						multiSelectList &&
+						multiSelectList.length
+					) {
+						for (let m = 0; m < multiSelectList.length; m++) {
+							const item = multiSelectList[m]
+							const res = await getFaceOrderReport({
+								codes: WayBillInfoVO.code,
+								printType: item,
+							})
+							const table1 = (res && res.data && res.data.table1) || []
+							const paramValue = table1[0] || {}
+							const waybillCtx = Object.assign({}, tplCtx, {
+								isMulti: true,
+								multiType: item,
+							})
+							const tData = resolveWaybillTemplate(paramValue, waybillCtx)
+							const waybillName = resolveWaybillTemplateName(waybillCtx)
+							for (let i = 0; i < waybillValue; i++) {
+								pList.push({
+									cpcl: tData,
+									templateName: waybillName,
+									printType: 'waybill',
+								})
+							}
+						}
+					} else {
+						const waybillCtx = Object.assign({}, tplCtx, {
+							isMulti: false,
+						})
+						const tData = resolveWaybillTemplate(WayBillInfoVO, waybillCtx)
+						const waybillName = resolveWaybillTemplateName(waybillCtx)
+						for (let i = 0; i < waybillValue; i++) {
+							pList.push({
+								cpcl: tData,
+								templateName: waybillName,
+								printType: 'waybill',
+							})
+						}
+					}
+				}
+
+				return pList
+			},
+
+			/** 组装回单 CPCL 项（不写入蓝牙） */
+			async collectReceiptItems(receiptPrinter) {
+				const that = this
+				const rows = await that.receiptTask()
+				const receiptCtx = that.resolvePrintTemplateCtx(receiptPrinter, {
+					parameterO097: that.parameterO097,
+					zoneId: that.zoneId,
+				})
+				const receiptTpl = resolveReceiptTemplate(rows[0] || {}, receiptCtx)
+				const receiptName = resolveReceiptTemplateName(receiptCtx)
+				const pList = []
+				const num = convertNumber(that.printReceiptNum)
+				for (let index = 0; index < num; index++) {
+					pList.push({
+						cpcl: receiptTpl,
+						templateName: receiptName,
+						printType: 'receipt',
+					})
+				}
+				return pList
+			},
+
 			// 对齐 newPrint.printReceiptTask
 			async printReceiptTask(receiptPrinter) {
-				const that = this
 				uni.showLoading({
 					title: '打印中...',
 					mask: true,
 				})
 				try {
-					const rows = await that.receiptTask()
-					const receiptTpl = resolveReceiptTemplate(rows[0] || {}, {
-						...that.resolvePrintTemplateCtx(receiptPrinter, {
-							parameterO097: that.parameterO097,
-							zoneId: that.zoneId,
-						}),
-					})
-					const pList = []
-					const num = convertNumber(that.printReceiptNum)
-					for (let index = 0; index < num; index++) {
-						pList.push(receiptTpl)
-					}
-					await that.printCpclList(receiptPrinter, pList)
+					const pList = await this.collectReceiptItems(receiptPrinter)
+					await this.printCpclList(receiptPrinter, pList)
 				} finally {
 					uni.hideLoading()
 				}
@@ -1734,5 +1957,38 @@
 		background: #fff;
 		border: 1rpx solid $pr-border-color;
 		box-sizing: border-box;
+	}
+
+	.footerBtn--row {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+	}
+
+	.taskBtn {
+		flex: 0 0 220rpx;
+		margin: 0;
+		height: 80rpx;
+		line-height: 80rpx;
+		border-radius: 16rpx;
+		font-weight: 700;
+		font-size: 28rpx;
+		color: $pr-theme-text !important;
+		background: $pr-theme-soft !important;
+		border: 2rpx solid $pr-theme;
+
+		&::after {
+			border: none;
+		}
+
+		&[disabled] {
+			opacity: 0.7;
+		}
+	}
+
+	.footerBtn--row .printBtn {
+		flex: 1;
+		height: 80rpx;
+		line-height: 80rpx;
 	}
 </style>
