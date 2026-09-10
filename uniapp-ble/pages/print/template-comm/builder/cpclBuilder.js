@@ -187,9 +187,9 @@ export function createCpclBuilder(options = {}) {
 			const useGapSense = options.useGapSense !== false
 			if (brand === 'HM') {
 				if (useGapSense) {
-					// max-feed≈15mm（120dot@8dot/mm），定位标签间隙；skip=0 避免多走
-					pushLine('SETFF 120 0')
-					pushOp({ type: 'setff', maxFeed: 120, skip: 0 })
+					// SETFF 5 0：搜索间隙步长 5dot，精细寻缝并避免额外走纸
+					pushLine('SETFF 5 0')
+					pushOp({ type: 'setff', maxFeed: 5, skip: 0 })
 					pushLine('FORM')
 					pushOp({ type: 'form' })
 				}

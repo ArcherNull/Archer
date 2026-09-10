@@ -31,7 +31,7 @@
 					<view class="historyList" v-if="historyList.length">
 						<BluetoothDeviceItem
 							v-for="(item, index) in historyList"
-							:key="item.deviceId || index"
+							:key="item.deviceId"
 							:device="item"
 							:index="index"
 							variant="search"

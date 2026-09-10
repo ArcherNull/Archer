@@ -3,7 +3,7 @@
 		<view class="cpclPreview-paper" :style="paperStyleStr">
 			<view
 				v-for="(op, index) in renderOps"
-				:key="'op-' + index"
+				:key="index"
 				:class="'cpclPreview-op cpclPreview-op--' + op.type + (op.vertical ? ' is-vertical' : '')"
 				:style="op.styleStr"
 			>

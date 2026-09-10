@@ -44,24 +44,33 @@ const PAGE_W = 70 * DOTS_PER_MM // 560
 const PAGE_H = 85 * DOTS_PER_MM // 680
 /** 顶部条码上方预留 2mm 空白 */
 const TOP_PAD = 2 * DOTS_PER_MM // 16
-/** 汉印底部预留约 2mm 空白，避免内容贴缝/顶到下一张 */
-const BOTTOM_PAD = 2 * DOTS_PER_MM // 16
 const BARCODE_H = 50
 const Y_BARCODE = TOP_PAD
 const Y_ORDER_TEXT = Y_BARCODE + BARCODE_H + 4 // 70
 const Y_BOX_TOP = 110
 
-const Y_RECV_TOP = 370
-const Y_SEND_TOP = 500
+const Y_RECV_TOP = 380
+const Y_SEND_TOP = 510
 const LINE_W = 3
 const BODY_GAP = 28
 const SMALL_GAP = 26
+/** 毫米 → dots（203dpi ≈ 8 dots/mm） */
+const UP_04 = Math.round(0.4 * DOTS_PER_MM) // 3：条码下运单号
+const UP_08 = Math.round(0.8 * DOTS_PER_MM) // 6
+const UP_05 = Math.round(0.5 * DOTS_PER_MM) // 4
+/** 二维码单元格左线右移 2mm（框宽缩小），二维码同步右移 2mm */
+const QR_COL_SHIFT = Math.round(2 * DOTS_PER_MM) // 16
+const QR_COL_X = 325 + QR_COL_SHIFT // 341
+const QR_X = 336 + QR_COL_SHIFT // 352
+const QR_UNIT = 4
+const QR_SIZE = 37 * QR_UNIT // 148
+const QR_EDGE_PAD = 2
 /** 页脚相对底横线：紧贴横线下方 */
 const FOOTER_GAP1 = 7
 const FOOTER_GAP2 = 28
 const FOOTER_TEXT_H = 24
-/** 底框：为页脚 + 底部 2mm 留白让位 */
-const Y_BOX_BOTTOM = PAGE_H - BOTTOM_PAD - FOOTER_GAP2 - FOOTER_TEXT_H // 612
+/** 底框：为页脚让位（不再预留底部 2mm 空白） */
+const Y_BOX_BOTTOM = PAGE_H - FOOTER_GAP2 - FOOTER_TEXT_H // 628
 
 function isHmBrand(brand) {
 	const b = String(brand || '').toUpperCase()
@@ -109,7 +118,7 @@ export function buildPeiJunLabel(data = {}, options = {}) {
 	const d = Object.assign({}, EMPTY, data || {})
 	const brand = options.brand || 'common'
 	const b = createCpclBuilder({ brand: brand })
-	/** 汉印底部 2mm 留白；其它品牌保持略紧凑 */
+	/** 汉印/其它品牌统一底框，不再预留底部 2mm */
 	const boxBottom = isHmBrand(brand) ? Y_BOX_BOTTOM : 620
 	const footerGap1 = isHmBrand(brand) ? FOOTER_GAP1 : 7
 	const footerGap2 = isHmBrand(brand) ? FOOTER_GAP2 : 32
@@ -127,18 +136,22 @@ export function buildPeiJunLabel(data = {}, options = {}) {
 	b.page(PAGE_H, 1)
 	b.pageWidth(PAGE_W)
 
-	// 页头：顶留 2mm → Logo / 条码 / 运单号
+	// 页头：顶留 2mm → Logo / 条码 / 运单号（运单号上移 0.4mm）
 	b.logoEg(LOGO_EG_BYTE_W, LOGO_EG_HEIGHT, 10, TOP_PAD, LOGO_EG_DATA)
 	b.barcode128(2, 1, BARCODE_H, 82, Y_BARCODE, orderNo)
 	b.setMag(2, 2)
 	b.setBold(1)
-	b.text(3, 0, 182, Y_ORDER_TEXT, orderNo)
+	b.text(3, 0, 182, Y_ORDER_TEXT - UP_04, orderNo)
 	b.setBold(0)
 	b.setMag(1, 1)
 	b.vbarcode128(2, 1, 50, 510, boxBottom, orderNo)
 	b.box(5, Y_BOX_TOP, 500, boxBottom, LINE_W)
 
-	const yTransport = Y_BOX_TOP + 15
+	// 品名行上移腾出的 0.8mm：收/寄分区线上移，空间落到寄件地址下方（底框不动）
+	const yRecvTop = Y_RECV_TOP - UP_08
+	const ySendTop = Y_SEND_TOP - UP_08
+
+	const yTransport = Y_BOX_TOP + 15 - UP_08
 	b.setMag(2, 2)
 	b.text(0, 24, 20, yTransport, d.transportType)
 	b.setBold(1)
@@ -147,7 +160,7 @@ export function buildPeiJunLabel(data = {}, options = {}) {
 	b.setMag(1, 1)
 
 	const yLine1 = Y_BOX_TOP + 60
-	let yDest = Y_BOX_TOP + 75
+	let yDest = Y_BOX_TOP + 75 - UP_08
 	// 目的地市+区：与条码下运单号同款（SETMAG 2 2 + TEXT 3 0 + 加粗）
 	const destAreaGap = 40
 	b.setMag(2, 2)
@@ -158,44 +171,52 @@ export function buildPeiJunLabel(data = {}, options = {}) {
 	b.setBold(0)
 	b.setMag(1, 1)
 	yDest += destAreaLines.length * destAreaGap
-	const yOutlet = Math.max(yDest + 4, Y_BOX_TOP + 120)
+	const yOutlet = Math.max(yDest + 4, Y_BOX_TOP + 120 - UP_08)
 	b.setBold(1)
 	textLines(b, 15, yOutlet, BODY_GAP, destOutletLines)
 	b.setBold(0)
 
-	b.qr(336, Y_BOX_TOP + 69, 4, 4, d.qrcode)
+	// 品名 / 件数 / 包装：整体上移 0.8mm
+	const yGoods = Y_BOX_TOP + 185 - UP_08
+	const yWeightLine = Y_BOX_TOP + 238 - UP_08
+	const yWeight = Y_BOX_TOP + 248 - UP_08
 
-	const yGoods = Y_BOX_TOP + 185
-	const yWeightLine = Y_BOX_TOP + 215
-	const yWeight = Y_BOX_TOP + 230
-	b.text(0, 24, 20, yGoods, d.goodsName)
+	// 二维码：尺寸不变；单元格左线/二维码右移 2mm；贴底消除约 3mm 下空白
+	const qrY = yWeightLine - QR_SIZE - QR_EDGE_PAD
+	b.qr(QR_X, qrY, QR_UNIT, QR_UNIT, d.qrcode)
+
+	b.text(0, 24, 15, yGoods + 10, truncate(d.goodsName, 6))
+	b.setMag(2, 2)
 	b.setBold(1)
-	b.text(0, 24, 130, yGoods, d.goodsQty)
+	b.text(3, 0, 130, yGoods, truncate(d.goodsQty, 6))
 	b.setBold(0)
-	b.text(0, 24, 230, yGoods, d.packType)
 	b.setMag(1, 1)
+	b.text(0, 24, 270, yGoods + 10, truncate(d.packType, 4))
 	b.text(0, 24, 20, yWeight, d.weightVolume)
 
+	// 收件：姓名/电话/地址整体再上移 0.5mm
 	b.setMag(2, 2)
-	b.text(0, 24, 15, Y_RECV_TOP + 20, '收')
+	b.text(0, 24, 15, yRecvTop + 22 - UP_05, '收')
+	b.setBold(1)
+	b.text(3, 0, 70, yRecvTop + 12 - UP_05, truncate(d.receiverName, 6))
+	b.setBold(0)
 	b.setMag(1, 1)
-	let yRecv = Y_RECV_TOP + 15
-	b.text(0, 24, 70, yRecv, d.receiverName)
-	yRecv += BODY_GAP
+	let yRecv = yRecvTop + 58 - UP_05
 	b.text(0, 24, 70, yRecv, d.receiverPhone)
 	yRecv += BODY_GAP
 	textLines(b, 70, yRecv, BODY_GAP, receiverAddrLines)
 
 	b.setBold(1)
 	b.setMag(1, 1)
-	let yDelivery = Y_RECV_TOP + 15
+	let yDelivery = yRecvTop + 15
 	textLines(b, 340, yDelivery, SMALL_GAP, deliveryLines)
 	yDelivery += deliveryLines.length * SMALL_GAP + 8
 	textLines(b, 340, yDelivery, SMALL_GAP, payTypeLines)
 	b.setBold(0)
 
-	const ySendLabel = Y_SEND_TOP + 20
-	const ySendContent = Y_SEND_TOP + 15
+	// 寄件：内容整体上移 0.5mm；分区因品名行上移已抬高，地址下方多出空间
+	const ySendLabel = ySendTop + 20 - UP_05
+	const ySendContent = ySendTop + 15 - UP_05
 	b.setMag(2, 2)
 	b.text(0, 24, 15, ySendLabel, '寄')
 	b.setMag(1, 1)
@@ -211,16 +232,16 @@ export function buildPeiJunLabel(data = {}, options = {}) {
 	textLines(b, 328, yCustomerCode, SMALL_GAP, customerOrderNumberLines)
 
 	b.line(5, yLine1, 500, yLine1, LINE_W)
-	b.line(5, yGoods - 15, 325, yGoods - 15, LINE_W)
-	b.line(5, yWeightLine, 325, yWeightLine, LINE_W)
-	b.line(325, yWeightLine, 500, yWeightLine, LINE_W)
-	b.line(5, Y_RECV_TOP, 500, Y_RECV_TOP, LINE_W)
-	b.line(5, Y_SEND_TOP, 500, Y_SEND_TOP, LINE_W)
+	b.line(5, yGoods - 15, QR_COL_X, yGoods - 15, LINE_W)
+	b.line(5, yWeightLine, QR_COL_X, yWeightLine, LINE_W)
+	b.line(QR_COL_X, yWeightLine, 500, yWeightLine, LINE_W)
+	b.line(5, yRecvTop, 500, yRecvTop, LINE_W)
+	b.line(5, ySendTop, 500, ySendTop, LINE_W)
 	b.line(250, Y_BOX_TOP, 250, yLine1, LINE_W)
-	b.line(325, yLine1, 325, yWeightLine, LINE_W)
-	b.line(320, Y_RECV_TOP, 320, boxBottom, LINE_W)
+	b.line(QR_COL_X, yLine1, QR_COL_X, yWeightLine, LINE_W)
+	b.line(320, yRecvTop, 320, boxBottom, LINE_W)
 
-	// 页脚：紧贴底横线；汉印再保证页底约 2mm 空白
+	// 页脚：紧贴底横线
 	const yFooter1 = boxBottom + footerGap1
 	const yFooter2 = boxBottom + footerGap2
 	b.text(0, 24, 5, yFooter1, d.footerOutlet)

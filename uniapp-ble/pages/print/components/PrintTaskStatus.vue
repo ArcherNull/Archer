@@ -2,6 +2,7 @@
 	<view class="footerStatus">
 		<view class="footerStatus-chips">
 			<text class="chip">{{ statusInfo.platformName }}</text>
+			<text class="chip">版本 {{ statusInfo.osVersion }}</text>
 			<text class="chip">{{ statusInfo.deviceName }}</text>
 			<text class="chip chip--accent">蓝牙 {{ statusInfo.btDeviceName }}</text>
 			<text class="chip">信号 {{ statusInfo.btRssi }}dBm</text>
@@ -50,6 +51,7 @@
 				const info = this.printStatusInfo || {}
 				return {
 					platformName: info.platformName || '其它',
+					osVersion: info.osVersion || '--',
 					deviceName: info.deviceName || '未知设备',
 					btDeviceName: info.btDeviceName || '未连接',
 					btRssi: (info.btRssi === 0 || (info.btRssi !== undefined && info.btRssi !== null))

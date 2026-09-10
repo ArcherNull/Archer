@@ -80,11 +80,9 @@ const PAGE_W = 70 * DOTS_PER_MM // 560
 /** 物理纸高 85mm；汉印按此高度走纸，勿再按内容动态缩短 */
 const PAGE_H = 85 * DOTS_PER_MM // 680
 const M = 10
-const M_TOP = 2 * DOTS_PER_MM
 const LABEL_W = 48
 const PICKUP_W = 84
-/** 汉印底部预留约 2mm 空白 */
-const BOTTOM_PAD = 2 * DOTS_PER_MM // 16
+/** 非汉印底框边距；汉印不再预留底部 2mm 空白 */
 const BOX_BOTTOM_MARGIN = 8
 
 const QR_U = 4
@@ -94,7 +92,6 @@ const QR_CELL_PAD = 1 * DOTS_PER_MM
 const QR_W = QR_DISPLAY + QR_CELL_PAD * 2 // 164
 
 const FONT_BODY = 24
-const FONT_TITLE = 28
 const CHAR_W = 24
 const TEXT_LINE_GAP = 30
 const CELL_PAD_Y = 14
@@ -109,9 +106,12 @@ const xRight = PAGE_W - M
 const xQR = PAGE_W - M - QR_W
 const xContent = xLabel + 6
 
-const Y_SHIFT = 5 * DOTS_PER_MM
-const yOrderNo = Math.max(2, M_TOP - FONT_TITLE) + Y_SHIFT
-const yBoxTop = yOrderNo + FONT_TITLE + 4
+/** 顶部运单号：与 peiJunLabel 同款位置/字号（SETMAG 2 2 + TEXT 3 0） */
+const X_ORDER_TEXT = 182
+/** 模板整体上移 2mm */
+const SHIFT_UP_2MM = 2 * DOTS_PER_MM // 16
+const Y_ORDER_TEXT = 70 - SHIFT_UP_2MM // 54
+const yBoxTop = 110 - SHIFT_UP_2MM // 94
 
 const ROW1_TOP_H = 66
 const ROW1_BOT_H = 74
@@ -137,7 +137,7 @@ function isHmBrand(brand) {
 }
 
 function resolveBoxBottom(brand) {
-	const pad = isHmBrand(brand) ? BOTTOM_PAD : BOX_BOTTOM_MARGIN
+	const pad = isHmBrand(brand) ? 0 : BOX_BOTTOM_MARGIN
 	return Math.min(yRow4End + ROW5_H, PAGE_H - pad)
 }
 
@@ -176,6 +176,8 @@ const peijunEmptyData = {
 	payType: '',
 	collectAmount: '',
 	deliveryFee: '',
+	receiptFee: '',
+	insureFee: '',
 	remark: '',
 	qrcode: '',
 }
@@ -184,6 +186,7 @@ const peijunEmptyData = {
  * 业务数据（多联面单 / 回单接口）拼装为配军模板字段
  */
 export function mapBizToPeijun(biz = {}) {
+	console.log('biz====>', biz)
 	const qty = biz?.件数 || ''
 	const qtyText = qty
 		? String(qty).includes('件')
@@ -215,7 +218,10 @@ export function mapBizToPeijun(biz = {}) {
 		totalFee: biz?.合计应收 || biz?.费用合计 || '',
 		payType: biz?.付款方式 || '',
 		collectAmount: biz?.代收 || biz?.代收款 || '',
-		deliveryFee: biz?.送货费 || '',
+		// 无值也保留文案
+		deliveryFee: biz?.送货费 != null && biz?.送货费 !== '' ? String(biz.送货费) : '',
+		receiptFee: biz?.回单费 != null && biz?.回单费 !== '' ? String(biz.回单费) : '',
+		insureFee: biz?.保价费 != null && biz?.保价费 !== '' ? String(biz.保价费) : '',
 		remark: biz?.备注 || biz?.开单备注 || '',
 		qrcode,
 	}
@@ -234,7 +240,6 @@ export function buildPeijun(data = {}, options = {}) {
 
 	const companyMaxChars = maxCharsByWidth(xContent, xPickup, 8, CHAR_W)
 	const remarkMaxChars = maxCharsByWidth(xContent, xQR, 8, CHAR_W)
-	const contentMaxChars = maxCharsByWidth(xContent, xRight, 8, CHAR_W)
 
 	const senderCompanyLines = wrapText(d.senderCompany, companyMaxChars, 2)
 	const senderContact = truncate(`${d.senderName} ${d.senderPhone}`, companyMaxChars)
@@ -248,10 +253,25 @@ export function buildPeijun(data = {}, options = {}) {
 		d.goodsDate,
 		WRAP_CHARS
 	)
-	const feeLine = truncate(`费用合计：${d.totalFee}`, Math.floor(contentMaxChars * 0.65))
-	const payType = truncate(d.payType, 4)
-	const collectLine = truncate(`代收款：${d.collectAmount}`, Math.floor(contentMaxChars * 0.55))
-	const deliveryFeeLine = truncate(`送货费：${d.deliveryFee}`, Math.floor(contentMaxChars * 0.4))
+	// 运费区：付款方式固定最右最多4字；费用合计/回单费平分剩余宽度
+	const PAY_TYPE_MAX = 4
+	const payTypeW = PAY_TYPE_MAX * CHAR_W
+	const xPayType = xRight - payTypeW
+	const feeRemainW = Math.max(0, xPayType - xContent)
+	const feeHalfW = Math.floor(feeRemainW / 2)
+	const xFeeTotal = xContent
+	const xReceiptFee = xContent + feeHalfW
+	const feeLine = `费用合计：${d.totalFee}`
+	const receiptFeeLine = `回单费：${d.receiptFee || ''}`
+	const payType = truncate(d.payType, PAY_TYPE_MAX)
+	// 下方代收款/送货费/保价费三等分，费用值完整展示不省略
+	const feeColW = Math.max(4, Math.floor((xRight - xContent) / 3))
+	const xFeeCol0 = xContent
+	const xFeeCol1 = xContent + feeColW
+	const xFeeCol2 = xContent + feeColW * 2
+	const collectLine = `代收款：${d.collectAmount}`
+	const deliveryFeeLine = `送货费：${d.deliveryFee || ''}`
+	const insureFeeLine = `保价费：${d.insureFee || ''}`
 
 	const remarkMaxLines = Math.max(1, Math.floor((ROW5_H - CELL_PAD_Y * 2) / TEXT_LINE_GAP))
 	const remarkLines = wrapText(d.remark, remarkMaxChars, remarkMaxLines)
@@ -259,12 +279,12 @@ export function buildPeijun(data = {}, options = {}) {
 	b.page(PAGE_H, 1)
 	b.pageWidth(PAGE_W)
 
-	// 单号（居中）
-	b.align('CENTER')
+	// 顶部运单号：与 peiJunLabel 同款（SETMAG 2 2 + SETBOLD + TEXT 3 0）
+	b.setMag(2, 2)
 	b.setBold(1)
-	b.text(0, FONT_TITLE, 0, yOrderNo, d.orderNo)
+	b.text(3, 0, X_ORDER_TEXT, Y_ORDER_TEXT, d.orderNo)
 	b.setBold(0)
-	b.align('LEFT')
+	b.setMag(1, 1)
 
 	b.box(xLeft, yBoxTop, xRight, yBoxBottom, LINE_W)
 
@@ -349,10 +369,14 @@ export function buildPeijun(data = {}, options = {}) {
 		'运费'
 	)
 	const feeBaseY = yRow3End + CELL_PAD_Y
-	b.text(0, FONT_BODY, xContent, feeBaseY, feeLine)
-	b.text(0, FONT_BODY, xRight - 56, feeBaseY, payType)
-	b.text(0, FONT_BODY, xContent, feeBaseY + TEXT_LINE_GAP, collectLine)
-	b.text(0, FONT_BODY, xRight - 160, feeBaseY + TEXT_LINE_GAP, deliveryFeeLine)
+	// 第一行：费用合计/回单费平分剩余；付款方式最右（最多4字）
+	b.text(0, FONT_BODY, xFeeTotal, feeBaseY, feeLine)
+	b.text(0, FONT_BODY, xReceiptFee, feeBaseY, receiptFeeLine)
+	b.text(0, FONT_BODY, xPayType, feeBaseY, payType)
+	// 第二行三等分：代收款 | 送货费 | 保价费（费用值不省略）
+	b.text(0, FONT_BODY, xFeeCol0, feeBaseY + TEXT_LINE_GAP, collectLine)
+	b.text(0, FONT_BODY, xFeeCol1, feeBaseY + TEXT_LINE_GAP, deliveryFeeLine)
+	b.text(0, FONT_BODY, xFeeCol2, feeBaseY + TEXT_LINE_GAP, insureFeeLine)
 
 	// 开单备注
 	verticalText(

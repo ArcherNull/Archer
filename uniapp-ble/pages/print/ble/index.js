@@ -5,14 +5,14 @@ import { BleBlueTooth } from './bleBlueTooth.js'
  * 连接与打印任务均由 BleBlueTooth 实现
  */
 export class BluetoothPrintModule {
-    constructor() {
-        this.ble = new BleBlueTooth()
-    }
+	constructor() {
+		this.ble = new BleBlueTooth()
+	}
 
-    /** 页面统一访问的适配器实例 */
-    get adapter() {
-        return this.ble
-    }
+	/** 页面统一访问的适配器实例 */
+	get adapter() {
+		return this.ble
+	}
 }
 
 let _instance = null
@@ -22,10 +22,10 @@ let _instance = null
  * @returns {BluetoothPrintModule}
  */
 export function getBluetoothPrintModule() {
-    if (!_instance) {
-        _instance = new BluetoothPrintModule()
-    }
-    return _instance
+	if (!_instance) {
+		_instance = new BluetoothPrintModule()
+	}
+	return _instance
 }
 
 /**
@@ -33,7 +33,7 @@ export function getBluetoothPrintModule() {
  * @returns {BleBlueTooth}
  */
 export function getBluetoothAdapter() {
-    return getBluetoothPrintModule().adapter
+	return getBluetoothPrintModule().adapter
 }
 
 /**
@@ -41,7 +41,35 @@ export function getBluetoothAdapter() {
  * @returns {BleBlueTooth}
  */
 export function createBluetoothAdapter() {
-    return new BleBlueTooth()
+	return new BleBlueTooth()
 }
 
 export { BleBlueTooth }
+
+export {
+	DEFAULT_PAGE_WIDTH_DOTS,
+	DEFAULT_THRESHOLD,
+	DOTS_PER_MM,
+	DEFAULT_PRINT_WIDTH_MM,
+	DEFAULT_PRINT_HEIGHT_MM,
+	MAX_IMAGE_BYTES,
+	ALLOWED_IMAGE_EXTS,
+	STATIC_PRINT_IMAGES,
+	mmToDots,
+	calcPrintSizeByMm,
+	getImageExt,
+	isAllowedImageType,
+	getFileSizeAsync,
+	validatePrintImage,
+	rgbaToEgBitmap,
+	buildImageCpcl,
+	buildHmCpclImageHex,
+	compressMonoToHex,
+	isHmImageHexPayload,
+	getImageInfoAsync,
+	resolveDrawableImagePath,
+	materializeLocalImagePath,
+	loadImagePixels,
+	imagePathToCpcl,
+	choosePrintImage,
+} from './imagePrint.js'

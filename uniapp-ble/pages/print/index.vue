@@ -3,7 +3,9 @@
 		<!-- 顶部手机设备信息（本项目扩展，便于联调） -->
 		<view class="deviceBar">
 			<view class="deviceBar-left">
-				<text class="deviceBar-item">平台：{{ platformName }}</text>
+				<text class="deviceBar-item">操作系统：{{ platformName }}</text>
+				<text class="deviceBar-split">|</text>
+				<text class="deviceBar-item">版本：{{ osVersion || '--' }}</text>
 				<text class="deviceBar-split">|</text>
 				<text class="deviceBar-item">设备：{{ deviceName }}</text>
 			</view>
@@ -63,14 +65,8 @@
 						:index="index"
 						variant="connected"
 						:show-print-type="true"
-					>
-						<template #actions>
-							<view
-								class="cPClose"
-								@click.stop="onConnectedClose(item)"
-							>×</view>
-						</template>
-					</BluetoothDeviceItem>
+						@connect="onConnectedClose"
+					/>
 				</view>
 				<view class="noMoreBox" v-else @click="jumpOldPage">
 					暂无连接蓝牙打印机
@@ -314,23 +310,29 @@
 			@apply="applyPrintConfig"
 		/>
 
-		<view class="footerBtn footerBtn--row">
-			<button
-				class="taskBtn"
-				:disabled="printLoading"
-				@click="openPendingPrintTasks"
-			>
-				打印任务
-			</button>
-			<button
-				type="primary"
-				class="printBtn"
-				:disabled="printLoading"
-				:loading="printLoading"
-				@click="confirmPrinting"
-			>
-				{{ printLoading ? '打印中...' : '打印' }}
-			</button>
+		<view class="footerBar">
+			<PrintJobStatus
+				:jobs="printJobList"
+				:print-loading="printLoading"
+			/>
+			<view class="footerBtn-row">
+				<button
+					class="taskBtn"
+					:disabled="printLoading"
+					@click="openPendingPrintTasks"
+				>
+					打印任务
+				</button>
+				<button
+					type="primary"
+					class="printBtn"
+					:disabled="printLoading"
+					:loading="printLoading"
+					@click="confirmPrinting"
+				>
+					{{ printLoading ? '打印中...' : '打印' }}
+				</button>
+			</view>
 		</view>
 	</view>
 </template>
@@ -349,10 +351,12 @@
 	import ConnectHistoryPopup from './components/ConnectHistoryPopup.vue'
 	import PrintTasksPopup from './components/PrintTasksPopup.vue'
 	import PrintSettingsPopup from './components/PrintSettingsPopup.vue'
+	import PrintJobStatus from './components/PrintJobStatus.vue'
 	import { ALERT_TEXT_LIST } from './help/index.js'
 	import { getBluetoothAdapter } from './ble/index.js'
 	import {
 		resolvePrinterBrandInfo,
+		resolveOsVersion,
 	} from './ble/config.js'
 	import { showMsg, convertNumber, isNotEmptyArr, showModal } from './comm/utils.js'
 	import {
@@ -412,11 +416,13 @@
 			ConnectHistoryPopup,
 			PrintTasksPopup,
 			PrintSettingsPopup,
+			PrintJobStatus,
 			PreviewPopup,
 		},
 		data() {
 			return {
 				platformName: '其它',
+				osVersion: '',
 				deviceName: '未知设备',
 				printConfig: {},
 				platformDefaultConfig: {},
@@ -437,6 +443,10 @@
 				previewTitle: '',
 				previewOps: [],
 				printLoading: false,
+				/** 按打印类型拆分的任务状态：waybill / label / receipt */
+				printJobs: {},
+				activePrintType: '',
+				printJobVersion: 0,
 				selectedPrinterType: '',
 				cusBModuleInstance: null,
 				printReceiptChecked: true,
@@ -473,6 +483,19 @@
 			}
 		},
 		computed: {
+			printJobList() {
+				void this.printJobVersion
+				const jobs = this.printJobs || {}
+				const order = ['waybill', 'label', 'receipt']
+				const list = []
+				for (let i = 0; i < order.length; i++) {
+					const key = order[i]
+					if (jobs[key]) {
+						list.push(jobs[key])
+					}
+				}
+				return list
+			},
 			devicePopTitle() {
 				if (this.sharePrinter || this.selectedPrinterType === 'shared') {
 					return '选择共用打印机'
@@ -578,12 +601,15 @@
 			this.initPage(options || {})
 		},
 		onShow() {
+			uni.setKeepScreenOn({ keepScreenOn: true })
 			this.initBlueTooth()
 		},
 		onHide() {
+			uni.setKeepScreenOn({ keepScreenOn: false })
 			this.teardownBlueTooth()
 		},
 		onUnload() {
+			uni.setKeepScreenOn({ keepScreenOn: false })
 			this.teardownBlueTooth()
 		},
 		methods: {
@@ -621,9 +647,11 @@
 				try {
 					const systemInfo = uni.getSystemInfoSync() || {}
 					this.platformName = this.resolvePlatformName(systemInfo)
+					this.osVersion = resolveOsVersion(systemInfo)
 					this.deviceName = this.resolveDeviceName(systemInfo)
 				} catch (e) {
 					this.platformName = '其它'
+					this.osVersion = ''
 					this.deviceName = '未知设备'
 				}
 			},
@@ -659,11 +687,21 @@
 					this.searching = true
 				}
 			},
+			syncOptimalTransferToBt(bt) {
+				const target = bt || this.cusBModuleInstance
+				if (!target) return
+				const cfg = this.printConfig || {}
+				const enabled = cfg.useOptimalTransfer !== false
+				target._useOptimalTransfer = enabled
+			},
 			syncConfigFromBt() {
 				const bt = this.cusBModuleInstance
 				if (!bt) return
 				if (bt.getPlatformDisplayName) {
 					this.platformName = bt.getPlatformDisplayName() || this.platformName
+				}
+				if (bt.getOsVersionDisplay) {
+					this.osVersion = bt.getOsVersionDisplay() || this.osVersion
 				}
 				if (bt.getDeviceDisplayName) {
 					this.deviceName = bt.getDeviceDisplayName() || this.deviceName
@@ -674,9 +712,11 @@
 				if (bt.getPrintConfig) {
 					this.printConfig = bt.getPrintConfig() || {}
 				}
+				this.syncOptimalTransferToBt(bt)
 			},
 			onConfigUpdate(cfg) {
 				this.printConfig = Object.assign({}, cfg)
+				this.syncOptimalTransferToBt()
 			},
 			applyPrintConfig(cfg) {
 				const bt = this.cusBModuleInstance
@@ -885,6 +925,9 @@
 				if (bt.getPlatformDisplayName) {
 					this.platformName = bt.getPlatformDisplayName() || this.platformName
 				}
+				if (bt.getOsVersionDisplay) {
+					this.osVersion = bt.getOsVersionDisplay() || this.osVersion
+				}
 				if (bt.getDeviceDisplayName) {
 					this.deviceName = bt.getDeviceDisplayName() || this.deviceName
 				}
@@ -1012,11 +1055,21 @@
 					if (this._btStateHandler) {
 						instance.off('stateChange', this._btStateHandler)
 					}
+					if (this._btProgressHandler) {
+						instance.off('printProgress', this._btProgressHandler)
+					}
 					this._btStateHandler = function () {
 						that.bumpBtVersion()
 					}
+					this._btProgressHandler = function () {
+						that.syncPrintJobFromBt()
+					}
 					instance.on('stateChange', this._btStateHandler)
+					instance.on('printProgress', this._btProgressHandler)
 					this.cusBModuleInstance = instance
+				}
+				if (this.cusBModuleInstance) {
+					this.syncOptimalTransferToBt(this.cusBModuleInstance)
 				}
 				if (needSetup) {
 					const instance = this.cusBModuleInstance
@@ -1339,7 +1392,12 @@
 							} catch (e) {}
 						}
 					}
-					const newItem = Object.assign({}, item, { printType: type })
+					const useOptimalTransfer =
+						!this.printConfig || this.printConfig.useOptimalTransfer !== false
+					const newItem = Object.assign({}, item, {
+						printType: type,
+						useOptimalTransfer: useOptimalTransfer,
+					})
 					if (newItem.isConnect) {
 						const full =
 							(bt._connectedDevicesList || []).find(function (ele) {
@@ -1347,7 +1405,12 @@
 							}) || newItem
 						await bt.closeBlueToothPrinter(full)
 					} else {
+						this.syncOptimalTransferToBt(bt)
 						await bt.connectBlueToothPrinter(newItem)
+						// 最优传输会回写 MTU / 间隔，同步到界面传输设置
+						if (useOptimalTransfer && bt.getPrintConfig) {
+							this.printConfig = Object.assign({}, bt.getPrintConfig())
+						}
 						// 确保已连接列表上的 printType 已更新为当前绑定类型
 						const connected = (bt._connectedDevicesList || []).find(function (ele) {
 							return ele && ele.deviceId === item.deviceId
@@ -1367,7 +1430,11 @@
 				}
 			},
 			onConnectedClose(payload) {
-				const item = this.resolveDeviceItem(payload)
+				// BluetoothDeviceItem 直接抛出 device；兼容旧事件结构
+				const item =
+					payload && payload.deviceId
+						? payload
+						: this.resolveDeviceItem(payload)
 				if (item) {
 					this.closeConnect(item)
 				}
@@ -1475,14 +1542,216 @@
 				}
 				try {
 					that.printLoading = true
+					that.beginPrintJob()
 					await that.buildPrintQueue()
+					that.finishPrintJob('success')
 				} catch (err) {
-					uni.hideLoading()
-					showMsg((err && err.message) || '打印失败')
+					that.finishPrintJob('fail')
+					const errMsg = (err && err.message) || '打印失败'
+					console.log('confirmPrinting-err=====>', errMsg)
+					await showModal({
+						title: '打印失败',
+						content: String(errMsg),
+						showCancel: false,
+						confirmText: '知道了',
+					})
 				} finally {
 					that.printLoading = false
-					uni.hideLoading()
 				}
+			},
+
+			/** 打印机展示名 */
+			resolvePrinterDisplayName(device) {
+				const d = device || {}
+				return d.name || d.localName || '未命名打印机'
+			},
+
+			calcWaybillJobCount() {
+				if (!this.selectedPrintWaybill) return 0
+				const copies = convertNumber(this.ydValue)
+				const multiList = this.dealMultiSelectList() || []
+				if (this.parameterO097 != '0' && multiList.length) {
+					return copies * multiList.length
+				}
+				return copies
+			},
+
+			calcLabelJobCount() {
+				if (!this.selectedPrintLabel) return 0
+				if (this.labelPrintChecked) {
+					return convertNumber(this.bqValue)
+				}
+				const start = convertNumber(this.assignBqValueStart)
+				const end = convertNumber(this.assignBqValueEnd)
+				return Math.max(0, end - start + 1)
+			},
+
+			calcReceiptJobCount() {
+				if (
+					!(
+						this.enablePrintReceipt &&
+						this.selectedPrintReceipt &&
+						this.printReceiptChecked
+					)
+				) {
+					return 0
+				}
+				return convertNumber(this.printReceiptNum)
+			},
+
+			createPrintTypeJob(printType, totalCount, printer) {
+				const cfg = this.printConfig || {}
+				return {
+					printType: printType,
+					printerName: this.resolvePrinterDisplayName(printer),
+					finishedCount: 0,
+					totalCount: Math.max(0, Number(totalCount) || 0),
+					status: 'pending',
+					estimatedSec: 0,
+					printProgress: 0,
+					transferProgress: 0,
+					elapsedSec: 0,
+					mtu: Number(cfg.mtu) || 0,
+				}
+			},
+
+			patchPrintJob(printType, partial) {
+				if (!printType) return
+				const current = (this.printJobs && this.printJobs[printType]) || null
+				if (!current) return
+				this.printJobs = Object.assign({}, this.printJobs, {
+					[printType]: Object.assign({}, current, partial || {}),
+				})
+				this.printJobVersion += 1
+			},
+
+			beginPrintJob() {
+				const { labelPrinter, waybillPrinter, receiptPrinter } =
+					this.connectedPrinter
+				const jobs = {}
+				if (this.selectedPrintWaybill && waybillPrinter && waybillPrinter.deviceId) {
+					jobs.waybill = this.createPrintTypeJob(
+						'waybill',
+						this.calcWaybillJobCount(),
+						waybillPrinter
+					)
+				}
+				if (this.selectedPrintLabel && labelPrinter && labelPrinter.deviceId) {
+					jobs.label = this.createPrintTypeJob(
+						'label',
+						this.calcLabelJobCount(),
+						labelPrinter
+					)
+				}
+				if (
+					this.enablePrintReceipt &&
+					this.selectedPrintReceipt &&
+					this.printReceiptChecked &&
+					receiptPrinter &&
+					receiptPrinter.deviceId
+				) {
+					jobs.receipt = this.createPrintTypeJob(
+						'receipt',
+						this.calcReceiptJobCount(),
+						receiptPrinter
+					)
+				}
+				this.printJobs = jobs
+				this.activePrintType = ''
+				this.printJobVersion += 1
+			},
+
+			finishPrintJob(status) {
+				const next = status === 'success' ? 'success' : 'fail'
+				const jobs = Object.assign({}, this.printJobs || {})
+				const keys = Object.keys(jobs)
+				for (let i = 0; i < keys.length; i++) {
+					const key = keys[i]
+					const job = jobs[key]
+					if (!job) continue
+					if (next === 'success') {
+						if (job.status === 'pending' || job.status === 'printing') {
+							jobs[key] = Object.assign({}, job, {
+								status: 'success',
+								finishedCount: Number(job.totalCount || 0),
+								printProgress: 100,
+								transferProgress: 100,
+							})
+						}
+					} else if (key === this.activePrintType || job.status === 'printing') {
+						jobs[key] = Object.assign({}, job, {
+							status: 'fail',
+						})
+					}
+				}
+				this.printJobs = jobs
+				this.activePrintType = ''
+				this.printJobVersion += 1
+			},
+
+			setPrintJobType(printType) {
+				const type = printType || ''
+				this.activePrintType = type
+				if (!type) return
+				this.patchPrintJob(type, {
+					status: 'printing',
+					finishedCount: 0,
+					printProgress: 0,
+					transferProgress: 0,
+					elapsedSec: 0,
+					estimatedSec: 0,
+				})
+			},
+
+			markPrintBatchDone(printType, batchCount) {
+				const type = printType || this.activePrintType
+				if (!type) return
+				const job = (this.printJobs && this.printJobs[type]) || null
+				const total = job
+					? Number(job.totalCount || 0)
+					: Math.max(0, Number(batchCount) || 0)
+				const finished = total > 0
+					? total
+					: Math.max(0, Number(batchCount) || 0)
+				this.patchPrintJob(type, {
+					status: 'success',
+					finishedCount: finished,
+					totalCount: total || finished,
+					printProgress: 100,
+					transferProgress: 100,
+				})
+				if (this.activePrintType === type) {
+					this.activePrintType = ''
+				}
+			},
+
+			syncPrintJobFromBt() {
+				const bt = this.cusBModuleInstance
+				if (!bt || !bt.getPrintProgress) return
+				const type = this.activePrintType
+				if (!type || !(this.printJobs && this.printJobs[type])) return
+				const progress = bt.getPrintProgress() || {}
+				const cfg = (bt.getPrintConfig && bt.getPrintConfig()) || this.printConfig || {}
+				const job = this.printJobs[type]
+				const total = Number(job.totalCount || 0)
+				const finishedCount = Math.min(
+					total || Number(progress.finishedTasks || 0),
+					Number(progress.finishedTasks || 0)
+				)
+				let printProgress = Number(progress.printProgress || 0)
+				if (total > 0) {
+					const byCount = Math.round((finishedCount / total) * 100)
+					printProgress = Math.max(byCount, Math.min(100, printProgress))
+				}
+				this.patchPrintJob(type, {
+					finishedCount: finishedCount,
+					estimatedSec: Number(progress.estimatedSec || 0),
+					printProgress: printProgress,
+					transferProgress: Number(progress.transferProgress || 0),
+					elapsedSec: Number(progress.elapsedSec || 0),
+					mtu: Number(cfg.mtu) || Number(job.mtu) || 0,
+					status: this.printLoading ? 'printing' : (job.status || 'idle'),
+				})
 			},
 
 			// ─── 建立打印队列（对齐 newPrint：先运单 → 标签 → 回单） ───
@@ -1490,13 +1759,6 @@
 				const that = this
 				const { labelPrinter, waybillPrinter, receiptPrinter } =
 					that.connectedPrinter
-				const osName =
-					(that.cusBModuleInstance && that.cusBModuleInstance._osName) || ''
-
-				uni.showLoading({
-					title: '打印中...',
-					mask: true,
-				})
 
 				if (that.selectedPrintWaybill && waybillPrinter.deviceId) {
 					const printData = {
@@ -1506,7 +1768,7 @@
 						multiSelectList: that.dealMultiSelectList(),
 						parameterO098: that.parameterO098,
 					}
-					await that.doPrintTask(waybillPrinter, printData, osName)
+					await that.doPrintTaskItem(waybillPrinter, printData, 'waybill')
 				}
 
 				if (that.selectedPrintLabel && labelPrinter.deviceId) {
@@ -1520,7 +1782,7 @@
 						parameterO097: that.parameterO097,
 						parameterO098: that.parameterO098,
 					}
-					await that.doPrintTask(labelPrinter, printData, osName)
+					await that.doPrintTaskItem(labelPrinter, printData, 'label')
 				}
 
 				if (
@@ -1532,16 +1794,7 @@
 					await that.printReceiptTask(receiptPrinter)
 				}
 
-				uni.hideLoading()
 				showMsg('打印完成', 'success')
-			},
-
-			/**
-			 * 执行打印任务
-			 * 统一走 template-comm 通用模板（按已连接机型 brand=CC3|HM 适配方言）+ ble.print
-			 */
-			async doPrintTask(device, options, osName) {
-				await this.doPrintTaskItem(device, options, osName)
 			},
 
 			/** 从已连接列表补齐 BLE 写入字段，避免共用模式等场景丢 serviceId */
@@ -1576,8 +1829,38 @@
 					printDataStr: printDataStr,
 					templateName: m.templateName || '打印任务',
 					printType: m.printType || '',
+					sheetIndex: m.sheetIndex || 0,
+					sheetTotal: m.sheetTotal || 0,
 					printTime: m.printTime || Date.now(),
 				}
+			},
+
+			/** 将 ble 失败信息格式化为「第几张 + 原因」 */
+			formatPrintFailMessage(err, printTaskList) {
+				const raw = String((err && err.message) || err || '蓝牙打印数据写入失败')
+				const list = Array.isArray(printTaskList) ? printTaskList : []
+				const typeMap = {
+					label: '标签',
+					waybill: '运单',
+					receipt: '回单',
+				}
+				const matched = raw.match(/第【(\d+)】/)
+				if (matched) {
+					const seq = Number(matched[1])
+					const task = list[seq - 1] || {}
+					const typeName = typeMap[task.printType] || '打印'
+					const tplName = task.templateName || typeName
+					const total = task.sheetTotal || list.length || 0
+					const sheetNo = task.sheetIndex || seq
+					let reason = raw
+						.replace(/^第【\d+】打印任务[，,：:]?/, '')
+						.replace(/^失败[：:]?/, '')
+						.trim()
+					if (!reason) reason = raw
+					const totalText = total > 0 ? '/' + total + '张' : ''
+					return '第' + sheetNo + '张' + totalText + '（' + tplName + '）打印失败：' + reason
+				}
+				return '打印失败：' + raw
 			},
 
 			async printCpclList(device, pList) {
@@ -1592,9 +1875,13 @@
 				if (!printDevice.serviceId || !printDevice.characteristicId) {
 					throw new Error('打印机未就绪，请重新连接后再打印')
 				}
-				const printTaskList = pList.map((item) => {
+				const total = pList.length
+				const printTaskList = pList.map((item, index) => {
 					if (typeof item === 'string') {
-						return this.createPrintTask(printDevice, item)
+						return this.createPrintTask(printDevice, item, {
+							sheetIndex: index + 1,
+							sheetTotal: total,
+						})
 					}
 					return this.createPrintTask(
 						printDevice,
@@ -1602,12 +1889,15 @@
 						{
 							templateName: (item && item.templateName) || '打印任务',
 							printType: (item && item.printType) || '',
+							sheetIndex: (item && item.sheetIndex) || index + 1,
+							sheetTotal: (item && item.sheetTotal) || total,
 						}
 					)
 				})
-				const ok = await bt.print(printTaskList)
-				if (!ok) {
-					throw new Error('打印失败')
+				try {
+					await bt.print(printTaskList)
+				} catch (err) {
+					throw new Error(this.formatPrintFailMessage(err, printTaskList))
 				}
 				return true
 			},
@@ -1627,10 +1917,12 @@
 			},
 
 			// 对齐 newPrint.doPrintTaskItem：按 options 组装标签/运单 CPCL 列表
-			async doPrintTaskItem(device, options) {
+			async doPrintTaskItem(device, options, printType) {
 				try {
+					this.setPrintJobType(printType || '')
 					const pList = await this.collectCpclItems(device, options)
 					await this.printCpclList(device, pList)
+					this.markPrintBatchDone(printType || '', (pList && pList.length) || 0)
 					return true
 				} catch (err) {
 					const errMsg = (err && err.message) || err || '蓝牙打印数据写入失败'
@@ -1677,7 +1969,10 @@
 
 				if (amountOfSheets > 0) {
 					const labelName = resolveLabelTemplateName(tplCtx)
+					const labelTotal = amountOfSheets - whichOne + 1
+					let labelSeq = 0
 					for (let i = whichOne; i <= amountOfSheets; i++) {
+						labelSeq += 1
 						const data = Object.assign({}, WayBillInfoVO, {
 							currentCopyCode: i,
 						})
@@ -1695,6 +1990,8 @@
 							cpcl: resolveLabelTemplate(data, tplCtx),
 							templateName: labelName,
 							printType: 'label',
+							sheetIndex: labelSeq,
+							sheetTotal: labelTotal,
 						})
 					}
 				}
@@ -1718,13 +2015,15 @@
 								isMulti: true,
 								multiType: item,
 							})
-							const tData = resolveWaybillTemplate(paramValue, waybillCtx)
+							const tData = resolveWaybillTemplate(paramValue || {}, waybillCtx)
 							const waybillName = resolveWaybillTemplateName(waybillCtx)
 							for (let i = 0; i < waybillValue; i++) {
 								pList.push({
 									cpcl: tData,
 									templateName: waybillName,
 									printType: 'waybill',
+									sheetIndex: i + 1,
+									sheetTotal: waybillValue,
 								})
 							}
 						}
@@ -1739,6 +2038,8 @@
 								cpcl: tData,
 								templateName: waybillName,
 								printType: 'waybill',
+								sheetIndex: i + 1,
+								sheetTotal: waybillValue,
 							})
 						}
 					}
@@ -1764,6 +2065,8 @@
 						cpcl: receiptTpl,
 						templateName: receiptName,
 						printType: 'receipt',
+						sheetIndex: index + 1,
+						sheetTotal: num,
 					})
 				}
 				return pList
@@ -1771,16 +2074,10 @@
 
 			// 对齐 newPrint.printReceiptTask
 			async printReceiptTask(receiptPrinter) {
-				uni.showLoading({
-					title: '打印中...',
-					mask: true,
-				})
-				try {
-					const pList = await this.collectReceiptItems(receiptPrinter)
-					await this.printCpclList(receiptPrinter, pList)
-				} finally {
-					uni.hideLoading()
-				}
+				this.setPrintJobType('receipt')
+				const pList = await this.collectReceiptItems(receiptPrinter)
+				await this.printCpclList(receiptPrinter, pList)
+				this.markPrintBatchDone('receipt', (pList && pList.length) || 0)
 			},
 			receiptTask() {
 				const that = this
@@ -1803,7 +2100,7 @@
 	@import './comm/common.scss';
 
 	.print {
-		padding-bottom: 150rpx;
+		padding-bottom: calc(520rpx + env(safe-area-inset-bottom));
 		background: $pr-page-bg;
 		min-height: 100vh;
 	}
@@ -2006,7 +2303,7 @@
 		box-sizing: border-box;
 	}
 
-	.footerBtn--row {
+	.footerBtn-row {
 		display: flex;
 		align-items: center;
 		gap: 16rpx;
@@ -2033,7 +2330,7 @@
 		}
 	}
 
-	.footerBtn--row .printBtn {
+	.footerBtn-row .printBtn {
 		flex: 1;
 		height: 80rpx;
 		line-height: 80rpx;

@@ -10,7 +10,7 @@
 				<view class="taskList" v-if="taskList.length">
 					<BluetoothDeviceItem
 						v-for="(item, index) in taskList"
-						:key="item.id || index"
+						:key="item.id"
 						:device="item"
 						:index="index"
 						variant="search"

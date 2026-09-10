@@ -24,11 +24,37 @@
 				:template-options="templateOptions"
 				:template-index="templateIndex"
 				:template-mode="templateMode"
+				:image-path="imagePath"
+				:image-meta-text="imageMetaText"
+				:image-width-mm="imageWidthMm"
+				:image-height-mm="imageHeightMm"
+				:static-images="staticPrintImages"
 				@update:templateIndex="onTemplateIndexUpdate"
 				@update:templateMode="onTemplateModeUpdate"
+				@update:imageWidthMm="onImageWidthMmUpdate"
+				@update:imageHeightMm="onImageHeightMmUpdate"
 				@change="onTemplateIndexUpdate"
 				@mode-change="onTemplateModeUpdate"
 				@preview="onCommonTemplatePreview"
+				@view-command="onViewCommand"
+				@choose-image="onChoosePrintImage"
+				@clear-image="onClearPrintImage"
+				@pick-static="onPickStaticImage"
+				@apply-size="onApplyImageSize"
+				@size-change="onApplyImageSize"
+			/>
+
+			<!-- 仅作旧端回退：完全隐藏，避免页面出现白板 -->
+			<canvas
+				canvas-id="printImageCanvas"
+				id="printImageCanvas"
+				class="printImageCanvas"
+				:width="imageCanvasWidth"
+				:height="imageCanvasHeight"
+				:style="{
+					width: imageCanvasWidth + 'px',
+					height: imageCanvasHeight + 'px',
+				}"
 			/>
 
 			<PrintSettings
@@ -87,6 +113,16 @@
 			@update:visible="onPreviewVisibleUpdate"
 			@close="previewVisible = false"
 		/>
+
+		<CommandPopup
+			:visible="commandVisible"
+			:title="commandTitle"
+			:command-text="commandText"
+			:show-brand-tabs="commandShowBrandTabs"
+			:commands-by-brand="commandByBrand"
+			@update:visible="onCommandVisibleUpdate"
+			@close="commandVisible = false"
+		/>
 	</view>
 </template>
 
@@ -95,9 +131,10 @@
 	import DeviceInfo from '../components/DeviceInfo.vue'
 	import TemplateSelect from '../components/TemplateSelect.vue'
 	import PrintTaskStatus from '../components/PrintTaskStatus.vue'
+	import CommandPopup from '../components/CommandPopup.vue'
 	import PreviewPopup from '../template-comm/preivew/PreviewPopup.vue'
 	import { createBluetoothAdapter } from '../ble/index.js'
-	import { resolvePrinterBrandInfo } from '../ble/config.js'
+	import { resolvePrinterBrandInfo, resolveOsVersion } from '../ble/config.js'
 	import { showMsg, isNotEmptyArr } from '../comm/utils.js'
 	import { SIGNAL_TIP_LIST } from '../help/index.js'
 	import { template5 } from './template/CC3/template5.js'
@@ -108,6 +145,17 @@
 		getCommonTemplateCpcl,
 	} from '../template-comm/template/index.js'
 	import { getMockByTemplateKey } from '../template-comm/mock/index.js'
+	import {
+		choosePrintImage,
+		imagePathToCpcl,
+		calcPrintSizeByMm,
+		STATIC_PRINT_IMAGES,
+		DEFAULT_PAGE_WIDTH_DOTS,
+		DEFAULT_PRINT_WIDTH_MM,
+		DEFAULT_PRINT_HEIGHT_MM,
+	} from '../ble/imagePrint.js'
+
+	const PRINT_IMAGE_CANVAS_ID = 'printImageCanvas'
 
 	const brandTemplateMap = {
 		template5: template5,
@@ -134,6 +182,7 @@
 			DeviceInfo,
 			TemplateSelect,
 			PrintTaskStatus,
+			CommandPopup,
 			PreviewPopup,
 		},
 		data() {
@@ -152,11 +201,20 @@
 				printConfig: {},
 				platformDefaultConfig: {},
 				platformName: '其它',
+				osVersion: '',
 				deviceName: '未知设备',
 				templateIndex: defaultTplIndex >= 0 ? defaultTplIndex : 0,
 				previewVisible: false,
 				previewTitle: '',
 				previewOps: [],
+				commandVisible: false,
+				commandTitle: '',
+				commandText: '',
+				commandShowBrandTabs: false,
+				commandByBrand: {
+					CC3: '',
+					HM: '',
+				},
 				printLoading: false,
 				searching: false,
 				scanning: false,
@@ -170,11 +228,59 @@
 					status: 'idle',
 				},
 				printProgressVersion: 0,
+				/** 图片模式 */
+				imagePath: '',
+				imageCpcl: '',
+				imageDataFormat: 'text',
+				imagePrintWidth: 0,
+				imagePrintHeight: 0,
+				imageByteWidth: 0,
+				imageHexLength: 0,
+				imageBlackRatio: 0,
+				imageParseMethod: '',
+				imageParsing: false,
+				imageWidthMm: DEFAULT_PRINT_WIDTH_MM,
+				imageHeightMm: DEFAULT_PRINT_HEIGHT_MM,
+				staticPrintImages: STATIC_PRINT_IMAGES.slice(),
+				imageCanvasWidth: 320,
+				imageCanvasHeight: 320,
 			}
 		},
 		computed: {
 			currentTemplate() {
 				return this.templateOptions[this.templateIndex] || this.templateOptions[0]
+			},
+			imageMetaText() {
+				if (!this.imagePath) return ''
+				if (this.imageParsing) return '正在解析图片...'
+				if (!this.imageCpcl) return '待解析'
+				const ratio =
+					this.imageBlackRatio > 0
+						? ' · 黑点 ' + Math.round(this.imageBlackRatio * 1000) / 10 + '%'
+						: ''
+				const method = this.imageParseMethod ? ' · ' + this.imageParseMethod : ''
+				const cmdLabel = this.imageDataFormat === 'hex' ? 'CGLZO' : 'EG'
+				const dataUnit = this.imageDataFormat === 'hex' ? ' 字节' : ' 字符'
+				return (
+					this.imageWidthMm +
+					'×' +
+					this.imageHeightMm +
+					' mm → ' +
+					this.imagePrintWidth +
+					'×' +
+					this.imagePrintHeight +
+					' dot · ' +
+					cmdLabel +
+					' ' +
+					this.imageByteWidth +
+					'×' +
+					this.imagePrintHeight +
+					' · 数据 ' +
+					this.imageHexLength +
+					dataUnit +
+					ratio +
+					method
+				)
 			},
 			connectedBtDevice() {
 				void this.btVersion
@@ -195,6 +301,7 @@
 				}
 				return {
 					platformName: this.platformName || '其它',
+					osVersion: this.osVersion || '--',
 					deviceName: this.deviceName || '未知设备',
 					btDeviceName: (btDevice && (btDevice.name || btDevice.localName)) || '未连接',
 					btRssi: (rssi === 0 || (rssi !== undefined && rssi !== null)) ? rssi : '--',
@@ -235,15 +342,46 @@
 			},
 		},
 		onShow() {
+			uni.setKeepScreenOn({ keepScreenOn: true })
+			this.initDeviceInfo()
 			this.initBlueTooth()
 		},
 		onHide() {
+			uni.setKeepScreenOn({ keepScreenOn: false })
 			this.teardownBlueTooth()
 		},
 		onUnload() {
+			uni.setKeepScreenOn({ keepScreenOn: false })
 			this.teardownBlueTooth()
 		},
 		methods: {
+			initDeviceInfo() {
+				try {
+					const systemInfo = uni.getSystemInfoSync() || {}
+					const osName = String(systemInfo.osName || '').toLowerCase()
+					const platform = String(systemInfo.platform || '').toLowerCase()
+					const system = String(systemInfo.system || '').toLowerCase()
+					const romName = String(systemInfo.romName || '').toLowerCase()
+					const isHarmony =
+						osName.indexOf('harmony') !== -1 ||
+						platform.indexOf('harmony') !== -1 ||
+						system.indexOf('harmony') !== -1 ||
+						romName.indexOf('harmony') !== -1
+					if (isHarmony) {
+						this.platformName = '鸿蒙'
+					} else if (osName === 'ios' || platform === 'ios') {
+						this.platformName = 'iOS'
+					} else if (osName === 'android' || platform === 'android') {
+						this.platformName = '安卓'
+					} else {
+						this.platformName = systemInfo.osName || systemInfo.platform || '其它'
+					}
+					this.osVersion = resolveOsVersion(systemInfo)
+				} catch (e) {
+					this.platformName = '其它'
+					this.osVersion = ''
+				}
+			},
 			/** 离开页面：停止搜索并关闭蓝牙连接 */
 			teardownBlueTooth() {
 				const bt = this.cusBModuleInstance
@@ -280,18 +418,145 @@
 				this.templateIndex = Number(index)
 			},
 			onTemplateModeUpdate(mode) {
-				const next = mode === 'common' ? 'common' : 'brand'
+				const next =
+					mode === 'common' ? 'common' : mode === 'image' ? 'image' : 'brand'
 				if (next === this.templateMode) return
 				this.templateMode = next
-				this.templateOptions =
-					next === 'common' ? commonTemplateOptions : brandTemplateOptions
-				this.templateIndex = 0
-				if (next === 'brand') {
+				if (next === 'common') {
+					this.templateOptions = commonTemplateOptions
+					this.templateIndex = 0
+				} else if (next === 'brand') {
+					this.templateOptions = brandTemplateOptions
+					this.templateIndex = 0
 					this.syncTemplateByConnectedDevice()
+				} else {
+					this.templateOptions = []
+					this.templateIndex = 0
+				}
+				this.previewEstimatedTime()
+			},
+			resetImagePrintState() {
+				this.imageCpcl = ''
+				this.imageDataFormat = 'text'
+				this.imagePrintWidth = 0
+				this.imagePrintHeight = 0
+				this.imageByteWidth = 0
+				this.imageHexLength = 0
+				this.imageBlackRatio = 0
+				this.imageParseMethod = ''
+			},
+			onClearPrintImage() {
+				this.imagePath = ''
+				this.resetImagePrintState()
+				this.previewEstimatedTime()
+			},
+			normalizeImageMm(value, fallback) {
+				const n = Number(value)
+				if (isNaN(n) || n <= 0) return fallback
+				return Math.round(n * 10) / 10
+			},
+			onImageWidthMmUpdate(v) {
+				this.imageWidthMm = v
+			},
+			onImageHeightMmUpdate(v) {
+				this.imageHeightMm = v
+			},
+			async onApplyImageSize() {
+				this.imageWidthMm = this.normalizeImageMm(
+					this.imageWidthMm,
+					DEFAULT_PRINT_WIDTH_MM
+				)
+				this.imageHeightMm = this.normalizeImageMm(
+					this.imageHeightMm,
+					DEFAULT_PRINT_HEIGHT_MM
+				)
+				if (this.imagePath) {
+					await this.parsePrintImage()
+				}
+			},
+			async onChoosePrintImage() {
+				if (this.printLoading || this.imageParsing) return
+				try {
+					const path = await choosePrintImage()
+					this.imagePath = path
+					this.resetImagePrintState()
+					await this.parsePrintImage()
+				} catch (err) {
+					const msg = (err && err.errMsg) || (err && err.message) || ''
+					if (msg && /cancel|取消/i.test(msg)) return
+					showMsg(msg || '选择图片失败')
+				}
+			},
+			async onPickStaticImage(item) {
+				if (this.printLoading || this.imageParsing) return
+				if (!item || !item.path) return
+				this.imagePath = item.path
+				this.resetImagePrintState()
+				await this.parsePrintImage()
+			},
+			async parsePrintImage() {
+				if (!this.imagePath) {
+					this.resetImagePrintState()
+					return ''
+				}
+				this.imageParsing = true
+				uni.showLoading({ title: '解析图片...', mask: true })
+				try {
+					this.imageWidthMm = this.normalizeImageMm(
+						this.imageWidthMm,
+						DEFAULT_PRINT_WIDTH_MM
+					)
+					this.imageHeightMm = this.normalizeImageMm(
+						this.imageHeightMm,
+						DEFAULT_PRINT_HEIGHT_MM
+					)
+					const size = calcPrintSizeByMm(this.imageWidthMm, this.imageHeightMm)
+					this.imageCanvasWidth = size.width
+					this.imageCanvasHeight = size.height
+					await this.$nextTick()
+					// 等 canvas 缓冲区按 width/height 属性重建
+					await new Promise(function (resolve) {
+						setTimeout(resolve, 200)
+					})
+
+					const brand = this.resolveConnectedBrand()
+					const printBrand = brand === 'common' ? 'CC3' : brand
+					const result = await imagePathToCpcl(this.imagePath, {
+						canvasId: PRINT_IMAGE_CANVAS_ID,
+						component: this,
+						pageWidth: DEFAULT_PAGE_WIDTH_DOTS,
+						brand: printBrand,
+						widthMm: this.imageWidthMm,
+						heightMm: this.imageHeightMm,
+						drawDelayMs: 350,
+						skipValidate: /\/?static\//.test(String(this.imagePath)),
+					})
+					this.imageCpcl = result.cpcl || ''
+					this.imageDataFormat = result.dataFormat || 'text'
+					this.imagePrintWidth = result.printWidth || 0
+					this.imagePrintHeight = result.printHeight || 0
+					this.imageByteWidth = result.byteWidth || 0
+					this.imageHexLength = result.hexLength || 0
+					this.imageBlackRatio = Number(result.blackRatio) || 0
+					this.imageParseMethod = result.method || ''
+					this.previewEstimatedTime()
+					return this.imageCpcl
+				} catch (err) {
+					this.resetImagePrintState()
+					const detail = (err && err.message) || '图片解析失败'
+					console.error('[parsePrintImage]', detail)
+					showMsg(detail)
+					return ''
+				} finally {
+					this.imageParsing = false
+					uni.hideLoading()
 				}
 			},
 			onPreviewVisibleUpdate(v) {
 				this.previewVisible = !!v
+			},
+			onCommandVisibleUpdate(v) {
+				this.commandVisible = !!v
 			},
 			resolveConnectedBrand() {
 				const btDevice = this.connectedBtDevice
@@ -323,6 +588,65 @@
 				this.previewOps = built.ops
 				this.previewVisible = true
 			},
+			/** 查看当前模板蓝牙打印指令（CPCL） */
+			async onViewCommand(payload) {
+				if (this.templateMode === 'image') {
+					if (!this.imagePath) {
+						showMsg('请先上传图片')
+						return
+					}
+					let cpcl = this.imageCpcl
+					if (!cpcl) {
+						cpcl = await this.parsePrintImage()
+					}
+					if (!cpcl) {
+						showMsg('指令内容为空')
+						return
+					}
+					const head = cpcl.slice(0, 800)
+					const more =
+						cpcl.length > 800
+							? '\n\n… 已截断，完整指令约 ' + cpcl.length + ' 字符 …'
+							: ''
+					this.commandTitle = '图片打印 · CPCL 指令'
+					this.commandShowBrandTabs = false
+					this.commandByBrand = { CC3: '', HM: '' }
+					this.commandText = head + more
+					this.commandVisible = true
+					return
+				}
+				const item = (payload && payload.item) || this.currentTemplate
+				if (!item || !item.key) {
+					showMsg('无法查看该模板指令')
+					return
+				}
+				if (this.templateMode === 'common') {
+					const mock = getMockByTemplateKey(item.key) || {}
+					const cc3 = getCommonTemplateCpcl(item.key, mock, { brand: 'CC3' }) || ''
+					const hm = getCommonTemplateCpcl(item.key, mock, { brand: 'HM' }) || ''
+					if (!cc3 && !hm) {
+						showMsg('指令内容为空')
+						return
+					}
+					this.commandTitle = (item.label || '模板') + ' · 打印指令'
+					this.commandShowBrandTabs = true
+					this.commandByBrand = { CC3: cc3, HM: hm }
+					this.commandText = ''
+					this.commandVisible = true
+					return
+				}
+				const tpl = brandTemplateMap[item.key]
+				const cpcl = typeof tpl === 'function' ? (tpl() || '') : (tpl || '')
+				if (!cpcl) {
+					showMsg('指令内容为空')
+					return
+				}
+				this.commandTitle = (item.label || '模板') + ' · 打印指令'
+				this.commandShowBrandTabs = false
+				this.commandByBrand = { CC3: '', HM: '' }
+				this.commandText = cpcl
+				this.commandVisible = true
+			},
 			previewEstimatedTime() {
 				const bt = this.cusBModuleInstance
 				if (!bt) return
@@ -339,6 +663,8 @@
 					name: device.name,
 					localName: device.localName,
 					printDataStr: tpl,
+					dataFormat:
+						this.templateMode === 'image' ? this.imageDataFormat || 'text' : 'text',
 				}])
 				this.printProgress = Object.assign({}, this.printProgress, { estimatedSec: estimatedSec })
 				this.printProgressVersion += 1
@@ -434,6 +760,7 @@
 				const bt = this.cusBModuleInstance
 				if (!bt) return
 				this.platformName = bt.getPlatformDisplayName()
+				this.osVersion = bt.getOsVersionDisplay ? bt.getOsVersionDisplay() : this.osVersion
 				this.deviceName = bt.getDeviceDisplayName()
 				this.platformDefaultConfig = bt.getPlatformDefaultConfig()
 				this.printConfig = bt.getPrintConfig()
@@ -680,6 +1007,9 @@
 				}
 			},
 			getSelectedTemplateStr() {
+				if (this.templateMode === 'image') {
+					return this.imageCpcl || ''
+				}
 				const opt = this.currentTemplate
 				if (!opt || !opt.key) return ''
 				if (this.templateMode === 'common') {
@@ -700,9 +1030,17 @@
 				if (!isNotEmptyArr(list)) {
 					errLog.push('请先连接蓝牙打印机')
 				}
-				const tpl = this.getSelectedTemplateStr()
-				if (!tpl) {
-					errLog.push('请选择有效的打印模板')
+				if (this.templateMode === 'image') {
+					if (!this.imagePath) {
+						errLog.push('请先上传打印图片')
+					} else if (!this.imageCpcl) {
+						errLog.push('图片尚未解析完成，请重选或稍候')
+					}
+				} else {
+					const tpl = this.getSelectedTemplateStr()
+					if (!tpl) {
+						errLog.push('请选择有效的打印模板')
+					}
 				}
 				const cfg = this.printConfig || {}
 				const timeout = Number(cfg.printTimeoutSec)
@@ -721,6 +1059,10 @@
 				this.syncPrintProgressFromBt()
 			},
 			async confirmPrinting() {
+				if (this.templateMode === 'image' && this.imagePath) {
+					const refreshed = await this.parsePrintImage()
+					if (!refreshed) return
+				}
 				const errLog = this.validateBeforePrint()
 				if (errLog.length) {
 					showMsg(errLog.join(';'))
@@ -737,6 +1079,8 @@
 					localName: device.localName || '',
 					writeType: device.writeType || '',
 					printDataStr: this.getSelectedTemplateStr(),
+					dataFormat:
+						this.templateMode === 'image' ? this.imageDataFormat || 'text' : 'text',
 				}]
 
 				this.printProgress = Object.assign({}, bt.getPrintProgress(), {
@@ -750,12 +1094,15 @@
 
 				this.printLoading = true
 				try {
-					const ok = await bt.print(printTaskList)
+					await bt.print(printTaskList)
 					this.syncConfigFromBt()
 					this.syncPrintProgressFromBt()
-					if (ok) {
-						showMsg('打印完成', 'success')
-					}
+					showMsg('打印完成', 'success')
+				} catch (err) {
+					this.syncConfigFromBt()
+					this.syncPrintProgressFromBt()
+					const errMsg = (err && err.message) || '打印失败'
+					showMsg(errMsg)
 				} finally {
 					this.printLoading = false
 					this.bumpBtVersion()
@@ -778,6 +1125,14 @@
 			padding-top: 8rpx;
 			padding-bottom: 24rpx;
 		}
+	}
+
+	.printImageCanvas {
+		position: absolute;
+		left: -9999px;
+		top: -9999px;
+		visibility: hidden;
+		pointer-events: none;
 	}
 
 	.signalTip {

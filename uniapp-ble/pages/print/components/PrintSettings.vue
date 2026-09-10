@@ -9,6 +9,18 @@
 		</view>
 
 		<view class="form">
+			<view class="form-row">
+				<label class="checkRow" @click="toggleOptimalTransfer">
+					<checkbox
+						color="#f9ae3d"
+						style="transform: scale(0.7)"
+						:checked="localConfig.useOptimalTransfer !== false"
+					/>
+					<text>使用最优传输</text>
+				</label>
+			</view>
+			<view class="form-tip">连接时自动二分协商最大 MTU，并套用较稳定的包间隔 / 重试间隔</view>
+
 			<view class="speedRow">
 				<view class="speedRow-label">传输快捷设置</view>
 				<view class="speedRow-btns">
@@ -236,6 +248,7 @@
 					{ key: 'turbo', label: '特快', mtu: 512, packetIntervalMs: 20, retryIntervalMs: 50 },
 				],
 				localConfig: {
+					useOptimalTransfer: true,
 					printTimeoutSec: 40,
 					enableRecursivePrint: true,
 					mtu: 23,
@@ -355,14 +368,24 @@
 				this.localConfig.enableRecursivePrint = !this.localConfig.enableRecursivePrint
 				this.emitConfig()
 			},
+			toggleOptimalTransfer() {
+				this.localConfig.useOptimalTransfer = !(
+					this.localConfig.useOptimalTransfer !== false
+				)
+				this.emitConfig()
+			},
 			resetPlatformDefault() {
 				this.localConfig = Object.assign({}, this.localConfig, this.platformDefaultConfig || {})
+				if (this.localConfig.useOptimalTransfer === undefined) {
+					this.localConfig.useOptimalTransfer = true
+				}
 				this.emitConfig()
 				this.$emit('apply', Object.assign({}, this.localConfig))
 				showMsg('已恢复平台默认配置', 'success')
 			},
 			applyConfig() {
 				const next = {
+					useOptimalTransfer: this.localConfig.useOptimalTransfer !== false,
 					printTimeoutSec: this.clamp(this.localConfig.printTimeoutSec, 10, 100, 40),
 					enableRecursivePrint: this.localConfig.enableRecursivePrint !== false,
 					mtu: this.clamp(this.localConfig.mtu, 20, 512, 23),

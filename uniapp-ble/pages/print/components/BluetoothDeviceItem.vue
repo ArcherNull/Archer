@@ -25,13 +25,43 @@
 			</view>
 		</view>
 		<view class="bdi-actions">
-					<slot
-						name="actions"
-						:device="device"
-						:index="index"
-						:unrecognized="unrecognized"
-						:isConnect="!!device.isConnect"
-					></slot>
+			<slot
+				name="actions"
+				:device="device"
+				:index="index"
+				:unrecognized="unrecognized"
+				:isConnect="!!device.isConnect"
+			>
+				<button
+					v-if="unrecognized"
+					size="mini"
+					class="action-btn action-btn--info action-btn--sm"
+					@click.stop="handleBind"
+				>
+					选品牌
+				</button>
+				<button
+					v-if="variant === 'connected'"
+					size="mini"
+					class="action-btn action-btn--muted action-btn--sm"
+					@click.stop="handleConnect"
+				>
+					取消连接
+				</button>
+				<button
+					v-else-if="!unrecognized"
+					:class="[
+						'action-btn',
+						'action-btn--sm',
+						device.isConnect ? 'action-btn--muted' : 'action-btn--primary',
+					]"
+					size="mini"
+					:loading="connecting"
+					@click.stop="handleConnect"
+				>
+					{{ device.isConnect ? '已连接' : '连接' }}
+				</button>
+			</slot>
 		</view>
 	</view>
 </template>
@@ -73,6 +103,11 @@
 				type: Boolean,
 				default: false,
 			},
+			/** 搜索列表连接中状态 */
+			connecting: {
+				type: Boolean,
+				default: false,
+			},
 		},
 		computed: {
 			rootClass() {
@@ -102,6 +137,15 @@
 				if (type === 'waybill') return '运单打印'
 				if (type === 'receipt') return '回单打印'
 				return type || ''
+			},
+		},
+		methods: {
+			/** 连接 / 已连接 / 取消连接：统一抛出 device，父级按 isConnect 切换断开 */
+			handleConnect() {
+				this.$emit('connect', this.device)
+			},
+			handleBind() {
+				this.$emit('bind', this.device)
 			},
 		},
 	}

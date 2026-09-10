@@ -7,7 +7,7 @@ import { buildPeiJunLabel } from './peiJunLabel.js'
 import { createGetVal, resolveBrand } from './_helpers.js'
 
 function buildCityDistrict(getVal) {
-	return getVal('desitiantionSataion')
+	return getVal('netWorkAddressName') || ''
 }
 
 function buildWeightVolume(getVal) {

@@ -64,25 +64,9 @@
 					variant="connected"
 					:show-print-type="true"
 					:brand-bind-version="brandBindVersion"
-				>
-					<template #actions="{ unrecognized }">
-						<button
-							v-if="unrecognized"
-							size="mini"
-							class="action-btn action-btn--info action-btn--sm"
-							@click="openBindBrand(item)"
-						>
-							选品牌
-						</button>
-						<button
-							size="mini"
-							class="action-btn action-btn--muted action-btn--sm"
-							@click="emitDisconnect(item)"
-						>
-							取消连接
-						</button>
-					</template>
-				</BluetoothDeviceItem>
+					@connect="onItemConnect"
+					@bind="onItemBind"
+				/>
 			</view>
 			<view class="noMoreBox" v-else>暂无连接蓝牙设备</view>
 		</view>
@@ -123,33 +107,10 @@
 					variant="search"
 					:brand-bind-version="brandBindVersion"
 					:bordered="index !== deviceList.length - 1"
-				>
-					<template #actions="{ unrecognized }">
-						<button
-							v-if="unrecognized"
-							size="mini"
-							class="action-btn action-btn--info action-btn--sm"
-							@click="openBindBrand(item)"
-						>
-							选品牌
-						</button>
-						<button
-							v-else
-							:class="[
-								'action-btn',
-								'action-btn--sm',
-								item.isConnect
-									? 'action-btn--muted'
-									: 'action-btn--primary',
-							]"
-							size="mini"
-							:loading="connectingId === item.deviceId"
-							@click="emitConnect(item)"
-						>
-							{{ item.isConnect ? "已连接" : "连接" }}
-						</button>
-					</template>
-				</BluetoothDeviceItem>
+					:connecting="connectingId === item.deviceId"
+					@connect="onItemConnect"
+					@bind="onItemBind"
+				/>
 				<view v-if="!deviceList.length" class="noMoreBox"
 					>暂无搜索结果</view
 				>
@@ -241,26 +202,20 @@ export default {
 		},
 	},
 	methods: {
-		resolveDevice(payload) {
-			if (!payload) return null;
-			if (payload.deviceId) return payload;
-			const detail = payload.detail;
-			if (detail && detail.deviceId) return detail;
-			if (detail && detail.__args__ && detail.__args__[0]) {
-				return detail.__args__[0];
-			}
-			return null;
-		},
-		openBindBrand(payload) {
-			const item = this.resolveDevice(payload);
-			if (!item || !item.deviceId) {
-				uni.showToast({
-					title: "设备信息不完整",
-					icon: "none",
-				});
+		/** 子组件带回完整 device，连接/已连接/取消连接共用此入口（已连接则断开） */
+		onItemConnect(device) {
+			if (!device || !device.deviceId) {
+				uni.showToast({ title: "设备信息不完整", icon: "none" });
 				return;
 			}
-			this.bindTargetDevice = item;
+			this.$emit("device-connect", device);
+		},
+		onItemBind(device) {
+			if (!device || !device.deviceId) {
+				uni.showToast({ title: "设备信息不完整", icon: "none" });
+				return;
+			}
+			this.bindTargetDevice = device;
 			this.bindPopupVisible = true;
 		},
 		onBindVisibleUpdate(val) {
@@ -303,28 +258,6 @@ export default {
 		},
 		emitScanJoin() {
 			this.$emit("scan-join");
-		},
-		emitConnect(payload) {
-			const item = this.resolveDevice(payload);
-			if (!item || !item.deviceId) {
-				uni.showToast({
-					title: "设备信息不完整",
-					icon: "none",
-				});
-				return;
-			}
-			this.$emit("device-connect", item);
-		},
-		emitDisconnect(payload) {
-			const item = this.resolveDevice(payload);
-			if (!item || !item.deviceId) {
-				uni.showToast({
-					title: "设备信息不完整",
-					icon: "none",
-				});
-				return;
-			}
-			this.$emit("device-disconnect", item);
 		},
 		emitDisconnectAll() {
 			this.$emit("disconnect-all");

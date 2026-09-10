@@ -370,6 +370,7 @@ export async function tipBluetoothError(errOrMsg) {
 
 export function getPlatformDefaultConfigByOs(osName, isHarmonyOS) {
     const base = {
+        useOptimalTransfer: true,
         printTimeoutSec: 40,
         enableRecursivePrint: true,
         mtu: 23,
@@ -402,6 +403,20 @@ export function getPlatformDefaultConfigByOs(osName, isHarmonyOS) {
     return base
 }
 
+/**
+ * 解析操作系统版本号（如 13 / 17.0 / 4.2.0）
+ * @param {Object} systemInfo uni.getSystemInfoSync()
+ * @returns {string}
+ */
+export function resolveOsVersion(systemInfo = {}) {
+    const osVersion = String(systemInfo.osVersion || '').trim()
+    if (osVersion) return osVersion
+    const system = String(systemInfo.system || '').trim()
+    if (!system) return ''
+    const matched = system.match(/(\d+(?:\.\d+)*)/)
+    return matched ? matched[1] : system
+}
+
 export function clampPrintConfigValues(cfg = {}) {
     const clamp = (v, min, max, def) => {
         const n = Number(v)
@@ -417,5 +432,6 @@ export function clampPrintConfigValues(cfg = {}) {
     cfg.retryStepMs = clamp(cfg.retryStepMs, 10, 200, 30)
     cfg.maxPacketRetry = clamp(cfg.maxPacketRetry, 0, 6, 2)
     cfg.enableRecursivePrint = cfg.enableRecursivePrint !== false
+    cfg.useOptimalTransfer = cfg.useOptimalTransfer !== false
     return cfg
 }

@@ -1,5 +1,8 @@
 import * as gbk from '../sdk/CC3/printUtil-GBK.js'
 import { hexStringToBuff } from '../sdk/HM/util.js'
+import { string2HexArrayBuffer } from '../sdk/HM/base64gb2312.js'
+import { isHmImageHexPayload } from './imagePrint.js'
+
 import {
     isNotEmptyArr,
     convertNumber,
@@ -20,6 +23,7 @@ import {
     formatBluetoothError,
     tipBluetoothError,
     getPlatformDefaultConfigByOs,
+    resolveOsVersion,
     clampPrintConfigValues,
     resolvePrinterBrandInfo,
     loadPrintTasks,
@@ -36,6 +40,8 @@ import {
 export class BleBlueTooth {
     // 区分苹果 / 安卓 / 鸿蒙
     _osName
+    // 操作系统版本号（如 13 / 17.0）
+    _osVersion = ''
     // 手机设备名称（品牌 + 型号）
     _deviceName = ''
     // 是否鸿蒙（含 HarmonyOS Next / 卓易通兼容层）
@@ -44,6 +50,8 @@ export class BleBlueTooth {
     _mtu = 512
     // 实际协商后的 MTU（失败则回退默认分包）
     _negotiatedMtu = 0
+    // 是否启用最优传输（二分最大 MTU + 稳定间隔）；可由页面勾选同步
+    _useOptimalTransfer = true
 
     // 重启蓝牙模块次数
     _restartBlueToothCount = 0
@@ -147,6 +155,11 @@ export class BleBlueTooth {
         return this._osName || '其它'
     }
 
+    // 操作系统版本号
+    getOsVersionDisplay() {
+        return this._osVersion || ''
+    }
+
     // 手机设备名称
     getDeviceDisplayName() {
         return this._deviceName || '未知设备'
@@ -170,6 +183,7 @@ export class BleBlueTooth {
         if (mtu > 0) {
             this._mtu = mtu
         }
+        this._useOptimalTransfer = this._printConfig.useOptimalTransfer !== false
     }
 
     // 读取本地成功配置
@@ -226,6 +240,7 @@ export class BleBlueTooth {
         if (mtu > 0) {
             this._mtu = mtu
         }
+        this._useOptimalTransfer = this._printConfig.useOptimalTransfer !== false
         this.emit('stateChange')
         return this.getPrintConfig()
     }
@@ -372,8 +387,14 @@ export class BleBlueTooth {
             totalBytes = buffer.byteLength || 0
             chunkSize = this.getWriteChunkSize(totalBytes)
             packetCount = totalBytes > 0 ? Math.ceil(totalBytes / chunkSize) : 0
+        } else if (pTask.dataFormat === 'hex' || isHmImageHexPayload(printDataStr)) {
+            // 汉印图片：HPRT cutCpclImage → string2HexArrayBuffer
+            const buffer = string2HexArrayBuffer(String(printDataStr).trim())
+            totalBytes = buffer.byteLength || 0
+            chunkSize = this._isHarmonyOS ? this.getWriteChunkSize(totalBytes) : 20
+            packetCount = totalBytes > 0 ? Math.ceil(totalBytes / chunkSize) : 0
         } else {
-            // 汉印：HPRT util.hexStringToBuff（同 cutCommand）
+            // 汉印明文 CPCL：HPRT util.hexStringToBuff（实为 GBK.encode）
             const buffer = hexStringToBuff(printDataStr)
             totalBytes = buffer.byteLength || 0
             chunkSize = this._isHarmonyOS ? this.getWriteChunkSize(totalBytes) : 20
@@ -1001,9 +1022,11 @@ export class BleBlueTooth {
         const systemInfo = uni.getSystemInfoSync() || {}
         this._osName = systemInfo.osName || systemInfo.platform || ''
         this._isHarmonyOS = this.detectHarmonyOS(systemInfo)
+        this._osVersion = resolveOsVersion(systemInfo)
         this._deviceName = this.resolveDeviceName(systemInfo)
         this.log('bluetooth-os=====>', {
             osName: this._osName,
+            osVersion: this._osVersion,
             platform: systemInfo.platform,
             system: systemInfo.system,
             romName: systemInfo.romName,
@@ -1685,13 +1708,24 @@ export class BleBlueTooth {
         const that = this
         try {
             const device = that.validateBluetoothDevices(options)
+            const useOptimalTransfer = options && Object.prototype.hasOwnProperty.call(options, 'useOptimalTransfer')
+                ? !!options.useOptimalTransfer
+                : !!that._useOptimalTransfer
             uni.showLoading({
                 title: '连接中...'
             })
             that.changeConnectState(device, 'connecting')
             that._negotiatedMtu = 0
+            // 先连接设备，再协商 / 设置 MTU
             await that.createBLEConnection(device)
-            await that.setBLEMTU(device.deviceId)
+            if (useOptimalTransfer) {
+                uni.showLoading({
+                    title: '协商最优MTU...'
+                })
+                await that.applyOptimalTransferAfterConnect(device.deviceId)
+            } else {
+                await that.setBLEMTU(device.deviceId)
+            }
             const dealRes = await that.dealServicesAndCharacteristics(device)
             that.log('dealRes=======>', dealRes)
             that.operationConnectDevice(dealRes)
@@ -2059,20 +2093,19 @@ export class BleBlueTooth {
                 })
                 that.emitPrintProgress()
                 return true
-            } else {
-                showMsg('打印任务列表不能为空')
-                return false
             }
+            throw new Error('打印任务列表不能为空')
         } catch (err) {
             const cancelled = that._printCancelled
             that.updatePrintProgress({
                 status: cancelled ? 'cancelled' : 'fail'
             })
             that.emitPrintProgress()
-            if (!cancelled) {
-                showMsg(err?.message || '打印失败')
+            // 取消：返回 false；失败：抛出原错误，供页面提示「第几张 / 原因」
+            if (cancelled) {
+                return false
             }
-            return false
+            throw (err instanceof Error ? err : new Error(String((err && err.message) || err || '打印失败')))
         } finally {
             that.stopPrintElapsedTimer()
             that.refreshPrintElapsed()
@@ -2126,7 +2159,8 @@ export class BleBlueTooth {
                 await sleep(that.getRetryIntervalSec())
             }
         }
-        throw lastErr || new Error(`第【${taskIndex + 1}】打印任务失败`)
+        const reason = (lastErr && lastErr.message) || (lastErr && String(lastErr)) || '未知原因'
+        throw new Error(`第【${taskIndex + 1}】打印任务失败：${reason}`)
     }
 
     // 打印任务项：芝柯/优博讯优先 GBK，其余（含汉印）走 CPCL
@@ -2148,11 +2182,17 @@ export class BleBlueTooth {
         }
     }
 
-    // CPCL 打印（汉印）— 对齐 HPRT demo：Print.cpcl() → util.hexStringToBuff → 分包写入
+    // CPCL 打印（汉印）
+    // - 明文模板：Print.cpcl() → util.hexStringToBuff（GBK）→ 分包
+    // - 图片 CGLZO：cutCpclImage → string2HexArrayBuffer → 分包
     async printCpclTaskItem(pTask) {
         const that = this
         const { deviceId, serviceId, characteristicId, printDataStr, writeType } = pTask
-        const buffer = hexStringToBuff(printDataStr)
+        const useHex =
+            pTask.dataFormat === 'hex' || isHmImageHexPayload(printDataStr)
+        const buffer = useHex
+            ? string2HexArrayBuffer(String(printDataStr || '').trim())
+            : hexStringToBuff(printDataStr)
         const chunkSize = that._isHarmonyOS ? that.getWriteChunkSize(buffer.byteLength) : 20
         const length = buffer.byteLength
         const count = Math.ceil(length / chunkSize)
@@ -2214,44 +2254,179 @@ export class BleBlueTooth {
         return buffer
     }
 
-    // 连接成功后设置 MTU（安卓/鸿蒙有效）；失败不阻断打印
-    setBLEMTU(deviceId) {
+    /**
+     * 底层请求设置 MTU（独立封装，供固定值设置与二分探测复用）
+     * @param {string} deviceId
+     * @param {number} mtu
+     * @returns {Promise<{ ok: boolean, mtu: number }>}
+     */
+    requestBLEMTU(deviceId, mtu) {
         const that = this
         return new Promise((resolve) => {
             if (!deviceId || that._osName === 'ios') {
-                resolve(false)
+                resolve({ ok: false, mtu: 0 })
                 return
             }
-            const cfgMtu = convertNumber(that.getPrintConfig().mtu)
-            // 优先用界面配置；鸿蒙过大易乱码，未配置时回退 20
-            let requestMtu = cfgMtu || that._mtu || 23
-            if (that._isHarmonyOS && !cfgMtu) {
-                requestMtu = 20
-            }
-            requestMtu = Math.min(512, Math.max(20, Math.round(requestMtu)))
-            that._mtu = requestMtu
+            const requestMtu = Math.min(512, Math.max(20, Math.round(Number(mtu) || 23)))
             uni.setBLEMTU({
                 deviceId,
                 mtu: requestMtu,
                 success(res) {
-                    that.log('setBLEMTU-success======>', res)
-                    const mtu = Number(res?.mtu)
-                    if (!isNaN(mtu) && mtu > 0) {
-                        that._negotiatedMtu = mtu
-                    } else if (that._isHarmonyOS) {
-                        that._negotiatedMtu = Math.min(requestMtu, 20)
-                    } else {
-                        that._negotiatedMtu = requestMtu
-                    }
-                    resolve(true)
+                    that.log('requestBLEMTU-success======>', res, requestMtu)
+                    const negotiated = Number(res && res.mtu)
+                    const finalMtu = (!isNaN(negotiated) && negotiated > 0) ? negotiated : requestMtu
+                    resolve({ ok: true, mtu: finalMtu })
                 },
                 fail(res) {
-                    that.log('setBLEMTU-fail======>', res)
-                    that._negotiatedMtu = that._isHarmonyOS ? 20 : 0
-                    resolve(false)
+                    that.log('requestBLEMTU-fail======>', res, requestMtu)
+                    resolve({ ok: false, mtu: 0 })
                 }
             })
         })
+    }
+
+    /**
+     * 二分查找设备当前可设置的最大 MTU（独立方法，仅负责探测，不改业务配置）
+     * 先连接设备后再调用；iOS 由系统分配，直接返回 0
+     * @param {string} deviceId
+     * @param {{ min?: number, max?: number, delayMs?: number }} [options]
+     * @returns {Promise<number>} 最大可设置 MTU；失败返回 0
+     */
+    async findMaxSettableMTU(deviceId, options = {}) {
+        const that = this
+        if (!deviceId || that._osName === 'ios') {
+            return 0
+        }
+        const minMtu = Math.max(20, Math.round(convertNumber(options.min) || 23))
+        // 鸿蒙过大易乱码，探测上限收紧；安卓可探到 512
+        const defaultMax = that._isHarmonyOS ? 128 : 512
+        const maxMtu = Math.min(512, Math.round(convertNumber(options.max) || defaultMax))
+        const delayMs = Math.max(0, Math.round(convertNumber(options.delayMs) || 40))
+        if (maxMtu < minMtu) {
+            return 0
+        }
+
+        let low = minMtu
+        let high = maxMtu
+        let best = 0
+
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2)
+            const result = await that.requestBLEMTU(deviceId, mid)
+            if (result.ok) {
+                const actual = Math.max(0, convertNumber(result.mtu) || mid)
+                best = Math.max(best, actual)
+                if (actual < mid) {
+                    // 系统向下钳制，无需继续上探
+                    high = actual
+                    break
+                }
+                low = mid + 1
+            } else {
+                high = mid - 1
+            }
+            if (delayMs > 0 && low <= high) {
+                await sleep(delayMs / 1000)
+            }
+        }
+
+        // 以最终 best 再设一次，确保链路落在已验证的最大 MTU
+        if (best > 0) {
+            const confirm = await that.requestBLEMTU(deviceId, best)
+            if (confirm.ok) {
+                best = Math.max(best, convertNumber(confirm.mtu) || best)
+            }
+        }
+
+        that.log('findMaxSettableMTU======>', {
+            deviceId,
+            best,
+            minMtu,
+            maxMtu,
+        })
+        return best
+    }
+
+    /**
+     * 按平台返回较稳定的包间隔 / 重试间隔（毫秒）
+     * @param {number} [mtu]
+     * @returns {{ packetIntervalMs: number, retryIntervalMs: number }}
+     */
+    getStableTransferIntervals(mtu = 0) {
+        const n = convertNumber(mtu) || 0
+        if (this._isHarmonyOS) {
+            // 鸿蒙缓冲弱：偏稳
+            if (n > 50) {
+                return { packetIntervalMs: 60, retryIntervalMs: 100 }
+            }
+            return { packetIntervalMs: 80, retryIntervalMs: 120 }
+        }
+        if (this._osName === 'ios') {
+            return { packetIntervalMs: 20, retryIntervalMs: 50 }
+        }
+        // 安卓：大 MTU 包更大，略抬升间隔更稳
+        if (n >= 200) {
+            return { packetIntervalMs: 20, retryIntervalMs: 50 }
+        }
+        if (n >= 100) {
+            return { packetIntervalMs: 30, retryIntervalMs: 60 }
+        }
+        return { packetIntervalMs: 40, retryIntervalMs: 80 }
+    }
+
+    /**
+     * 连接成功后应用最优传输：二分最大 MTU + 稳定包/重试间隔
+     * @param {string} deviceId
+     * @returns {Promise<number>} 最终采用的 MTU（探测失败则为当前配置 / 平台默认）
+     */
+    async applyOptimalTransferAfterConnect(deviceId) {
+        const that = this
+        const bestMtu = await that.findMaxSettableMTU(deviceId)
+        const intervals = that.getStableTransferIntervals(bestMtu)
+        const fallbackMtu = that._isHarmonyOS
+            ? 20
+            : (convertNumber(that.getPrintConfig().mtu) || that._mtu || 23)
+        const finalMtu = bestMtu > 0 ? bestMtu : fallbackMtu
+
+        that._mtu = finalMtu
+        that._negotiatedMtu = bestMtu > 0 ? bestMtu : (that._isHarmonyOS ? Math.min(finalMtu, 20) : 0)
+        that.updatePrintConfig({
+            mtu: finalMtu,
+            packetIntervalMs: intervals.packetIntervalMs,
+            retryIntervalMs: intervals.retryIntervalMs,
+        })
+        that.log('applyOptimalTransferAfterConnect======>', {
+            deviceId,
+            bestMtu,
+            finalMtu,
+            intervals,
+        })
+        return finalMtu
+    }
+
+    // 连接成功后设置 MTU（安卓/鸿蒙有效）；失败不阻断打印
+    async setBLEMTU(deviceId) {
+        const that = this
+        if (!deviceId || that._osName === 'ios') {
+            return false
+        }
+        const cfgMtu = convertNumber(that.getPrintConfig().mtu)
+        // 优先用界面配置；鸿蒙过大易乱码，未配置时回退 20
+        let requestMtu = cfgMtu || that._mtu || 23
+        if (that._isHarmonyOS && !cfgMtu) {
+            requestMtu = 20
+        }
+        requestMtu = Math.min(512, Math.max(20, Math.round(requestMtu)))
+        that._mtu = requestMtu
+        const result = await that.requestBLEMTU(deviceId, requestMtu)
+        if (result.ok) {
+            that._negotiatedMtu = result.mtu > 0
+                ? result.mtu
+                : (that._isHarmonyOS ? Math.min(requestMtu, 20) : requestMtu)
+            return true
+        }
+        that._negotiatedMtu = that._isHarmonyOS ? 20 : 0
+        return false
     }
 
     // 向打印机设备写入二进制数据（失败重试，避免静默丢包导致“打一下就停”）

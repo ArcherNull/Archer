@@ -16,7 +16,7 @@ export const peiJunLabelMock = {
 	receiverAddress: '湖南省长沙市雨花区万家丽中路88号汽配城A区15栋203室',
 	deliveryType: '送货上门',
 	payType: '提付',
-	senderAddress: '紫光郑州名优汽配',
+	senderAddress: '紫光郑州名优汽配紫光郑州名优汽配紫光郑州名优汽配',
 	senderName: '张三五',
 	senderPhone: '13266895574',
 	valueAdded: '增值服务：进仓装卸上楼',
