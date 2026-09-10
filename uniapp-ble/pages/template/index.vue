@@ -13,12 +13,34 @@
 				@settings="onOpenElementSettings"
 			/>
 
-			<!-- 右上角：缩放 / 清空 -->
-			<view class="floatOps">
-				<view class="floatOps-btn" @click="onZoomOut">−</view>
+			<!-- 右下角（底部操作栏上方）：拖拽 / 缩放 / 清空 / 折叠 -->
+			<view
+				v-if="!floatOpsCollapsed"
+				class="floatOps"
+				:style="floatOpsStyle"
+				@touchmove.stop.prevent="onFloatOpsTouchMove"
+				@touchend="onFloatOpsTouchEnd"
+				@touchcancel="onFloatOpsTouchEnd"
+			>
+				<view
+					class="floatOps-btn floatOps-btn--drag"
+					@touchstart.stop="onFloatOpsDragStart"
+				>
+					<image class="floatOps-img" :src="icons.move" mode="aspectFit" />
+				</view>
+				<view class="floatOps-btn" @click="onZoomOut">
+					<image class="floatOps-img" :src="icons.zoomOut" mode="aspectFit" />
+				</view>
 				<view class="floatOps-zoom" @click="onZoomReset">{{ zoomPercent }}</view>
-				<view class="floatOps-btn" @click="onZoomIn">+</view>
-				<view class="floatOps-btn floatOps-btn--danger" @click="onClearCanvas">🗑</view>
+				<view class="floatOps-btn" @click="onZoomIn">
+					<image class="floatOps-img" :src="icons.zoomIn" mode="aspectFit" />
+				</view>
+				<view class="floatOps-btn" @click="onClearCanvas">
+					<image class="floatOps-img" :src="icons.delete" mode="aspectFit" />
+				</view>
+				<view class="floatOps-btn floatOps-btn--fold" @click="onCollapseFloatOps">
+					<image class="floatOps-img" :src="icons.fold" mode="aspectFit" />
+				</view>
 			</view>
 		</view>
 
@@ -26,11 +48,15 @@
 		<BottomDock
 			:paper="paper"
 			:printing="printLoading"
+			:tools-collapsed="floatOpsCollapsed"
 			@paper="paperPopupVisible = true"
 			@add="onAddElement"
+			@open-import="onOpenImportPopup"
+			@list="elementListVisible = true"
 			@preview="onPreview"
 			@command="onViewCommand"
 			@print="onOpenPrintPopup"
+			@expand-tools="onExpandFloatOps"
 		/>
 
 		<PaperSettingsPopup
@@ -40,11 +66,27 @@
 			@change="onPaperChange"
 		/>
 
+		<ImportCommandPopup
+			:visible="importPopupVisible"
+			@update:visible="importPopupVisible = $event"
+			@confirm="onImportCommand"
+		/>
+
 		<ElementEditorPopup
 			:visible="editorPopupVisible"
 			:element="selectedElement"
 			@update:visible="editorPopupVisible = $event"
 			@change="onElementChange"
+		/>
+
+		<ElementListPopup
+			:visible="elementListVisible"
+			:elements="elements"
+			:selected-id="selectedId"
+			@update:visible="elementListVisible = $event"
+			@select="onSelectElement"
+			@remove="onRemoveElement"
+			@settings="onOpenElementSettingsFromList"
 		/>
 
 		<PrintDevicePopup
@@ -87,6 +129,19 @@
 			@update:visible="commandVisible = $event"
 			@close="commandVisible = false"
 		/>
+
+		<!-- 图片解析回退 canvas（完全隐藏） -->
+		<canvas
+			canvas-id="templateImageCanvas"
+			id="templateImageCanvas"
+			class="templateImageCanvas"
+			:width="imageCanvasWidth"
+			:height="imageCanvasHeight"
+			:style="{
+				width: imageCanvasWidth + 'px',
+				height: imageCanvasHeight + 'px',
+			}"
+		></canvas>
 	</view>
 </template>
 
@@ -95,23 +150,27 @@
 	import PreviewPopup from '../print/template-comm/preivew/PreviewPopup.vue'
 	import { getBluetoothAdapter } from '../print/ble/index.js'
 	import { resolvePrinterBrandInfo } from '../print/ble/config.js'
-	import { showMsg, showModal, isNotEmptyArr } from '../print/comm/utils.js'
+	import { showMsg, showModal, isNotEmptyArr, getWindowInfoSafe } from '../print/comm/utils.js'
 
 	import CanvasBoard from './components/CanvasBoard.vue'
 	import BottomDock from './components/BottomDock.vue'
 	import PaperSettingsPopup from './components/PaperSettingsPopup.vue'
 	import ElementEditorPopup from './components/ElementEditorPopup.vue'
+	import ElementListPopup from './components/ElementListPopup.vue'
+	import ImportCommandPopup from './components/ImportCommandPopup.vue'
 	import PrintDevicePopup from './components/PrintDevicePopup.vue'
 
-	import { createDefaultPaper, createDefaultElement } from './utils/elementTypes.js'
+	import { createDefaultPaper, createDefaultElement, TEMPLATE_ICONS } from './utils/elementTypes.js'
+	import { cpclToDesign } from './utils/cpclToDesign.js'
 	import {
-		buildDesignTemplate,
-		buildDesignCommandsByBrand,
+		buildDesignTemplateAsync,
+		buildDesignCommandsByBrandAsync,
 	} from './utils/templateBuilder.js'
 
 	const ZOOM_MIN = 0.5
 	const ZOOM_MAX = 2
 	const ZOOM_STEP = 0.25
+	const TEMPLATE_IMAGE_CANVAS_ID = 'templateImageCanvas'
 
 	export default {
 		name: 'TemplateDesignPage',
@@ -122,6 +181,8 @@
 			BottomDock,
 			PaperSettingsPopup,
 			ElementEditorPopup,
+			ElementListPopup,
+			ImportCommandPopup,
 			PrintDevicePopup,
 		},
 		data() {
@@ -133,6 +194,8 @@
 
 				paperPopupVisible: false,
 				editorPopupVisible: false,
+				elementListVisible: false,
+				importPopupVisible: false,
 				printPopupVisible: false,
 
 				cusBModuleInstance: null,
@@ -157,6 +220,15 @@
 				},
 
 				printLoading: false,
+
+				imageCanvasWidth: 80,
+				imageCanvasHeight: 80,
+
+				floatOpsLeft: null,
+				floatOpsTop: null,
+				floatOpsDrag: null,
+				floatOpsCollapsed: false,
+				icons: TEMPLATE_ICONS,
 			}
 		},
 		computed: {
@@ -185,6 +257,16 @@
 			zoomPercent() {
 				return Math.round((Number(this.canvasZoom) || 1) * 100) + '%'
 			},
+			floatOpsStyle() {
+				if (this.floatOpsLeft == null || this.floatOpsTop == null) return ''
+				return (
+					'left:' +
+					this.floatOpsLeft +
+					'px;top:' +
+					this.floatOpsTop +
+					'px;right:auto;bottom:auto;'
+				)
+			},
 		},
 		onShow() {
 			uni.setKeepScreenOn({ keepScreenOn: true })
@@ -203,12 +285,12 @@
 				this.paper = Object.assign({}, next)
 			},
 			onAddElement(type) {
-				const margin = Number(this.paper.marginLeft) || 1
-				const top = Number(this.paper.marginTop) || 1
+				const margin = Number(this.paper.marginLeft) || 0.5
+				const top = Number(this.paper.marginTop) || 0.5
 				const offset = this.elements.length * 3
 				const el = createDefaultElement(type, {
 					x: margin,
-					y: Math.min(top + offset, Math.max(0, (Number(this.paper.heightMm) || 90) - 10)),
+					y: Math.min(top + offset, Math.max(0, (Number(this.paper.heightMm) || 100) - 10)),
 				})
 				this.elements = this.elements.concat([el])
 				this.selectedId = el.id
@@ -235,6 +317,72 @@
 				this.selectedId = id || this.selectedId
 				if (!this.selectedId) return
 				this.editorPopupVisible = true
+			},
+			onOpenElementSettingsFromList(id) {
+				this.selectedId = id || this.selectedId
+				if (!this.selectedId) return
+				this.elementListVisible = false
+				this.editorPopupVisible = true
+			},
+
+			getTouchPoint(e) {
+				const t =
+					(e.touches && e.touches[0]) ||
+					(e.changedTouches && e.changedTouches[0]) ||
+					null
+				if (!t) return null
+				return {
+					x: t.clientX != null ? t.clientX : t.pageX,
+					y: t.clientY != null ? t.clientY : t.pageY,
+				}
+			},
+			onFloatOpsDragStart(e) {
+				const touch = this.getTouchPoint(e)
+				if (!touch) return
+				const that = this
+				const query = uni.createSelectorQuery().in(this)
+				query
+					.select('.floatOps')
+					.boundingClientRect(function (rect) {
+						if (!rect) return
+						that.floatOpsLeft = rect.left
+						that.floatOpsTop = rect.top
+						that.floatOpsDrag = {
+							startX: touch.x,
+							startY: touch.y,
+							originLeft: rect.left,
+							originTop: rect.top,
+						}
+					})
+					.exec()
+			},
+			onFloatOpsTouchMove(e) {
+				if (!this.floatOpsDrag) return
+				const touch = this.getTouchPoint(e)
+				if (!touch) return
+				const dx = touch.x - this.floatOpsDrag.startX
+				const dy = touch.y - this.floatOpsDrag.startY
+				let left = this.floatOpsDrag.originLeft + dx
+				let top = this.floatOpsDrag.originTop + dy
+				try {
+					const sys = getWindowInfoSafe()
+					const maxL = Math.max(0, (sys.windowWidth || 375) - 200)
+					const maxT = Math.max(0, (sys.windowHeight || 667) - 80)
+					left = Math.max(8, Math.min(maxL, left))
+					top = Math.max(8, Math.min(maxT, top))
+				} catch (err) {}
+				this.floatOpsLeft = left
+				this.floatOpsTop = top
+			},
+			onFloatOpsTouchEnd() {
+				this.floatOpsDrag = null
+			},
+			onCollapseFloatOps() {
+				this.floatOpsDrag = null
+				this.floatOpsCollapsed = true
+			},
+			onExpandFloatOps() {
+				this.floatOpsCollapsed = false
 			},
 
 			onZoomIn() {
@@ -273,6 +421,39 @@
 				} catch (e) {}
 			},
 
+			async onImportCommand(cpcl) {
+				const text = String(cpcl || '').trim()
+				if (!text) {
+					showMsg('请输入蓝牙指令')
+					return
+				}
+				try {
+					if (this.elements.length) {
+						const res = await showModal({
+							title: '导入指令',
+							content: '将覆盖当前画布内容，是否继续？',
+							confirmText: '导入',
+						})
+						if (!(res && res.confirm)) return
+					}
+					const design = cpclToDesign(text)
+					this.paper = Object.assign(createDefaultPaper(), design.paper || {})
+					this.elements = (design.elements || []).slice()
+					this.selectedId = ''
+					this.editorPopupVisible = false
+					this.importPopupVisible = false
+					showMsg(
+						'已回显 ' + ((design.elements && design.elements.length) || 0) + ' 个元素',
+						'success'
+					)
+				} catch (err) {
+					showMsg((err && err.message) || '导入失败')
+				}
+			},
+			onOpenImportPopup() {
+				this.importPopupVisible = true
+			},
+
 			resolveConnectedBrand() {
 				const btDevice = this.connectedBtDevice
 				if (!btDevice) return 'common'
@@ -290,29 +471,62 @@
 				return 'HM'
 			},
 
-			onPreview() {
-				const brand = this.resolveConnectedBrand()
-				const built = buildDesignTemplate(this.designModel, { brand: brand })
-				if (!built || !built.ops || !built.ops.length) {
-					showMsg('预览数据为空')
-					return
+			getImageBuildOptions() {
+				const that = this
+				return {
+					canvasId: TEMPLATE_IMAGE_CANVAS_ID,
+					component: this,
+					onCanvasSize: function (w, h) {
+						that.imageCanvasWidth = Math.max(8, Number(w) || 80)
+						that.imageCanvasHeight = Math.max(8, Number(h) || 80)
+						return that.$nextTick()
+					},
 				}
-				this.previewTitle =
-					'模板预览 ' + this.paper.widthMm + '×' + this.paper.heightMm + 'mm'
-				this.previewOps = built.ops
-				this.previewVisible = true
 			},
 
-			onViewCommand() {
-				const byBrand = buildDesignCommandsByBrand(this.designModel)
-				this.commandByBrand = {
-					CC3: byBrand.CC3 || '',
-					HM: byBrand.HM || '',
+			async onPreview() {
+				uni.showLoading({ title: '解析图片...', mask: true })
+				try {
+					const brand = this.resolveConnectedBrand()
+					const built = await buildDesignTemplateAsync(
+						this.designModel,
+						Object.assign({ brand: brand }, this.getImageBuildOptions())
+					)
+					if (!built || !built.ops || !built.ops.length) {
+						showMsg('预览数据为空')
+						return
+					}
+					this.previewTitle =
+						'模板预览 ' + this.paper.widthMm + '×' + this.paper.heightMm + 'mm'
+					this.previewOps = built.ops
+					this.previewVisible = true
+				} catch (err) {
+					showMsg((err && err.message) || '预览失败')
+				} finally {
+					uni.hideLoading()
 				}
-				const brand = this.resolveConnectedBrand()
-				this.commandText =
-					brand === 'HM' ? byBrand.HM : brand === 'CC3' ? byBrand.CC3 : byBrand.CC3
-				this.commandVisible = true
+			},
+
+			async onViewCommand() {
+				uni.showLoading({ title: '解析图片...', mask: true })
+				try {
+					const byBrand = await buildDesignCommandsByBrandAsync(
+						this.designModel,
+						this.getImageBuildOptions()
+					)
+					this.commandByBrand = {
+						CC3: byBrand.CC3 || '',
+						HM: byBrand.HM || '',
+					}
+					const brand = this.resolveConnectedBrand()
+					this.commandText =
+						brand === 'HM' ? byBrand.HM : brand === 'CC3' ? byBrand.CC3 : byBrand.CC3
+					this.commandVisible = true
+				} catch (err) {
+					showMsg((err && err.message) || '生成指令失败')
+				} finally {
+					uni.hideLoading()
+				}
 			},
 
 			async onOpenPrintPopup() {
@@ -332,35 +546,42 @@
 
 				const brand = this.resolveConnectedBrand()
 				const printBrand = brand === 'common' ? 'CC3' : brand
-				const built = buildDesignTemplate(this.designModel, { brand: printBrand })
-				if (!built || !built.cpcl) {
-					showMsg('生成打印指令失败')
-					return
-				}
-
-				const device = list[0]
-				const printTaskList = [
-					{
-						deviceId: device.deviceId,
-						serviceId: device.serviceId,
-						characteristicId: device.characteristicId,
-						name: device.name || device.localName || '',
-						localName: device.localName || '',
-						writeType: device.writeType || '',
-						printDataStr: built.cpcl,
-						dataFormat: 'text',
-						templateName: '模板试打',
-					},
-				]
 
 				this.printLoading = true
+				uni.showLoading({ title: '解析图片...', mask: true })
 				try {
+					const built = await buildDesignTemplateAsync(
+						this.designModel,
+						Object.assign({ brand: printBrand }, this.getImageBuildOptions())
+					)
+					if (!built || !built.cpcl) {
+						showMsg('生成打印指令失败')
+						return
+					}
+
+					const device = list[0]
+					const printTaskList = [
+						{
+							deviceId: device.deviceId,
+							serviceId: device.serviceId,
+							characteristicId: device.characteristicId,
+							name: device.name || device.localName || '',
+							localName: device.localName || '',
+							writeType: device.writeType || '',
+							printDataStr: built.cpcl,
+							dataFormat: 'text',
+							templateName: '模板试打',
+						},
+					]
+
+					uni.showLoading({ title: '打印中...', mask: true })
 					await bt.print(printTaskList)
 					showMsg('打印完成', 'success')
 					this.printPopupVisible = false
 				} catch (err) {
 					showMsg((err && err.message) || '打印失败')
 				} finally {
+					uni.hideLoading()
 					this.printLoading = false
 					this.bumpBtVersion()
 				}
@@ -715,7 +936,8 @@
 	.floatOps {
 		position: absolute;
 		right: 20rpx;
-		top: 20rpx;
+		bottom: calc(220rpx + env(safe-area-inset-bottom) + 16rpx);
+		top: auto;
 		z-index: 30;
 		display: flex;
 		align-items: center;
@@ -729,23 +951,25 @@
 		&-btn {
 			width: 56rpx;
 			height: 56rpx;
-			line-height: 56rpx;
-			text-align: center;
-			font-size: 32rpx;
-			font-weight: 700;
-			color: $pr-theme-text;
-			background: $pr-theme-soft;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: #f5f2ec;
 			border-radius: 12rpx;
 
 			&:active {
 				opacity: 0.75;
 			}
 
-			&--danger {
-				color: $pr-danger;
-				background: rgba(221, 82, 77, 0.12);
-				font-size: 28rpx;
+			&--drag,
+			&--fold {
+				background: #efe8dc;
 			}
+		}
+
+		&-img {
+			width: 32rpx;
+			height: 32rpx;
 		}
 
 		&-zoom {
@@ -756,7 +980,17 @@
 			text-align: center;
 			font-size: 22rpx;
 			font-weight: 600;
-			color: $pr-text-main;
+			color: #2c2c2c;
 		}
+	}
+
+	.templateImageCanvas {
+		position: fixed;
+		left: -9999px;
+		top: -9999px;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		pointer-events: none;
 	}
 </style>

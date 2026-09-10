@@ -18,10 +18,11 @@
 
 <script>
 	import CpclPreview from './CpclPreview.vue'
+	import { getWindowInfoSafe } from '../../comm/utils.js'
 
 	function getWindowHeight() {
 		try {
-			const info = uni.getSystemInfoSync() || {}
+			const info = getWindowInfoSafe()
 			return Number(info.windowHeight) || Number(info.screenHeight) || 667
 		} catch (e) {
 			return 667

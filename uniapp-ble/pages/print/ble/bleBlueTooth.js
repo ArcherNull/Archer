@@ -9,6 +9,7 @@ import {
     showMsg,
     showModal,
     sleep,
+    getSystemInfoCompat,
 } from '../comm/utils.js'
 import {
     ERROR_CODE,
@@ -1019,7 +1020,7 @@ export class BleBlueTooth {
 
     // 平台是否支持蓝牙
     getSystemInfoSync() {
-        const systemInfo = uni.getSystemInfoSync() || {}
+        const systemInfo = getSystemInfoCompat()
         this._osName = systemInfo.osName || systemInfo.platform || ''
         this._isHarmonyOS = this.detectHarmonyOS(systemInfo)
         this._osVersion = resolveOsVersion(systemInfo)

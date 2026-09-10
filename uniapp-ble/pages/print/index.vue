@@ -358,7 +358,7 @@
 		resolvePrinterBrandInfo,
 		resolveOsVersion,
 	} from './ble/config.js'
-	import { showMsg, convertNumber, isNotEmptyArr, showModal } from './comm/utils.js'
+	import { showMsg, convertNumber, isNotEmptyArr, showModal, getSystemInfoCompat } from './comm/utils.js'
 	import {
 		resolveLabelTemplate,
 		resolveWaybillTemplate,
@@ -645,7 +645,7 @@
 			},
 			initDeviceInfo() {
 				try {
-					const systemInfo = uni.getSystemInfoSync() || {}
+					const systemInfo = getSystemInfoCompat()
 					this.platformName = this.resolvePlatformName(systemInfo)
 					this.osVersion = resolveOsVersion(systemInfo)
 					this.deviceName = this.resolveDeviceName(systemInfo)

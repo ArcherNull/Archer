@@ -71,5 +71,6 @@ export {
 	materializeLocalImagePath,
 	loadImagePixels,
 	imagePathToCpcl,
+	imagePathToEgBitmap,
 	choosePrintImage,
 } from './imagePrint.js'

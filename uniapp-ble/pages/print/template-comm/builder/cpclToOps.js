@@ -106,14 +106,37 @@ export function cpclToOps(cpcl, brand = 'common') {
 				if (ma) data = ma[1] || ''
 			}
 			const unit = Number(m[5]) || 4
+			const level = Number(m[4]) || 2
 			const cmd = m[1].toUpperCase()
 			const isV = cmd === 'VB' || cmd === 'VBARCODE'
+			const modules = (() => {
+				const len = String(data || '').length
+				const ecc = Math.max(0, Math.min(3, level))
+				const caps = [
+					[17, 14, 11, 7],
+					[32, 26, 20, 14],
+					[53, 42, 32, 24],
+					[78, 62, 46, 34],
+					[106, 84, 60, 44],
+					[134, 106, 74, 58],
+					[154, 122, 86, 64],
+					[192, 152, 108, 84],
+					[230, 180, 130, 98],
+					[271, 213, 151, 119],
+				]
+				for (let v = 0; v < caps.length; v++) {
+					if (len <= caps[v][ecc]) return 21 + v * 4
+				}
+				return 57
+			})()
 			push({
 				type: 'qr',
 				orient: isV ? 'v' : 'h',
 				x: Number(m[2]) || 0,
 				y: Number(m[3]) || 0,
-				size: 37 * unit,
+				level: level,
+				unit: unit,
+				size: modules * unit,
 				data: data,
 			})
 			continue
@@ -151,10 +174,14 @@ export function cpclToOps(cpcl, brand = 'common') {
 			continue
 		}
 
-		m = raw.match(/^(VTEXT|VT|TEXT|T)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.*))?$/i)
+		m = raw.match(/^(TEXT270|TEXT180|TEXT90|VTEXT|VT|TEXT|T)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.*))?$/i)
 		if (m) {
 			const cmd = m[1].toUpperCase()
-			const vertical = cmd === 'VTEXT' || cmd === 'VT'
+			let rotate = 0
+			if (cmd === 'TEXT90') rotate = 90
+			else if (cmd === 'TEXT180') rotate = 180
+			else if (cmd === 'TEXT270') rotate = 270
+			const vertical = cmd === 'VTEXT' || cmd === 'VT' || rotate === 90 || rotate === 270
 			push({
 				type: 'text',
 				font: m[2],
@@ -163,6 +190,7 @@ export function cpclToOps(cpcl, brand = 'common') {
 				y: Number(m[5]) || 0,
 				content: m[6] || '',
 				vertical: vertical,
+				rotate: rotate,
 				align: currentAlign,
 			})
 			continue

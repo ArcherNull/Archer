@@ -3,13 +3,24 @@
  */
 
 import { createCpclBuilder } from '../../print/template-comm/builder/cpclBuilder.js'
-import { DOTS_PER_MM, mmToDots } from '../../print/ble/imagePrint.js'
 import {
-	LOGO_EG_DATA,
-	LOGO_EG_BYTE_W,
-	LOGO_EG_HEIGHT,
-} from '../../print/template-comm/assets/logo.js'
-import { PAPER_LIMITS } from './elementTypes.js'
+	DOTS_PER_MM,
+	mmToDots,
+	STATIC_PRINT_IMAGES,
+	imagePathToEgBitmap,
+	calcPrintSizeByMm,
+} from '../../print/ble/imagePrint.js'
+import {
+	PAPER_LIMITS,
+	estimateTextMaxChars,
+	estimateTextWidthMm,
+	wrapDesignText,
+	truncateDesignText,
+	normalizeElementRotate,
+	normalizeAlignH,
+	normalizeAlignV,
+	textCharHeightMm,
+} from './elementTypes.js'
 
 function clamp(n, min, max) {
 	const v = Number(n)
@@ -76,6 +87,83 @@ export function paperToDots(paper) {
 	}
 }
 
+/** 解析图片元素的实际路径 */
+export function resolveElementImagePath(el) {
+	if (!el || el.type !== 'image') return ''
+	if (el.imagePath) return String(el.imagePath)
+	const key = el.imageKey || ''
+	if (!key) return ''
+	const found = STATIC_PRINT_IMAGES.find(function (item) {
+		return item.key === key
+	})
+	return (found && found.path) || ''
+}
+
+/**
+ * 将设计稿中的图片元素经 imagePrint 转为 EG 位图后写回
+ * @param {{ paper: object, elements: array }} design
+ * @param {{ canvasId?: string, component?: any, onProgress?: Function }} options
+ */
+export async function prepareDesignImages(design, options = {}) {
+	const paper = (design && design.paper) || {}
+	const elements = (design && design.elements) || []
+	const list = []
+	const imageEls = elements.filter(function (el) {
+		return el && el.type === 'image'
+	})
+	let done = 0
+
+	for (let i = 0; i < elements.length; i++) {
+		const el = elements[i]
+		if (!el || el.type !== 'image') {
+			list.push(el)
+			continue
+		}
+		const path = resolveElementImagePath(el)
+		if (!path) {
+			throw new Error('有图片元素未选择图片，请先在设置中选图')
+		}
+		const widthMm = Number(el.widthMm) || 10
+		const heightMm = Number(el.heightMm) || 10
+		const size = calcPrintSizeByMm(widthMm, heightMm)
+
+		if (typeof options.onCanvasSize === 'function') {
+			await Promise.resolve(options.onCanvasSize(size.width, size.height))
+		}
+		// 等页面 canvas 尺寸生效（回退路径需要）
+		await new Promise(function (resolve) {
+			setTimeout(resolve, 200)
+		})
+
+		const bmp = await imagePathToEgBitmap(path, {
+			widthMm: widthMm,
+			heightMm: heightMm,
+			canvasId: options.canvasId,
+			component: options.component,
+			skipValidate: /\/?static\//.test(String(path)),
+		})
+		done += 1
+		if (typeof options.onProgress === 'function') {
+			options.onProgress(done, imageEls.length)
+		}
+		list.push(
+			Object.assign({}, el, {
+				egBitmap: {
+					hex: bmp.hex,
+					byteWidth: bmp.byteWidth,
+					height: bmp.height,
+					width: bmp.width,
+				},
+			})
+		)
+	}
+
+	return {
+		paper: paper,
+		elements: list,
+	}
+}
+
 function appendElement(b, el, paperDots) {
 	if (!el || !el.type) return
 	const x = Math.round(Number(el.x) * DOTS_PER_MM) || 0
@@ -84,16 +172,81 @@ function appendElement(b, el, paperDots) {
 	switch (el.type) {
 		case 'text': {
 			const mag = Math.max(1, Math.min(4, Number(el.mag) || 1))
+			const font = el.font != null ? el.font : 0
+			const size = el.size != null ? el.size : 24
+			const content = el.content || ''
+			const rotate = normalizeElementRotate(el.rotate)
+			const alignH = normalizeAlignH(el.alignH)
+			const alignV = normalizeAlignV(el.alignV)
+			const boxX = Number(el.x) || 0
+			const boxY = Number(el.y) || 0
+			const boxW = Number(el.widthMm) || 30
+			const charMm = textCharHeightMm(el)
+			const lineHMm = charMm * 1.15
+			const boxH = Number(el.heightMm) > 0 ? Number(el.heightMm) : charMm
+			const maxChars = estimateTextMaxChars(boxW, mag)
+			const ellipsis = !!el.ellipsis
+
+			let lines
+			if (el.wrap) {
+				const maxLines = Math.max(1, Math.floor(boxH / lineHMm))
+				lines = wrapDesignText(content, maxChars, maxLines)
+				if (ellipsis) {
+					const full = wrapDesignText(content, maxChars, 40)
+					if (full.length > maxLines && lines.length) {
+						lines[lines.length - 1] = truncateDesignText(
+							lines[lines.length - 1],
+							maxChars
+						)
+					}
+				}
+			} else {
+				let line = String(content).replace(/\r?\n/g, ' ')
+				if (ellipsis) line = truncateDesignText(line, maxChars)
+				lines = [line]
+			}
+			const contentH = Math.max(charMm, lines.length * lineHMm)
+
+			let startY = boxY
+			if (alignV === 'middle') {
+				startY = boxY + Math.max(0, (boxH - contentH) / 2)
+			} else if (alignV === 'bottom') {
+				startY = boxY + Math.max(0, boxH - contentH)
+			}
+
 			if (mag > 1) b.setMag(mag, mag)
 			if (el.bold) b.setBold(1)
-			b.text(el.font != null ? el.font : 0, el.size != null ? el.size : 24, x, y, el.content || '')
+
+			const lineHDots = Math.round(lineHMm * DOTS_PER_MM)
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i]
+				const lineW = estimateTextWidthMm(line, charMm)
+				let lx = boxX
+				if (alignH === 'center') {
+					lx = boxX + Math.max(0, (boxW - lineW) / 2)
+				} else if (alignH === 'right') {
+					lx = boxX + Math.max(0, boxW - lineW)
+				}
+				let ly = startY + i * lineHMm
+				let px = Math.round(lx * DOTS_PER_MM) || 0
+				let py = Math.round(ly * DOTS_PER_MM) || 0
+				// 旋转 90/270 时，换行沿 X 方向推进
+				if (el.wrap && (rotate === 90 || rotate === 270)) {
+					px = Math.round(boxX * DOTS_PER_MM) + i * lineHDots
+					py = Math.round(startY * DOTS_PER_MM) || 0
+				}
+				b.text(font, size, px, py, line, rotate)
+			}
+
 			if (el.bold) b.setBold(0)
 			if (mag > 1) b.setMag(1, 1)
 			break
 		}
 		case 'image': {
-			// 当前内置 Logo EG；宽高由位图本身决定
-			b.logoEg(LOGO_EG_BYTE_W, LOGO_EG_HEIGHT, x, y, LOGO_EG_DATA)
+			const bmp = el.egBitmap
+			if (bmp && bmp.hex && bmp.byteWidth && bmp.height) {
+				b.logoEg(bmp.byteWidth, bmp.height, x, y, bmp.hex)
+			}
 			break
 		}
 		case 'barcode': {
@@ -169,6 +322,14 @@ export function buildDesignTemplate(design, options = {}) {
 }
 
 /**
+ * 准备图片后生成模板（打印 / 预览共用）
+ */
+export async function buildDesignTemplateAsync(design, options = {}) {
+	const prepared = await prepareDesignImages(design, options)
+	return buildDesignTemplate(prepared, options)
+}
+
+/**
  * 同时生成芝柯 / 汉印方言指令
  */
 export function buildDesignCommandsByBrand(design, options = {}) {
@@ -181,4 +342,12 @@ export function buildDesignCommandsByBrand(design, options = {}) {
 		opsHM: hm.ops,
 		paperDots: cc3.paperDots,
 	}
+}
+
+/**
+ * 异步：先解析图片再生成双品牌指令
+ */
+export async function buildDesignCommandsByBrandAsync(design, options = {}) {
+	const prepared = await prepareDesignImages(design, options)
+	return buildDesignCommandsByBrand(prepared, options)
 }

@@ -29,19 +29,19 @@ export const MAX_IMAGE_BYTES = 100 * 1024
 export const ALLOWED_IMAGE_EXTS = ['png', 'jpg', 'jpeg']
 
 export const STATIC_PRINT_IMAGES = [
-	{ key: 'logo', label: 'Logo', path: '/static/logo.png' },
-	{ key: 'weChat', label: '微信', path: '/static/weChat.png' },
-	{ key: 'ali-pay', label: '支付宝', path: '/static/ali-pay.png' },
-	{ key: 'ali-cloud', label: '阿里云', path: '/static/ali-cloud.png' },
-	{ key: 'ali-movie', label: '淘票票', path: '/static/ali-movie.png' },
-	{ key: 'apple', label: 'Apple', path: '/static/apple.png' },
-	{ key: 'huawei', label: '华为', path: '/static/huawei.png' },
-	{ key: 'huawei-logo', label: '华为Logo', path: '/static/huawei-logo.png' },
-	{ key: 'xiaomi', label: '小米', path: '/static/xiaomi.png' },
-	{ key: 'sf-logo', label: '顺丰Logo', path: '/static/sf-logo.png' },
-	{ key: 'sf-express', label: '顺丰', path: '/static/sf-express.png' },
-	{ key: 'jianshe', label: '建设银行', path: '/static/jianshe.png' },
-	{ key: 'longye', label: '农业银行', path: '/static/longye.png' },
+	{ key: 'logo', label: 'Logo', path: '/static/logo/logo.png' },
+	{ key: 'weChat', label: '微信', path: '/static/logo/weChat.png' },
+	{ key: 'ali-pay', label: '支付宝', path: '/static/logo/ali-pay.png' },
+	{ key: 'ali-cloud', label: '阿里云', path: '/static/logo/ali-cloud.png' },
+	{ key: 'ali-movie', label: '淘票票', path: '/static/logo/ali-movie.png' },
+	{ key: 'apple', label: 'Apple', path: '/static/logo/apple.png' },
+	{ key: 'huawei', label: '华为', path: '/static/logo/huawei.png' },
+	{ key: 'huawei-logo', label: '华为Logo', path: '/static/logo/huawei-logo.png' },
+	{ key: 'xiaomi', label: '小米', path: '/static/logo/xiaomi.png' },
+	{ key: 'sf-logo', label: '顺丰Logo', path: '/static/logo/sf-logo.png' },
+	{ key: 'sf-express', label: '顺丰', path: '/static/logo/sf-express.png' },
+	{ key: 'jianshe', label: '建设银行', path: '/static/logo/jianshe.png' },
+	{ key: 'longye', label: '农业银行', path: '/static/logo/longye.png' },
 ]
 
 export function mmToDots(mm, options = {}) {
@@ -684,20 +684,15 @@ export async function loadImagePixels(src, drawW, drawH, options = {}) {
 }
 
 /**
- * 图片 → 打印指令
- * - HM：HPRT CGLZO + LZO（dataFormat=hex）
- * - 其它：CPCL EG 明文
+ * 图片 → EG 位图数据（可嵌入模板 CPCL，不包整页）
+ * 与 imagePathToCpcl 芝柯分支同源：canvas 取像素 → 二值化 → EG hex
  */
-export async function imagePathToCpcl(src, options = {}) {
+export async function imagePathToEgBitmap(src, options = {}) {
 	if (!src) throw new Error('缺少图片路径')
 	if (!options.skipValidate && !/\/?static\//.test(String(src))) {
 		await validatePrintImage(src)
 	}
 
-	const pageWidth = Number(options.pageWidth) || DEFAULT_PAGE_WIDTH_DOTS
-	const brand = String(options.brand || '').toUpperCase()
-	const x = Number(options.x) || 0
-	const y = Number(options.y) || 0
 	let threshold =
 		options.threshold != null ? Number(options.threshold) : DEFAULT_THRESHOLD
 
@@ -714,9 +709,69 @@ export async function imagePathToCpcl(src, options = {}) {
 	})
 	let imgData = loaded.imageData
 
+	let bmp = rgbaToEgBitmap(imgData, { threshold: threshold })
+	let ratio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
+	if (bmp.hex && ratio < 0.02 && threshold < 220) {
+		threshold = Math.min(220, threshold + 40)
+		bmp = rgbaToEgBitmap(imgData, { threshold: threshold })
+		ratio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
+	}
+	if (bmp.hex && ratio > 0.92) {
+		imgData = invertRgbaImageData(imgData)
+		bmp = rgbaToEgBitmap(imgData, { threshold: DEFAULT_THRESHOLD })
+		ratio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
+	}
+	if (!bmp.hex) throw new Error('图片解析结果为空')
+	const blackRatio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
+	if (blackRatio < 0.001) {
+		throw new Error('图片解析为空白，请换对比度更高的图')
+	}
+
+	return {
+		hex: bmp.hex,
+		byteWidth: bmp.byteWidth,
+		width: bmp.width,
+		height: bmp.height,
+		printWidth: drawW,
+		printHeight: drawH,
+		printWidthMm: size.widthMm,
+		printHeightMm: size.heightMm,
+		blackRatio: blackRatio,
+		method: loaded.method,
+		previewPath: loaded.drawPath,
+	}
+}
+
+/**
+ * 图片 → 打印指令
+ * - HM：HPRT CGLZO + LZO（dataFormat=hex）
+ * - 其它：CPCL EG 明文
+ */
+export async function imagePathToCpcl(src, options = {}) {
+	if (!src) throw new Error('缺少图片路径')
+	if (!options.skipValidate && !/\/?static\//.test(String(src))) {
+		await validatePrintImage(src)
+	}
+
+	const pageWidth = Number(options.pageWidth) || DEFAULT_PAGE_WIDTH_DOTS
+	const brand = String(options.brand || '').toUpperCase()
+	const x = Number(options.x) || 0
+	const y = Number(options.y) || 0
+
+	const size = calcPrintSizeByMm(
+		options.widthMm != null ? options.widthMm : DEFAULT_PRINT_WIDTH_MM,
+		options.heightMm != null ? options.heightMm : DEFAULT_PRINT_HEIGHT_MM
+	)
+	const drawW = size.width
+	const drawH = size.height
+
 	// —— 汉印：对齐 HPRT demo drawCanvas → convertToMonoImage → LZO → cutCpclImage ——
 	if (brand === 'HM') {
-		const mono = convertToMonoImage(imgData)
+		const loaded = await loadImagePixels(src, drawW, drawH, {
+			canvasId: options.canvasId,
+			component: options.component,
+		})
+		const mono = convertToMonoImage(loaded.imageData)
 		if (!mono || !mono.length) throw new Error('汉印单色位图转换失败')
 		const dataHex = compressMonoToHex(new Uint8Array(mono))
 		if (!dataHex) throw new Error('汉印 LZO 压缩失败')
@@ -738,25 +793,8 @@ export async function imagePathToCpcl(src, options = {}) {
 		}
 	}
 
-	// —— 芝柯等：EG 明文 ——
-	let bmp = rgbaToEgBitmap(imgData, { threshold: threshold })
-	let ratio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
-	if (bmp.hex && ratio < 0.02 && threshold < 220) {
-		threshold = Math.min(220, threshold + 40)
-		bmp = rgbaToEgBitmap(imgData, { threshold: threshold })
-		ratio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
-	}
-	if (bmp.hex && ratio > 0.92) {
-		imgData = invertRgbaImageData(imgData)
-		bmp = rgbaToEgBitmap(imgData, { threshold: DEFAULT_THRESHOLD })
-		ratio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
-	}
-	if (!bmp.hex) throw new Error('图片解析结果为空')
-	const blackRatio = bmp.pixelCount ? bmp.blackCount / bmp.pixelCount : 0
-	if (blackRatio < 0.001) {
-		throw new Error('图片解析为空白，请换对比度更高的图')
-	}
-
+	// —— 芝柯等：EG 明文整页 ——
+	const bmp = await imagePathToEgBitmap(src, options)
 	const cpcl = buildImageCpcl({
 		hex: bmp.hex,
 		byteWidth: bmp.byteWidth,
@@ -772,15 +810,15 @@ export async function imagePathToCpcl(src, options = {}) {
 	return {
 		cpcl: cpcl,
 		dataFormat: 'text',
-		previewPath: loaded.drawPath,
-		printWidth: bmp.width,
-		printHeight: bmp.height,
-		printWidthMm: size.widthMm,
-		printHeightMm: size.heightMm,
+		previewPath: bmp.previewPath,
+		printWidth: bmp.printWidth,
+		printHeight: bmp.printHeight,
+		printWidthMm: bmp.printWidthMm,
+		printHeightMm: bmp.printHeightMm,
 		byteWidth: bmp.byteWidth,
 		hexLength: bmp.hex.length,
-		blackRatio: blackRatio,
-		method: loaded.method,
+		blackRatio: bmp.blackRatio,
+		method: bmp.method,
 	}
 }
 

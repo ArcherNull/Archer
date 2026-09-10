@@ -41,7 +41,7 @@
 </template>
 
 <script>
-	import { showMsg } from '../comm/utils.js'
+	import { showMsg, getWindowInfoSafe } from '../comm/utils.js'
 
 	const BRAND_TAB_LIST = [
 		{ key: 'CC3', label: 'CC3' },
@@ -50,7 +50,7 @@
 
 	function getWindowHeight() {
 		try {
-			const info = uni.getSystemInfoSync() || {}
+			const info = getWindowInfoSafe()
 			return Number(info.windowHeight) || Number(info.screenHeight) || 667
 		} catch (e) {
 			return 667

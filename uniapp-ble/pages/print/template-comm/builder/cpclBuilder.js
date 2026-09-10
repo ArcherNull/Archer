@@ -22,6 +22,28 @@ function esc(v) {
 	return String(v == null ? '' : v)
 }
 
+/** 预览用：按内容估算 QR 模块边长（与模板画布算法一致） */
+function estimateQrModules(data, level) {
+	const len = String(data == null ? '' : data).length
+	const ecc = Math.max(0, Math.min(3, Number(level) || 2))
+	const caps = [
+		[17, 14, 11, 7],
+		[32, 26, 20, 14],
+		[53, 42, 32, 24],
+		[78, 62, 46, 34],
+		[106, 84, 60, 44],
+		[134, 106, 74, 58],
+		[154, 122, 86, 64],
+		[192, 152, 108, 84],
+		[230, 180, 130, 98],
+		[271, 213, 151, 119],
+	]
+	for (let v = 0; v < caps.length; v++) {
+		if (len <= caps[v][ecc]) return 21 + v * 4
+	}
+	return 21 + (caps.length - 1) * 4
+}
+
 /**
  * 文本字号方言：
  * - 芝柯：常用 T 0 24（font=0, size=24）
@@ -53,6 +75,13 @@ export function normalizeTextFont(brand, font, size) {
 	}
 	// 汉印 size 统一置 0（官方说明：该功能被屏蔽）
 	return { font: f, size: '0' }
+}
+
+/** 文本旋转角度规范化：0 | 90 | 180 | 270 */
+export function normalizeTextRotate(rotate) {
+	const n = Number(rotate)
+	if (n === 90 || n === 180 || n === 270) return n
+	return 0
 }
 
 /**
@@ -236,11 +265,22 @@ export function createCpclBuilder(options = {}) {
 			return api
 		},
 
-		/** 横排文本（内部按品牌映射字库，模板可统一写芝柯风格 0 24） */
-		text(font, size, x, y, content) {
+		/** 横排文本（内部按品牌映射字库，模板可统一写芝柯风格 0 24）
+		 * @param {number} [rotate=0] 旋转角度：0 | 90 | 180 | 270 → TEXT / TEXT90 / TEXT180 / TEXT270
+		 */
+		text(font, size, x, y, content, rotate) {
 			const mapped = normalizeTextFont(brand, font, size)
 			const c = esc(content)
-			pushLine(`${dialect.textCmd} ${mapped.font} ${mapped.size} ${x} ${y} ${c}`)
+			const deg = normalizeTextRotate(rotate)
+			const cmd =
+				deg === 90
+					? 'TEXT90'
+					: deg === 180
+						? 'TEXT180'
+						: deg === 270
+							? 'TEXT270'
+							: dialect.textCmd
+			pushLine(`${cmd} ${mapped.font} ${mapped.size} ${x} ${y} ${c}`)
 			pushOp({
 				type: 'text',
 				font: mapped.font,
@@ -248,7 +288,8 @@ export function createCpclBuilder(options = {}) {
 				x: Number(x) || 0,
 				y: Number(y) || 0,
 				content: c,
-				vertical: false,
+				rotate: deg,
+				vertical: deg === 90 || deg === 270,
 				align: currentAlign,
 			})
 			return api
@@ -384,12 +425,15 @@ export function createCpclBuilder(options = {}) {
 			pushLine(`MA,${d}`)
 			pushLine('ENDQR')
 			const unit = Number(u) || 4
-			const size = 37 * unit
+			const level = Number(m) || 2
+			const size = estimateQrModules(d, level) * unit
 			pushOp({
 				type: 'qr',
 				orient: 'h',
 				x: Number(x) || 0,
 				y: Number(y) || 0,
+				level: level,
+				unit: unit,
 				size,
 				data: d,
 			})

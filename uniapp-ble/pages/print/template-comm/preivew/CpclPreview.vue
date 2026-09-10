@@ -243,7 +243,8 @@
 						const fs = resolveFontPx(op.font, op.size, mag, s)
 						const weight = bold > 0 || mag >= 2 ? (bold >= 2 ? '800' : '700') : '400'
 						const pt = mapPt(op.x, op.y)
-						const vertical = rotate ? false : !!op.vertical
+						const rot = Number(op.rotate) || 0
+						const vertical = rotate ? false : !!op.vertical && !rot
 						const textAlign = op.align || align
 						const textWDots = vertical
 							? fs / s
@@ -251,14 +252,22 @@
 						const left = rotate
 							? Math.round(pt.x * s)
 							: resolveAlignedLeftPx(textAlign, pt.x, textWDots, pageWDots, s)
+						let textStyle =
+							'font-size:' + fs + 'px;font-weight:' + weight + ';'
+						if (vertical) {
+							textStyle += 'writing-mode:vertical-rl;'
+						} else if (rot === 90 || rot === 180 || rot === 270) {
+							textStyle +=
+								'transform:rotate(' +
+								rot +
+								'deg);transform-origin:left top;display:inline-block;'
+						}
 						list.push({
 							type: 'text',
 							content: op.content || '',
 							vertical: vertical,
 							styleStr: 'left:' + left + 'px;top:' + Math.round(pt.y * s) + 'px;',
-							textStyleStr:
-								'font-size:' + fs + 'px;font-weight:' + weight + ';' +
-								(vertical ? 'writing-mode:vertical-rl;' : ''),
+							textStyleStr: textStyle,
 						})
 						return
 					}

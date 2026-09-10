@@ -3,20 +3,36 @@
 		<!-- 第一行：纸张摘要 + 预览/指令/打印 -->
 		<view class="dock-row dock-row--top">
 			<view class="paperBtn" @click="$emit('paper')">
-				<text class="paperBtn-icon">▤</text>
+				<image class="paperBtn-iconImg" :src="icons.settings" mode="aspectFit" />
 				<text class="paperBtn-text">{{ paperSummary }}</text>
 			</view>
 			<view class="actionIcons">
+				<view
+					v-if="toolsCollapsed"
+					class="iconBtn iconBtn--tools"
+					@click="$emit('expand-tools')"
+				>
+					<image class="iconBtn-img" :src="icons.expand" mode="aspectFit" />
+					<text class="iconBtn-label">工具</text>
+				</view>
+				<view class="iconBtn" @click="onImportTap">
+					<image class="iconBtn-img" :src="icons.importIcon" mode="aspectFit" />
+					<text class="iconBtn-label">导入</text>
+				</view>
+				<view class="iconBtn" @click="$emit('list')">
+					<image class="iconBtn-img" :src="icons.list" mode="aspectFit" />
+					<text class="iconBtn-label">列表</text>
+				</view>
 				<view class="iconBtn" @click="$emit('preview')">
-					<text class="iconBtn-glyph">👁</text>
+					<image class="iconBtn-img" :src="icons.preview" mode="aspectFit" />
 					<text class="iconBtn-label">预览</text>
 				</view>
 				<view class="iconBtn" @click="$emit('command')">
-					<text class="iconBtn-glyph">{ }</text>
+					<image class="iconBtn-img" :src="icons.command" mode="aspectFit" />
 					<text class="iconBtn-label">指令</text>
 				</view>
 				<view class="iconBtn" :class="{ 'iconBtn--busy': printing }" @click="$emit('print')">
-					<text class="iconBtn-glyph">⎙</text>
+					<image class="iconBtn-img" :src="icons.print" mode="aspectFit" />
 					<text class="iconBtn-label">{{ printing ? '打印中' : '试打' }}</text>
 				</view>
 			</view>
@@ -30,7 +46,13 @@
 				class="toolBtn"
 				@click="$emit('add', item.type)"
 			>
-				<text class="toolBtn-icon">{{ item.icon }}</text>
+				<image
+					v-if="item.iconSrc"
+					class="toolBtn-img"
+					:src="item.iconSrc"
+					mode="aspectFit"
+				/>
+				<text v-else class="toolBtn-icon">{{ item.icon }}</text>
 				<text class="toolBtn-label">{{ item.label }}</text>
 			</view>
 		</view>
@@ -38,7 +60,11 @@
 </template>
 
 <script>
-	import { ELEMENT_TYPES, formatPaperSummary } from '../utils/elementTypes.js'
+	import {
+		ELEMENT_TYPES,
+		TEMPLATE_ICONS,
+		formatPaperSummary,
+	} from '../utils/elementTypes.js'
 
 	export default {
 		name: 'BottomDock',
@@ -51,15 +77,25 @@
 				type: Boolean,
 				default: false,
 			},
+			toolsCollapsed: {
+				type: Boolean,
+				default: false,
+			},
 		},
 		data() {
 			return {
 				types: ELEMENT_TYPES,
+				icons: TEMPLATE_ICONS,
 			}
 		},
 		computed: {
 			paperSummary() {
 				return formatPaperSummary(this.paper)
+			},
+		},
+		methods: {
+			onImportTap() {
+				this.$emit('open-import')
 			},
 		},
 	}
@@ -113,16 +149,16 @@
 			border-color: $pr-theme;
 		}
 
-		&-icon {
-			font-size: 28rpx;
-			color: $pr-theme-text;
+		&-iconImg {
+			width: 36rpx;
+			height: 36rpx;
 			flex-shrink: 0;
 		}
 
 		&-text {
 			font-size: 24rpx;
 			font-weight: 600;
-			color: $pr-text-main;
+			color: #2c2c2c;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
@@ -142,7 +178,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 2rpx;
+		gap: 4rpx;
 		padding: 6rpx 0;
 
 		&:active {
@@ -153,15 +189,14 @@
 			opacity: 0.55;
 		}
 
-		&-glyph {
-			font-size: 30rpx;
-			line-height: 1.2;
-			color: $pr-theme-text;
+		&-img {
+			width: 40rpx;
+			height: 40rpx;
 		}
 
 		&-label {
 			font-size: 18rpx;
-			color: $pr-text-sub;
+			color: #2c2c2c;
 		}
 	}
 
@@ -180,6 +215,11 @@
 			background: $pr-theme-soft;
 		}
 
+		&-img {
+			width: 44rpx;
+			height: 44rpx;
+		}
+
 		&-icon {
 			width: 44rpx;
 			height: 44rpx;
@@ -187,14 +227,14 @@
 			text-align: center;
 			font-size: 28rpx;
 			font-weight: 700;
-			color: $pr-theme-text;
+			color: #2c2c2c;
 			background: $pr-theme-soft;
 			border-radius: 10rpx;
 		}
 
 		&-label {
 			font-size: 18rpx;
-			color: $pr-text-sub;
+			color: #2c2c2c;
 			transform: scale(0.95);
 		}
 	}

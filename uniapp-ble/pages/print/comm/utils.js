@@ -73,3 +73,120 @@ export function sleep(time) {
         }, time * 1000)
     })
 }
+
+function callApi(uniName, wxName) {
+    try {
+        if (typeof uni !== 'undefined' && typeof uni[uniName] === 'function') {
+            return uni[uniName]() || {}
+        }
+    } catch (e) {}
+    try {
+        if (typeof wx !== 'undefined' && typeof wx[wxName] === 'function') {
+            return wx[wxName]() || {}
+        }
+    } catch (e2) {}
+    return null
+}
+
+/**
+ * 窗口信息（替代 getSystemInfoSync 中的宽高字段）
+ * 优先 wx.getWindowInfo / uni.getWindowInfo
+ */
+export function getWindowInfoSafe() {
+    const info = callApi('getWindowInfo', 'getWindowInfo')
+    if (info) return info
+    try {
+        const s = uni.getSystemInfoSync() || {}
+        return {
+            windowWidth: s.windowWidth,
+            windowHeight: s.windowHeight,
+            screenWidth: s.screenWidth,
+            screenHeight: s.screenHeight,
+            statusBarHeight: s.statusBarHeight,
+            safeArea: s.safeArea,
+            safeAreaInsets: s.safeAreaInsets,
+            pixelRatio: s.pixelRatio,
+        }
+    } catch (e) {
+        return {
+            windowWidth: 375,
+            windowHeight: 667,
+            screenWidth: 375,
+            screenHeight: 667,
+        }
+    }
+}
+
+/**
+ * 设备信息（品牌 / 型号 / 系统等）
+ */
+export function getDeviceInfoSafe() {
+    const info = callApi('getDeviceInfo', 'getDeviceInfo')
+    if (info) return info
+    try {
+        const s = uni.getSystemInfoSync() || {}
+        return {
+            brand: s.brand,
+            model: s.model,
+            system: s.system,
+            platform: s.platform,
+            memorySize: s.memorySize,
+            deviceAbi: s.deviceAbi,
+            deviceType: s.deviceType,
+            deviceOrientation: s.deviceOrientation,
+            devicePixelRatio: s.devicePixelRatio || s.pixelRatio,
+            benchmarkLevel: s.benchmarkLevel,
+        }
+    } catch (e) {
+        return {}
+    }
+}
+
+/**
+ * 应用基础信息（SDKVersion / language 等）
+ */
+export function getAppBaseInfoSafe() {
+    const info = callApi('getAppBaseInfo', 'getAppBaseInfo')
+    if (info) return info
+    try {
+        const s = uni.getSystemInfoSync() || {}
+        return {
+            SDKVersion: s.SDKVersion,
+            enableDebug: s.enableDebug,
+            host: s.host,
+            language: s.language,
+            version: s.version,
+            theme: s.theme,
+            fontSizeScaleFactor: s.fontSizeScaleFactor,
+            fontSizeSetting: s.fontSizeSetting,
+        }
+    } catch (e) {
+        return {}
+    }
+}
+
+/**
+ * 兼容旧版 uni.getSystemInfoSync 的聚合结果
+ * 优先使用拆分 API，避免 wx.getSystemInfoSync 弃用告警
+ */
+export function getSystemInfoCompat() {
+    const windowInfo = getWindowInfoSafe()
+    const deviceInfo = getDeviceInfoSafe()
+    const appBaseInfo = getAppBaseInfoSafe()
+    const merged = Object.assign({}, deviceInfo, appBaseInfo, windowInfo)
+
+    // 旧字段别名，兼容现有业务读取
+    if (!merged.osName && merged.platform) {
+        merged.osName = merged.platform
+    }
+    if (!merged.deviceBrand && merged.brand) {
+        merged.deviceBrand = merged.brand
+    }
+    if (!merged.deviceModel && merged.model) {
+        merged.deviceModel = merged.model
+    }
+    if (!merged.pixelRatio && merged.devicePixelRatio) {
+        merged.pixelRatio = merged.devicePixelRatio
+    }
+    return merged
+}

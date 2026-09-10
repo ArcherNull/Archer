@@ -135,7 +135,7 @@
 	import PreviewPopup from '../template-comm/preivew/PreviewPopup.vue'
 	import { createBluetoothAdapter } from '../ble/index.js'
 	import { resolvePrinterBrandInfo, resolveOsVersion } from '../ble/config.js'
-	import { showMsg, isNotEmptyArr } from '../comm/utils.js'
+	import { showMsg, isNotEmptyArr, getSystemInfoCompat } from '../comm/utils.js'
 	import { SIGNAL_TIP_LIST } from '../help/index.js'
 	import { template5 } from './template/CC3/template5.js'
 	import { template8 } from './template/HM/template8.js'
@@ -357,7 +357,7 @@
 		methods: {
 			initDeviceInfo() {
 				try {
-					const systemInfo = uni.getSystemInfoSync() || {}
+					const systemInfo = getSystemInfoCompat()
 					const osName = String(systemInfo.osName || '').toLowerCase()
 					const platform = String(systemInfo.platform || '').toLowerCase()
 					const system = String(systemInfo.system || '').toLowerCase()

@@ -31,7 +31,7 @@
 			/>
 		</view>
 
-		<view class="sectionTip">上下左右偏移（默认 1mm）</view>
+		<view class="sectionTip">上下左右偏移（默认 0.5mm）</view>
 		<view class="marginGrid">
 			<view class="row">
 				<text class="row-label">上</text>
