@@ -1,9 +1,21 @@
 {
-	"pages": [ 
+	"pages": [
 		{
 			"path": "pages/print/index",
 			"style": {
-				"navigationBarTitleText": "蓝牙打印"
+				"navigationBarTitleText": "打印"
+			}
+		},
+		{
+			"path": "pages/bluetooth/index",
+			"style": {
+				"navigationBarTitleText": "蓝牙调试"
+			}
+		},
+		{
+			"path": "pages/template/index",
+			"style": {
+				"navigationBarTitleText": "模板设计"
 			}
 		},
 		{
@@ -16,6 +28,32 @@
 			}
 		}
 	],
+	"tabBar": {
+		"color": "#8a7a64",
+		"selectedColor": "#f9ae3d",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/print/index",
+				"iconPath": "static/tabbar/print.png",
+				"selectedIconPath": "static/tabbar/print-active.png",
+				"text": "打印"
+			},
+			{
+				"pagePath": "pages/bluetooth/index",
+				"iconPath": "static/tabbar/bluetooth.png",
+				"selectedIconPath": "static/tabbar/bluetooth-active.png",
+				"text": "蓝牙调试"
+			},
+			{
+				"pagePath": "pages/template/index",
+				"iconPath": "static/tabbar/template.png",
+				"selectedIconPath": "static/tabbar/template-active.png",
+				"text": "模板设计"
+			}
+		]
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "uni-app",
