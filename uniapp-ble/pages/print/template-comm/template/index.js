@@ -24,6 +24,7 @@ import {
 	getMultiWaybillTemplate,
 } from './multiWaybillTemplate.js'
 import {
+	buildPeijun,
 	buildPeijunTemplate,
 	mapBizToPeijun,
 	peijunTemplateJson,
@@ -39,7 +40,6 @@ import {
 	resolveWaybillTemplate,
 	resolveReceiptTemplate,
 } from './selectTemplate.js'
-import { cpclToOps } from '../builder/cpclToOps.js'
 
 export const COMMON_TEMPLATE_OPTIONS = [
 	{
@@ -99,16 +99,6 @@ export const COMMON_TEMPLATE_OPTIONS = [
 	},
 ]
 
-function asBuilt(cpcl, options = {}) {
-	const brand = (options && options.brand) || 'common'
-	const text = typeof cpcl === 'string' ? cpcl : (cpcl && cpcl.cpcl) || ''
-	return {
-		cpcl: text || '',
-		ops: text ? cpclToOps(text, brand) : [],
-		brand: brand,
-	}
-}
-
 const builders = {
 	peiJunLabel: buildPeiJunLabel,
 	simpleLabel: buildSimpleLabel,
@@ -125,7 +115,7 @@ const builders = {
 		return buildMultiWaybillTemplate(data, type, options)
 	},
 	peiJunTemplate: function (data, options) {
-		return asBuilt(buildPeijunTemplate(data, options), options)
+		return buildPeijun(mapBizToPeijun(data), options)
 	},
 	receiptTemplate: buildReceiptTemplate,
 }
@@ -168,6 +158,7 @@ export {
 	getWaybillTemplate,
 	buildMultiWaybillTemplate,
 	getMultiWaybillTemplate,
+	buildPeijun,
 	buildPeijunTemplate,
 	mapBizToPeijun,
 	peijunTemplateJson,

@@ -469,6 +469,7 @@
 				scanning: false,
 				connectingId: '',
 				_btStateHandler: null,
+				pendingClosePromise: null,
 			}
 		},
 		computed: {
@@ -579,14 +580,11 @@
 		onShow() {
 			this.initBlueTooth()
 		},
+		onHide() {
+			this.teardownBlueTooth()
+		},
 		onUnload() {
-			// 业务页使用全局单例，仅解绑监听，不销毁适配器（调试页可继续复用）
-			const bt = this.cusBModuleInstance
-			if (bt && this._btStateHandler) {
-				bt.off('stateChange', this._btStateHandler)
-				this._btStateHandler = null
-			}
-			this.cusBModuleInstance = null
+			this.teardownBlueTooth()
 		},
 		methods: {
 			resolveDeviceName(systemInfo) {
@@ -961,9 +959,54 @@
 				}
 			},
 
-			// ─── 蓝牙（对齐 newPrint，适配器为全局单例） ───
+			// ─── 蓝牙（对齐 newPrint：进入启动并连历史，离开关闭） ───
+			teardownBlueTooth() {
+				const bt = this.cusBModuleInstance
+				if (!bt) return
+				this.searching = false
+				if (this._btStateHandler) {
+					bt.off('stateChange', this._btStateHandler)
+					this._btStateHandler = null
+				}
+				this.cusBModuleInstance = null
+				this.bumpBtVersion()
+				const that = this
+				this.pendingClosePromise = Promise.resolve()
+					.then(function () {
+						if (bt.stopContinuousDeviceDiscovery) {
+							return bt.stopContinuousDeviceDiscovery()
+						}
+						if (bt.stopBluetoothDevicesDiscovery) {
+							return bt.stopBluetoothDevicesDiscovery()
+						}
+					})
+					.catch(function () {})
+					.then(function () {
+						if (bt.safeCloseBluetoothAdapter) {
+							return bt.safeCloseBluetoothAdapter()
+						}
+						if (bt.closeBluetoothAdapter) {
+							return bt.closeBluetoothAdapter()
+						}
+					})
+					.catch(function () {})
+					.then(function () {
+						that.pendingClosePromise = null
+					})
+			},
 			async initBlueTooth() {
 				const that = this
+				if (this.pendingClosePromise) {
+					try {
+						await this.pendingClosePromise
+					} catch (e) {}
+					await new Promise(function (resolve) {
+						setTimeout(resolve, 400)
+					})
+				}
+				const needSetup =
+					!this.cusBModuleInstance ||
+					this.cusBModuleInstance._bluetoothModuleState !== 'started'
 				if (!this.cusBModuleInstance) {
 					const instance = getBluetoothAdapter()
 					if (this._btStateHandler) {
@@ -974,12 +1017,16 @@
 					}
 					instance.on('stateChange', this._btStateHandler)
 					this.cusBModuleInstance = instance
-					await instance.setupBlueTooth()
-					await instance.connectHistoryPrintDevices()
-					this.bumpBtVersion()
-				} else {
-					this.bumpBtVersion()
 				}
+				if (needSetup) {
+					const instance = this.cusBModuleInstance
+					await instance.setupBlueTooth()
+					if (instance.refreshHistoryDevicesFromTasks) {
+						instance.refreshHistoryDevicesFromTasks()
+					}
+					await instance.connectHistoryPrintDevices()
+				}
+				this.bumpBtVersion()
 				return this.cusBModuleInstance
 			},
 			async restartOpenBluetoothAdapter() {

@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "name": "skill-creator",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:18.357Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\skill-creator\\SKILL.md",
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\skill-creator\\SKILL.md"
+      ]
+    },
+    {
+      "name": "brand-guidelines",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:23.852Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\brand-guidelines\\SKILL.md"
+      ]
+    },
+    {
+      "name": "canvas-design",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:24.434Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\canvas-design\\SKILL.md"
+      ]
+    },
+    {
+      "name": "doc-coauthoring",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:29.884Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\doc-coauthoring\\SKILL.md"
+      ]
+    },
+    {
+      "name": "frontend-design",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:35.173Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\frontend-design\\SKILL.md"
+      ]
+    },
+    {
+      "name": "internal-comms",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:35.682Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\internal-comms\\SKILL.md"
+      ]
+    },
+    {
+      "name": "mcp-builder",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:36.069Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\mcp-builder\\SKILL.md"
+      ]
+    },
+    {
+      "name": "pdf",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:36.699Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\pdf\\SKILL.md"
+      ]
+    },
+    {
+      "name": "pptx",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:36.979Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\pptx\\SKILL.md"
+      ]
+    },
+    {
+      "name": "slack-gif-creator",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:37.230Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\slack-gif-creator\\SKILL.md"
+      ]
+    },
+    {
+      "name": "theme-factory",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:37.464Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\theme-factory\\SKILL.md"
+      ]
+    },
+    {
+      "name": "webapp-testing",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:42.739Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\webapp-testing\\SKILL.md"
+      ]
+    },
+    {
+      "name": "xlsx",
+      "repo": "https://github.com/anthropics/skills/blob/main/skills/frontend-design",
+      "installedAt": "2026-07-01T02:27:42.992Z",
+      "files": [
+        "c:\\Users\\dongfangshuo\\Desktop\\uniapp-bluetooth-print\\.github\\skills\\xlsx\\SKILL.md"
+      ]
+    }
+  ]
+}

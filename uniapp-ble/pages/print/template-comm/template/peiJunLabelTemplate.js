@@ -7,21 +7,7 @@ import { buildPeiJunLabel } from './peiJunLabel.js'
 import { createGetVal, resolveBrand } from './_helpers.js'
 
 function buildCityDistrict(getVal) {
-	const city =
-		getVal('city') ||
-		getVal('receiveCity') ||
-		getVal('destinationCity') ||
-		getVal('receivedCity')
-	const district =
-		getVal('district') ||
-		getVal('receiveDistrict') ||
-		getVal('receiveArea') ||
-		getVal('destinationDistrict') ||
-		getVal('receivedDistrict')
-	if (city && district) return `${city}-${district}`
-	if (city) return city
-	if (district) return district
-	return getVal('desitiantionSataion') || getVal('shortNetworkDestination') || ''
+	return getVal('desitiantionSataion')
 }
 
 function buildWeightVolume(getVal) {
@@ -60,6 +46,7 @@ function buildReceiverAddress(getVal) {
 
 /** 业务数据 → 配军标签字段 */
 export function mapBizToPeiJunLabel(biz = {}) {
+	console.log('biz====>', biz)
 	const getVal = createGetVal(biz || {})
 	const code = getVal('code')
 	const copy = getVal('currentCopyCode')
@@ -68,7 +55,7 @@ export function mapBizToPeiJunLabel(biz = {}) {
 	const goodsQty =
 		qty !== '' ? (String(qty).includes('件') ? String(qty) : `${qty}件`) : ''
 	const lastArrived = getVal('lastArrivedTime')
-	const customerCodeVal = getVal('customerCode')
+	const customerOrderNumberVal = getVal('customerOrderNumber')
 
 	return {
 		orderNo,
@@ -92,7 +79,7 @@ export function mapBizToPeiJunLabel(biz = {}) {
 		senderName: getVal('shipManMasked') || getVal('shipMan'),
 		senderPhone: getVal('shipManPhoneMasked') || getVal('shipManPhone'),
 		valueAdded: buildValueAdded(getVal),
-		customerCode: customerCodeVal ? `${customerCodeVal}` : '',
+		customerOrderNumber: customerOrderNumberVal ? `${customerOrderNumberVal}` : '',
 		footerOutlet: getVal('orderLabelName'),
 		printDate: getVal('orderDate'),
 		promiseTime: lastArrived ? `兑现时间：${lastArrived}` : '兑现时间：',

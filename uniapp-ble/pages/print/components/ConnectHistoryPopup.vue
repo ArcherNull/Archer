@@ -268,6 +268,10 @@
 		background: #fff;
 		border-radius: 16rpx;
 		overflow: hidden;
+
+		::v-deep .bdi--search {
+			padding: 20rpx 24rpx;
+		}
 	}
 
 	.taskActions {

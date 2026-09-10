@@ -238,27 +238,44 @@
 			this.initBlueTooth()
 		},
 		onHide() {
-			const bt = this.cusBModuleInstance
-			if (!bt) return
-			this.searching = false
-			this.cusBModuleInstance = null
-			this.syncDeviceViewFromBt()
-			this.btVersion += 1
-			const that = this
-			this.pendingClosePromise = Promise.resolve()
-				.then(function () {
-					return bt.stopContinuousDeviceDiscovery()
-				})
-				.catch(function () {})
-				.then(function () {
-					return bt.closeBluetoothAdapter()
-				})
-				.catch(function () {})
-				.then(function () {
-					that.pendingClosePromise = null
-				})
+			this.teardownBlueTooth()
+		},
+		onUnload() {
+			this.teardownBlueTooth()
 		},
 		methods: {
+			/** 离开页面：停止搜索并关闭蓝牙连接 */
+			teardownBlueTooth() {
+				const bt = this.cusBModuleInstance
+				if (!bt) return
+				this.searching = false
+				this.cusBModuleInstance = null
+				this.syncDeviceViewFromBt()
+				this.btVersion += 1
+				const that = this
+				this.pendingClosePromise = Promise.resolve()
+					.then(function () {
+						if (bt.stopContinuousDeviceDiscovery) {
+							return bt.stopContinuousDeviceDiscovery()
+						}
+						if (bt.stopBluetoothDevicesDiscovery) {
+							return bt.stopBluetoothDevicesDiscovery()
+						}
+					})
+					.catch(function () {})
+					.then(function () {
+						if (bt.safeCloseBluetoothAdapter) {
+							return bt.safeCloseBluetoothAdapter()
+						}
+						if (bt.closeBluetoothAdapter) {
+							return bt.closeBluetoothAdapter()
+						}
+					})
+					.catch(function () {})
+					.then(function () {
+						that.pendingClosePromise = null
+					})
+			},
 			onTemplateIndexUpdate(index) {
 				this.templateIndex = Number(index)
 			},
@@ -431,6 +448,9 @@
 						setTimeout(resolve, 400)
 					})
 				}
+				const needSetup =
+					!this.cusBModuleInstance ||
+					this.cusBModuleInstance._bluetoothModuleState !== 'started'
 				if (!this.cusBModuleInstance) {
 					const instance = createBluetoothAdapter()
 					instance.on('stateChange', function () {
@@ -442,10 +462,16 @@
 					this.cusBModuleInstance = instance
 					this.syncConfigFromBt()
 					this.syncPrintProgressFromBt()
-					await instance.setupBlueTooth()
-					await instance.connectHistoryPrintDevices()
-					this.bumpBtVersion()
 				}
+				if (needSetup) {
+					const instance = this.cusBModuleInstance
+					await instance.setupBlueTooth()
+					if (instance.refreshHistoryDevicesFromTasks) {
+						instance.refreshHistoryDevicesFromTasks()
+					}
+					await instance.connectHistoryPrintDevices()
+				}
+				this.bumpBtVersion()
 				return this.cusBModuleInstance
 			},
 			onConfigUpdate(cfg) {

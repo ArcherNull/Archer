@@ -22,7 +22,7 @@
 			>
 				<view class="tplItem-main">
 					<view class="tplItem-name">{{ item.label }}</view>
-					<view class="tplItem-key">{{ item.desc || item.key }}</view>
+					<view class="tplItem-key">{{ item.key }}</view>
 				</view>
 				<view
 					v-if="templateMode === 'common'"

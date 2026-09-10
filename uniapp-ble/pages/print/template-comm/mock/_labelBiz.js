@@ -46,6 +46,7 @@ export const labelBizMock = {
 	beLoading: '1',
 	isUpfloor: '上楼',
 	customerCode: 'C20260301',
+	customerOrderNumber: 'C20260301',
 	lastArrivedTime: '2026-03-03 18:00',
 	city: '长沙',
 	district: '雨花区',

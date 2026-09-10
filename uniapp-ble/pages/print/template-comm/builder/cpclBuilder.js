@@ -177,16 +177,22 @@ export function createCpclBuilder(options = {}) {
 		/**
 		 * 结束一页并打印（推荐模板统一调用，勿再手写 gapSense+form+print）
 		 *
-		 * 品牌差异：
-		 * - 芝柯：GAP-SENSE + FORM + PRINT
-		 * - 汉印：仅 PRINT（对齐官方 demo / debug template8）
-		 *   FORM 在部分汉印机型上会再定位走一格，出现「第一张有内容、第二张空白」
+		 * useGapSense（汉印 / 芝柯共用）：
+		 * - true（默认）：芝柯 GAP-SENSE+FORM+PRINT；汉印 SETFF+FORM+PRINT（标签缝定位，完整出纸）
+		 * - false：芝柯 FORM+PRINT；汉印仅 PRINT（连续纸 / 回单等）
 		 *
-		 * @param {{ useGapSense?: boolean }} options 仅芝柯生效
+		 * @param {{ useGapSense?: boolean }} options
 		 */
 		endPage(options = {}) {
 			const useGapSense = options.useGapSense !== false
 			if (brand === 'HM') {
+				if (useGapSense) {
+					// max-feed≈15mm（120dot@8dot/mm），定位标签间隙；skip=0 避免多走
+					pushLine('SETFF 120 0')
+					pushOp({ type: 'setff', maxFeed: 120, skip: 0 })
+					pushLine('FORM')
+					pushOp({ type: 'form' })
+				}
 				pushLine('PRINT')
 				pushOp({ type: 'print' })
 			} else {
