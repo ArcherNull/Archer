@@ -112,10 +112,11 @@
 			@confirm-print="onConfirmPrint"
 		/>
 
-		<PreviewPopup
+		<TemplatePreviewPopup
 			:visible="previewVisible"
 			:title="previewTitle"
-			:ops="previewOps"
+			:paper="paper"
+			:elements="elements"
 			@update:visible="previewVisible = $event"
 			@close="previewVisible = false"
 		/>
@@ -147,7 +148,6 @@
 
 <script>
 	import CommandPopup from '../print/components/CommandPopup.vue'
-	import PreviewPopup from '../print/template-comm/preivew/PreviewPopup.vue'
 	import { getBluetoothAdapter } from '../print/ble/index.js'
 	import { resolvePrinterBrandInfo } from '../print/ble/config.js'
 	import { showMsg, showModal, isNotEmptyArr, getWindowInfoSafe } from '../print/comm/utils.js'
@@ -159,6 +159,7 @@
 	import ElementListPopup from './components/ElementListPopup.vue'
 	import ImportCommandPopup from './components/ImportCommandPopup.vue'
 	import PrintDevicePopup from './components/PrintDevicePopup.vue'
+	import TemplatePreviewPopup from './components/TemplatePreviewPopup.vue'
 
 	import { createDefaultPaper, createDefaultElement, TEMPLATE_ICONS } from './utils/elementTypes.js'
 	import { cpclToDesign } from './utils/cpclToDesign.js'
@@ -176,7 +177,7 @@
 		name: 'TemplateDesignPage',
 		components: {
 			CommandPopup,
-			PreviewPopup,
+			TemplatePreviewPopup,
 			CanvasBoard,
 			BottomDock,
 			PaperSettingsPopup,
@@ -210,7 +211,6 @@
 
 				previewVisible: false,
 				previewTitle: '模板预览',
-				previewOps: [],
 
 				commandVisible: false,
 				commandText: '',
@@ -485,26 +485,13 @@
 			},
 
 			async onPreview() {
-				uni.showLoading({ title: '解析图片...', mask: true })
-				try {
-					const brand = this.resolveConnectedBrand()
-					const built = await buildDesignTemplateAsync(
-						this.designModel,
-						Object.assign({ brand: brand }, this.getImageBuildOptions())
-					)
-					if (!built || !built.ops || !built.ops.length) {
-						showMsg('预览数据为空')
-						return
-					}
-					this.previewTitle =
-						'模板预览 ' + this.paper.widthMm + '×' + this.paper.heightMm + 'mm'
-					this.previewOps = built.ops
-					this.previewVisible = true
-				} catch (err) {
-					showMsg((err && err.message) || '预览失败')
-				} finally {
-					uni.hideLoading()
+				if (!this.paper) {
+					showMsg('预览数据为空')
+					return
 				}
+				this.previewTitle =
+					'模板预览 ' + this.paper.widthMm + '×' + this.paper.heightMm + 'mm'
+				this.previewVisible = true
 			},
 
 			async onViewCommand() {
@@ -928,6 +915,8 @@
 		flex: 1;
 		min-height: 0;
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		/* 为底部 dock 留空：约两行工具 + safe area */
 		padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
 		box-sizing: border-box;
@@ -980,7 +969,7 @@
 			text-align: center;
 			font-size: 22rpx;
 			font-weight: 600;
-			color: #2c2c2c;
+		color: #2c2c2c;
 		}
 	}
 

@@ -22,7 +22,7 @@ function esc(v) {
 	return String(v == null ? '' : v)
 }
 
-/** 预览用：按内容估算 QR 模块边长（与模板画布算法一致） */
+/** 预览用：按内容估算 QR 模块边长（与模板画布算法一致，不含静区） */
 function estimateQrModules(data, level) {
 	const len = String(data == null ? '' : data).length
 	const ecc = Math.max(0, Math.min(3, Number(level) || 2))
@@ -93,6 +93,24 @@ export function estimateCode128Width(data, moduleWidth) {
 	const len = Math.max(String(data || '').length, 1)
 	const mw = Math.max(Number(moduleWidth) || 1, 1)
 	return (len + 2) * 11 * mw + 13 * mw + 24
+}
+
+/**
+ * 纵向 VBARCODE 底边锚点用的符号长度（dot）。
+ * 机型实测常比理论 Code128 约长 10mm；用固定补偿而非比例，避免长条码下移过多。
+ * 仅用于纵向上/下锚点换算，不改变条码指令里的宽高参数。
+ */
+export var CODE128_RUN_EXTRA_MM = 10
+/** 203dpi ≈ 8 dot/mm（与 imagePrint.DOTS_PER_MM 一致） */
+var CODE128_DOTS_PER_MM = 8
+
+export function estimateCode128RunDots(data, moduleWidth, extraMm) {
+	const extra =
+		extraMm != null && !isNaN(Number(extraMm))
+			? Number(extraMm)
+			: CODE128_RUN_EXTRA_MM
+	const pad = Math.round(extra * CODE128_DOTS_PER_MM)
+	return Math.max(8, estimateCode128Width(data, moduleWidth) + pad)
 }
 
 /**
@@ -267,8 +285,9 @@ export function createCpclBuilder(options = {}) {
 
 		/** 横排文本（内部按品牌映射字库，模板可统一写芝柯风格 0 24）
 		 * @param {number} [rotate=0] 旋转角度：0 | 90 | 180 | 270 → TEXT / TEXT90 / TEXT180 / TEXT270
+		 * @param {{ boxX?: number, boxY?: number, boxW?: number, boxH?: number, widthMm?: number, heightMm?: number }} [opts]
 		 */
-		text(font, size, x, y, content, rotate) {
+		text(font, size, x, y, content, rotate, opts) {
 			const mapped = normalizeTextFont(brand, font, size)
 			const c = esc(content)
 			const deg = normalizeTextRotate(rotate)
@@ -281,7 +300,8 @@ export function createCpclBuilder(options = {}) {
 							? 'TEXT270'
 							: dialect.textCmd
 			pushLine(`${cmd} ${mapped.font} ${mapped.size} ${x} ${y} ${c}`)
-			pushOp({
+			const meta = opts && typeof opts === 'object' ? opts : null
+			const op = {
 				type: 'text',
 				font: mapped.font,
 				size: Number(mapped.size) || 0,
@@ -291,6 +311,41 @@ export function createCpclBuilder(options = {}) {
 				rotate: deg,
 				vertical: deg === 90 || deg === 270,
 				align: currentAlign,
+			}
+			if (meta) {
+				if (meta.boxX != null) op.boxX = Number(meta.boxX) || 0
+				if (meta.boxY != null) op.boxY = Number(meta.boxY) || 0
+				if (meta.boxW != null) op.boxW = Number(meta.boxW) || 0
+				if (meta.boxH != null) op.boxH = Number(meta.boxH) || 0
+				if (meta.widthMm != null) op.widthMm = Number(meta.widthMm) || 0
+				if (meta.heightMm != null) op.heightMm = Number(meta.heightMm) || 0
+			}
+			pushOp(op)
+			return api
+		},
+
+		/**
+		 * 记录文字设计区域（点）：写入指令注释，供回显/预览；打印机忽略 ; 行
+		 * ;TEXT-AREA x y w h
+		 */
+		textArea(x, y, w, h, mm) {
+			const xx = Number(x) || 0
+			const yy = Number(y) || 0
+			const ww = Math.max(0, Number(w) || 0)
+			const hh = Math.max(0, Number(h) || 0)
+			const widthMm =
+				mm && mm.widthMm != null ? Number(mm.widthMm) : Math.round((ww / 8) * 10) / 10
+			const heightMm =
+				mm && mm.heightMm != null ? Number(mm.heightMm) : Math.round((hh / 8) * 10) / 10
+			pushLine(`;TEXT-AREA ${xx} ${yy} ${ww} ${hh}`)
+			pushOp({
+				type: 'textArea',
+				x: xx,
+				y: yy,
+				w: ww,
+				h: hh,
+				widthMm: widthMm,
+				heightMm: heightMm,
 			})
 			return api
 		},
@@ -308,6 +363,7 @@ export function createCpclBuilder(options = {}) {
 				y: Number(y) || 0,
 				content: c,
 				vertical: true,
+				rotate: 90,
 				align: currentAlign,
 			})
 			return api
@@ -327,6 +383,7 @@ export function createCpclBuilder(options = {}) {
 				y: Number(y) || 0,
 				content: c,
 				vertical: true,
+				rotate: 90,
 				align: currentAlign,
 			})
 			return api
@@ -340,12 +397,16 @@ export function createCpclBuilder(options = {}) {
 			pushLine(`MA,${d}`)
 			pushLine('ENDQR')
 			const unit = Number(u) || 4
+			const level = Number(m) || 2
+			const size = estimateQrModules(d, level) * unit
 			pushOp({
 				type: 'qr',
 				orient: 'v',
 				x: Number(x) || 0,
 				y: Number(y) || 0,
-				size: 37 * unit,
+				level: level,
+				unit: unit,
+				size,
 				data: d,
 			})
 			return api

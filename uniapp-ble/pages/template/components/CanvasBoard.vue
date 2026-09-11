@@ -1,16 +1,15 @@
 <template>
 	<view
 		class="canvasRoot"
-		@touchmove.stop.prevent="onRootTouchMove"
+		@touchmove="onRootTouchMove"
 		@touchend="onRootTouchEnd"
 		@touchcancel="onRootTouchEnd"
 	>
 		<scroll-view
 			class="canvasScroll"
-			scroll-x
-			scroll-y
-			:scroll-left="scrollLeft"
-			:scroll-top="scrollTop"
+			:scroll-x="true"
+			:scroll-y="true"
+			:style="scrollViewStyle"
 		>
 			<view class="canvasInner" :style="innerStyle" @tap="onBlankTap" @click="onBlankTap">
 				<view class="rulerCorner" :style="cornerStyle">mm</view>
@@ -57,20 +56,19 @@
 						:class="item.wrapClass"
 						:style="elBoxStyle(item)"
 						:data-id="item.id"
-						@touchstart.stop="onElSelectStart"
-						@tap.stop="onElClick"
-						@click.stop="onElClick"
+						@touchstart="onElBoxTouchStart"
+						@tap.stop="onElBoxTap"
+						@click.stop="onElBoxTap"
 					>
 						<view v-if="item.isHline" class="el-hline"></view>
 						<view v-else-if="item.isVline" class="el-vline"></view>
 						<view v-else-if="item.isBox" class="el-box"></view>
-						<view v-else-if="item.isBarcode" class="el-barcode">
+						<view v-else-if="item.isBarcode" :class="item.barcodeClass">
 							<view class="el-barcode-bars"></view>
 							<text class="el-caption">{{ item.data }}</text>
 						</view>
-						<view v-else-if="item.isQrcode" class="el-qr">
-							<view class="el-qr-grid"></view>
-							<text class="el-qr-data">{{ item.data }}</text>
+						<view v-else-if="item.isQrcode" class="el-qr" :style="item.codeStyle">
+							<view class="el-qr-data">{{ item.data }}</view>
 						</view>
 						<view v-else-if="item.isImage" class="el-image">
 							<image
@@ -81,13 +79,18 @@
 							/>
 							<text v-else class="el-caption">图</text>
 						</view>
-						<text
-							v-else
-							:class="item.textClass"
-							:style="item.textStyle"
-						>{{ item.content }}</text>
+						<view v-else class="el-textHost" :style="item.textHostStyle">
+							<view :class="item.textClass" :style="item.textStyle">{{
+								item.content
+							}}</view>
+						</view>
 
-						<view v-if="item.selected" class="elOps" @touchstart.stop="noop" @tap.stop="noop">
+						<view
+							v-if="item.selected"
+							class="elOps"
+							@touchstart.stop="noop"
+							@tap.stop="noop"
+						>
 							<view
 								class="elOps-btn"
 								@touchend.stop.prevent="onDeleteTap(item.id)"
@@ -127,15 +130,19 @@
 	import {
 		applyElementSize,
 		textCharHeightMm,
+		textPreviewFontPx,
 		estimateTextWidthMm,
-		estimateTextMaxChars,
-		wrapDesignText,
-		truncateDesignText,
+		resolveDesignTextLines,
 		normalizeElementRotate,
+		normalizeCodeOrient,
 		normalizeAlignH,
 		normalizeAlignV,
+		displaySizeToModelSize,
 		qrSideMmFromUnit,
 		TEMPLATE_ICONS,
+		normalizeZIndex,
+		Z_INDEX_MAX,
+		BARCODE_RUN_MIN_MM,
 	} from '../utils/elementTypes.js'
 	import { STATIC_PRINT_IMAGES } from '../../print/ble/imagePrint.js'
 
@@ -173,16 +180,48 @@
 				type: Number,
 				default: 1,
 			},
+			/** 只读预览：不可选中 / 拖拽 / 缩放 / 删除 */
+			readonly: {
+				type: Boolean,
+				default: false,
+			},
+			/** 弹层等场景可直接指定视口高度（px），避免测量失败 */
+			viewportHeight: {
+				type: Number,
+				default: 0,
+			},
 		},
 		data() {
 			return {
-				scrollLeft: 0,
-				scrollTop: 0,
+				viewportH: 0,
 				drag: null,
 				/** 拖拽中本地预览，避免每帧回写父级 elements */
 				dragLive: null,
 				icons: TEMPLATE_ICONS,
 			}
+		},
+		mounted() {
+			this.$nextTick(() => {
+				this.measureViewport()
+			})
+			setTimeout(() => this.measureViewport(), 50)
+			setTimeout(() => this.measureViewport(), 300)
+		},
+		watch: {
+			zoom() {
+				this.$nextTick(() => this.measureViewport())
+			},
+			paper: {
+				deep: true,
+				handler() {
+					this.$nextTick(() => this.measureViewport())
+				},
+			},
+			viewportHeight(val) {
+				const h = Math.floor(Number(val) || 0)
+				if (h > 0) this.viewportH = h
+				else this.$nextTick(() => this.measureViewport())
+			},
 		},
 		computed: {
 			pxPerMm() {
@@ -194,10 +233,20 @@
 			paperH() {
 				return Math.max(30, Number(this.paper.heightMm) || 100) * this.pxPerMm
 			},
+			innerWidthPx() {
+				return RULER + this.paperW + 40
+			},
+			/** 小程序 scroll-view 需要明确 px 高度，否则无法滚动 */
+			scrollViewStyle() {
+				if (this.viewportH > 0) {
+					return 'width:100%;height:' + this.viewportH + 'px;'
+				}
+				return 'width:100%;height:100%;'
+			},
 			innerStyle() {
 				return (
 					'width:' +
-					(RULER + this.paperW + 40) +
+					this.innerWidthPx +
 					'px;height:' +
 					(RULER + this.paperH + 40) +
 					'px;'
@@ -267,46 +316,27 @@
 				return list.map(function (item) {
 					const size = that.elSize(item)
 					const s = that.pxPerMm
-					const selected = that.selectedId === item.id
+					const selected = !that.readonly && that.selectedId === item.id
 					const type = item.type || ''
 					const mag = Math.max(1, Number(item.mag) || 1)
 					const wrap = !!item.wrap
 					const ellipsis = !!item.ellipsis
-					const rotate = normalizeElementRotate(item.rotate)
+					const rotate =
+						type === 'barcode' || type === 'qrcode'
+							? normalizeCodeOrient(item.rotate)
+							: normalizeElementRotate(item.rotate)
 					const alignH = normalizeAlignH(item.alignH)
 					const alignV = normalizeAlignV(item.alignV)
 					let textStyle = ''
 					let textClass = 'el-text'
+					let textHostStyle = 'width:100%;height:100%;'
 					let content = item.content || '文字'
 					if (type === 'text') {
-						const charMm = textCharHeightMm(item)
-						const fontPx = Math.max(8, Math.round(charMm * s))
-						const linePx = Math.max(fontPx, Math.round(charMm * s * 1.15))
-						const boxW = Number(item.widthMm) || estimateTextWidthMm(content, charMm)
-						const boxH = Number(item.heightMm) || charMm
-						const maxChars = estimateTextMaxChars(boxW, mag)
-						const lineHMm = charMm * 1.15
-						if (wrap) {
-							const maxLines = Math.max(1, Math.floor(boxH / lineHMm))
-							const lines = wrapDesignText(content, maxChars, maxLines)
-							if (ellipsis) {
-								const full = wrapDesignText(content, maxChars, 40)
-								if (full.length > maxLines && lines.length) {
-									lines[lines.length - 1] = truncateDesignText(
-										lines[lines.length - 1],
-										maxChars
-									)
-								}
-							}
-							content = lines.join('\n')
-						} else if (ellipsis) {
-							content = truncateDesignText(
-								String(content).replace(/\r?\n/g, ' '),
-								maxChars
-							)
-						} else {
-							content = String(content).replace(/\r?\n/g, ' ')
-						}
+					const fontPx = textPreviewFontPx(item, that.zoom)
+					const linePx = fontPx
+					const charMm = textCharHeightMm(item)
+					const lines = resolveDesignTextLines(item)
+						content = lines.join('\n')
 						const justify =
 							alignH === 'center'
 								? 'center'
@@ -319,6 +349,10 @@
 								: alignV === 'bottom'
 									? 'flex-end'
 									: 'flex-start'
+						let boxW = Number(item.widthMm)
+						if (!(boxW > 0)) boxW = estimateTextWidthMm(String(item.content || ''), charMm)
+						let boxH = Number(item.heightMm)
+						if (!(boxH > 0)) boxH = charMm
 						textStyle =
 							'font-size:' +
 							fontPx +
@@ -333,25 +367,53 @@
 							';text-align:' +
 							alignH +
 							';'
-						if (rotate) {
-							textStyle +=
-								'transform:rotate(' +
-								rotate +
-								'deg);transform-origin:center center;'
-						}
 						textClass = 'el-text'
 						if (wrap) textClass += ' el-text--wrap'
-						if (ellipsis) textClass += ' el-text--ellipsis'
+						if (ellipsis && !wrap) textClass += ' el-text--ellipsis'
 						if (wrap) {
 							textStyle +=
 								'flex-direction:column;justify-content:' +
 								alignItems +
 								';align-items:stretch;'
 						}
+						// CPCL 旋转为逆时针；CSS rotate 为顺时针，故取负角
+						const ow = size.w * s
+						const oh = Math.max(size.h * s, 6)
+						if (rotate === 90 || rotate === 270) {
+							const iw = boxW * s
+							const ih = Math.max(boxH * s, 6)
+							textHostStyle =
+								'position:absolute;left:' +
+								(ow - iw) / 2 +
+								'px;top:' +
+								(oh - ih) / 2 +
+								'px;width:' +
+								iw +
+								'px;height:' +
+								ih +
+								'px;transform:rotate(' +
+								-rotate +
+								'deg);transform-origin:center center;'
+						} else if (rotate === 180) {
+							textHostStyle =
+								'width:100%;height:100%;transform:rotate(-180deg);transform-origin:center center;'
+						}
 					}
 					let imagePath = ''
 					if (type === 'image') {
 						imagePath = resolveImagePath(item)
+					}
+					// 条码：纵向用条纹方向样式，勿 CSS rotate（会与宽高交换叠加导致条纹仍像横向）
+					let barcodeClass = 'el-barcode'
+					if (type === 'barcode' && rotate === 90) {
+						barcodeClass = 'el-barcode el-barcode--v'
+					}
+					let codeStyle = ''
+					if (type === 'qrcode' && rotate) {
+						codeStyle =
+							'transform:rotate(' +
+							rotate +
+							'deg);transform-origin:center center;'
 					}
 					return {
 						id: item.id,
@@ -363,6 +425,9 @@
 						wrap: wrap,
 						textStyle: textStyle,
 						textClass: textClass,
+						textHostStyle: textHostStyle,
+						codeStyle: codeStyle,
+						barcodeClass: barcodeClass,
 						imagePath: imagePath,
 						isHline: type === 'hline',
 						isVline: type === 'vline',
@@ -370,17 +435,17 @@
 						isBarcode: type === 'barcode',
 						isQrcode: type === 'qrcode',
 						isImage: type === 'image',
+						isText: type === 'text',
 						wrapClass: selected ? 'el el--on' : 'el',
-						style:
-							'left:' +
-							(Number(item.x) || 0) * s +
-							'px;top:' +
-							(Number(item.y) || 0) * s +
-							'px;width:' +
-							size.w * s +
-							'px;height:' +
-							Math.max(size.h * s, 6) +
-							'px;',
+						zIndex: normalizeZIndex(item.zIndex),
+						style: that.buildBoxStyle(
+							Number(item.x) || 0,
+							Number(item.y) || 0,
+							size.w,
+							size.h,
+							item.zIndex,
+							selected
+						),
 					}
 				})
 			},
@@ -397,8 +462,14 @@
 				}
 				return item.style
 			},
-			buildBoxStyle(xMm, yMm, wMm, hMm) {
+			/**
+			 * @param {boolean} [selected]
+			 */
+			buildBoxStyle(xMm, yMm, wMm, hMm, zIndex, selected) {
 				const s = this.pxPerMm
+				const z = normalizeZIndex(zIndex)
+				// 选中时抬高一层便于操作柄可点，不改写模型 zIndex
+				const zShow = selected ? z + Z_INDEX_MAX + 1 : z
 				return (
 					'left:' +
 					(Number(xMm) || 0) * s +
@@ -408,7 +479,9 @@
 					(Number(wMm) || 0) * s +
 					'px;height:' +
 					Math.max((Number(hMm) || 0) * s, 6) +
-					'px;'
+					'px;z-index:' +
+					zShow +
+					';'
 				)
 			},
 			cancelDragRaf() {
@@ -465,7 +538,14 @@
 					drag.liveH = drag.originH
 					this.dragLive = {
 						id: drag.id,
-						style: this.buildBoxStyle(nx, ny, drag.originW, drag.originH),
+						style: this.buildBoxStyle(
+							nx,
+							ny,
+							drag.originW,
+							drag.originH,
+							drag.zIndex,
+							true
+						),
 					}
 				} else if (drag.mode === 'resize') {
 					const nw = Math.max(2, Math.round((drag.originW + dx) * 10) / 10)
@@ -476,7 +556,14 @@
 					drag.liveH = nh
 					this.dragLive = {
 						id: drag.id,
-						style: this.buildBoxStyle(drag.originX, drag.originY, nw, nh),
+						style: this.buildBoxStyle(
+							drag.originX,
+							drag.originY,
+							nw,
+							nh,
+							drag.zIndex,
+							true
+						),
 					}
 				}
 			},
@@ -525,8 +612,19 @@
 					w = side
 					h = side
 				} else if (item.type === 'barcode') {
-					w = w || 40
-					h = h || 8
+					// 展示宽度跟设计 widthMm，最小 15mm；不再被 Code128 理论宽度抬到 ~40mm
+					const runMm = Math.max(
+						BARCODE_RUN_MIN_MM,
+						Number(item.widthMm) || BARCODE_RUN_MIN_MM
+					)
+					const thickMm = Math.max(1, Number(item.heightMm) || 8)
+					w = runMm
+					h = thickMm
+					const rotate = normalizeCodeOrient(item.rotate)
+					if (rotate === 90) {
+						w = thickMm
+						h = runMm
+					}
 				} else if (item.type === 'image') {
 					w = w || 10
 					h = h || 10
@@ -552,14 +650,25 @@
 				)
 			},
 			onBlankTap() {
-				if (this._suppressSelectClear || this.drag) return
+				if (this.readonly || this._suppressSelectClear || this.drag) return
 				this.$emit('select', '')
+			},
+			onElBoxTouchStart(e) {
+				if (this.readonly) return
+				// 编辑态拦截冒泡；只读预览不 stop，避免挡住 scroll-view 滚动
+				if (e && typeof e.stopPropagation === 'function') e.stopPropagation()
+				this.onElSelectStart(e)
+			},
+			onElBoxTap(e) {
+				if (this.readonly) return
+				this.onElClick(e)
 			},
 			onElClick(e) {
 				const id = this.getDatasetId(e)
 				if (id) this.$emit('select', id)
 			},
 			onDeleteTap(id) {
+				if (this.readonly) return
 				const nextId = id || this.selectedId
 				if (!nextId || this._opsLock) return
 				this._opsLock = true
@@ -570,6 +679,7 @@
 				}, 320)
 			},
 			onSettingsTap(id) {
+				if (this.readonly) return
 				const nextId = id || this.selectedId
 				if (!nextId || this._opsLock) return
 				this._opsLock = true
@@ -591,6 +701,7 @@
 				}
 			},
 			startDrag(e, mode) {
+				if (this.readonly) return
 				const id = this.getDatasetId(e)
 				const item = this.findElement(id)
 				const touch = this.getTouch(e)
@@ -612,6 +723,7 @@
 					liveY: Number(item.y) || 0,
 					liveW: size.w,
 					liveH: size.h,
+					zIndex: normalizeZIndex(item.zIndex),
 					lastTouch: touch,
 					moved: false,
 				}
@@ -626,10 +738,29 @@
 			onElResizeStart(e) {
 				this.startDrag(e, 'resize')
 			},
+			measureViewport() {
+				const forced = Math.floor(Number(this.viewportHeight) || 0)
+				if (forced > 0) {
+					this.viewportH = forced
+					return
+				}
+				const query = uni.createSelectorQuery().in(this)
+				query
+					.select('.canvasRoot')
+					.boundingClientRect((rect) => {
+						if (rect && rect.height > 0) {
+							this.viewportH = Math.floor(rect.height)
+						}
+					})
+					.exec()
+			},
 			onRootTouchMove(e) {
+				if (this.readonly) return
+				// 仅拖拽元素时拦截；否则放行，让 scroll-view 可滚动
 				if (this.drag) this.onDragMove(e)
 			},
 			onRootTouchEnd(e) {
+				if (this.readonly) return
 				if (this.drag) this.onDragEnd(e)
 			},
 			bindDrag() {
@@ -687,7 +818,12 @@
 								})
 							)
 						} else if (drag.mode === 'resize') {
-							this.$emit('change', applyElementSize(el, drag.liveW, drag.liveH))
+							// 纵向/旋转元素：画布 w/h 已对调，回写模型前再对调回来
+							const model = displaySizeToModelSize(el, drag.liveW, drag.liveH)
+							this.$emit(
+								'change',
+								applyElementSize(el, model.widthMm, model.heightMm)
+							)
 						}
 					}
 				}
@@ -845,16 +981,18 @@
 		border: 1px solid rgba(44, 44, 44, 0.2);
 		background: rgba(249, 174, 61, 0.1);
 		overflow: visible;
-		z-index: 1;
 
 		&--on {
 			border-color: $pr-theme;
 			background: rgba(249, 174, 61, 0.22);
-			z-index: 5;
+		}
+
+		&-textHost {
+			box-sizing: border-box;
+			overflow: visible;
 		}
 
 		&-text {
-			font-size: 11px;
 			color: $pr-text-main;
 			padding: 0 2px;
 			overflow: hidden;
@@ -922,9 +1060,12 @@
 			justify-content: flex-end;
 			padding: 2px;
 			box-sizing: border-box;
+			overflow: hidden;
 
 			&-bars {
 				flex: 1;
+				min-height: 8px;
+				/* 横向条码：竖线条纹，沿 X 方向排列 */
 				background: repeating-linear-gradient(
 					90deg,
 					#2c2c2c 0,
@@ -932,7 +1073,34 @@
 					#fff 2px,
 					#fff 4px
 				);
-				min-height: 8px;
+			}
+
+			/* 纵向条码：包围盒已交换宽高；横线条纹沿 Y 方向排列 */
+			&--v {
+				flex-direction: row;
+				align-items: stretch;
+				justify-content: flex-end;
+
+				.el-barcode-bars {
+					flex: 1;
+					min-width: 6px;
+					min-height: 0;
+					background: repeating-linear-gradient(
+						180deg,
+						#2c2c2c 0,
+						#2c2c2c 2px,
+						#fff 2px,
+						#fff 4px
+					);
+				}
+
+				.el-caption {
+					writing-mode: vertical-rl;
+					max-width: 14px;
+					padding: 0 1px;
+					overflow: hidden;
+					align-self: center;
+				}
 			}
 		}
 
@@ -940,37 +1108,28 @@
 			width: 100%;
 			height: 100%;
 			display: flex;
-			flex-direction: column;
-			align-items: stretch;
-			justify-content: flex-end;
-			background: #f5f5f5;
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+			background: #d8d8d8;
 			overflow: hidden;
-			padding: 4px;
 			box-sizing: border-box;
-
-			&-grid {
-				flex: 1;
-				min-height: 12px;
-				background: repeating-linear-gradient(
-					45deg,
-					#2c2c2c 0,
-					#2c2c2c 4px,
-					#fff 4px,
-					#fff 8px
-				);
-				border: 1px solid rgba(44, 44, 44, 0.3);
-				box-sizing: border-box;
-			}
+			padding: 2px;
+			border: 1px solid rgba(44, 44, 44, 0.25);
 
 			&-data {
-				margin-top: 4px;
-				font-size: 9px;
-				line-height: 1.2;
-				color: $pr-text-main;
-				overflow: hidden;
-				white-space: nowrap;
-				text-overflow: ellipsis;
 				width: 100%;
+				font-size: 10px;
+				line-height: 1.25;
+				color: $pr-text-main;
+				text-align: center;
+				overflow: hidden;
+				/* 最多三行，超出省略（小程序/WebView 兼容） */
+				display: -webkit-box;
+				-webkit-box-orient: vertical;
+				-webkit-line-clamp: 3;
+				word-break: break-all;
+				box-sizing: border-box;
 			}
 		}
 

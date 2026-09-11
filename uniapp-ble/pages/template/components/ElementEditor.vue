@@ -8,6 +8,16 @@
 			<text class="row-label">Y (mm)</text>
 			<NumberBox :value="element.y" :min="0" :max="1000" @input="onY" />
 		</view>
+		<view class="row">
+			<text class="row-label">层级</text>
+			<NumberBox
+				:value="currentZIndex"
+				:min="zIndexMin"
+				:max="zIndexMax"
+				@input="onZIndex"
+			/>
+		</view>
+		<view class="zHint">0 最底 · 默认 1 · 最大 1000（越大越靠上，可点选）</view>
 
 		<template v-if="element.type === 'text'">
 			<view class="field">
@@ -31,8 +41,9 @@
 			</view>
 			<view class="row">
 				<text class="row-label">放大</text>
-				<NumberBox :value="element.mag" :min="1" :max="4" @input="onMag" />
+				<NumberBox :value="element.mag" :min="1" :max="6" @input="onMag" />
 			</view>
+			<view class="magHint">放大 N → SETMAG N N；画布 100% 时 1=10px / 2=24px / 3=36px / 4=48px</view>
 			<view class="field">
 				<text class="field-label">旋转</text>
 				<view class="rotateRow">
@@ -105,6 +116,15 @@
 				></view>
 				<text class="checkRow-text">内容超出省略</text>
 			</view>
+			<view v-if="element.wrap && element.ellipsis" class="row">
+				<text class="row-label">换行行数</text>
+				<NumberBox
+					:value="ellipsisLinesValue"
+					:min="2"
+					:max="50"
+					@input="onEllipsisLines"
+				/>
+			</view>
 		</template>
 
 		<template v-else-if="element.type === 'barcode'">
@@ -118,12 +138,33 @@
 				/>
 			</view>
 			<view class="row">
+				<text class="row-label">宽度 (mm)</text>
+				<NumberBox
+					:value="barcodeWidthMm"
+					:min="barcodeRunMinMm"
+					:max="80"
+					@input="onBarcodeWidthMm"
+				/>
+			</view>
+			<view class="row">
 				<text class="row-label">高度 (mm)</text>
 				<NumberBox :value="element.heightMm" :min="3" :max="40" @input="onHeightMm" />
 			</view>
 			<view class="row">
 				<text class="row-label">模块宽</text>
 				<NumberBox :value="element.moduleWidth" :min="1" :max="4" @input="onModuleWidth" />
+			</view>
+			<view class="field">
+				<text class="field-label">方向</text>
+				<view class="rotateRow">
+					<view
+						v-for="item in codeOrientOptions"
+						:key="item.value"
+						:class="codeOrientChipClass(item.value)"
+						@click="onCodeOrient(item.value)"
+					>{{ item.label }}</view>
+				</view>
+				<view class="orientHint">横向 BARCODE · 纵向 VBARCODE（旋转 90°）</view>
 			</view>
 		</template>
 
@@ -141,9 +182,22 @@
 				<text class="row-label">单元大小</text>
 				<NumberBox :value="element.unit" :min="1" :max="16" @input="onUnit" />
 			</view>
+			<view class="orientHint">当前约占位 {{ qrSideHint }}mm（已按打印校准）</view>
 			<view class="row">
 				<text class="row-label">纠错等级</text>
 				<NumberBox :value="element.level" :min="0" :max="3" @input="onLevel" />
+			</view>
+			<view class="field">
+				<text class="field-label">方向</text>
+				<view class="rotateRow">
+					<view
+						v-for="item in codeOrientOptions"
+						:key="item.value"
+						:class="codeOrientChipClass(item.value)"
+						@click="onCodeOrient(item.value)"
+					>{{ item.label }}</view>
+				</view>
+				<view class="orientHint">横向 BARCODE QR · 纵向 VBARCODE QR（旋转 90°）</view>
 			</view>
 		</template>
 
@@ -239,11 +293,20 @@
 	import { showMsg } from '../../print/comm/utils.js'
 	import {
 		TEXT_ROTATE_OPTIONS,
+		CODE_ORIENT_OPTIONS,
 		TEXT_ALIGN_H_OPTIONS,
 		TEXT_ALIGN_V_OPTIONS,
 		normalizeAlignH,
 		normalizeAlignV,
+		normalizeCodeOrient,
+		normalizeEllipsisLines,
+		normalizeZIndex,
+		Z_INDEX_MIN,
+		Z_INDEX_MAX,
+		normalizeTextMag,
+		BARCODE_RUN_MIN_MM,
 		qrSideMmFromUnit,
+		textCharHeightMm,
 	} from '../utils/elementTypes.js'
 
 	export default {
@@ -259,11 +322,23 @@
 			return {
 				staticImages: STATIC_PRINT_IMAGES.slice(),
 				rotateOptions: TEXT_ROTATE_OPTIONS,
+				codeOrientOptions: CODE_ORIENT_OPTIONS,
 				alignHOptions: TEXT_ALIGN_H_OPTIONS,
 				alignVOptions: TEXT_ALIGN_V_OPTIONS,
+				zIndexMin: Z_INDEX_MIN,
+				zIndexMax: Z_INDEX_MAX,
+				barcodeRunMinMm: BARCODE_RUN_MIN_MM,
 			}
 		},
 		computed: {
+			currentZIndex() {
+				return normalizeZIndex(this.element && this.element.zIndex)
+			},
+			barcodeWidthMm() {
+				const w = Number(this.element && this.element.widthMm)
+				if (!(w > 0)) return BARCODE_RUN_MIN_MM
+				return Math.max(BARCODE_RUN_MIN_MM, w)
+			},
 			currentAlignH() {
 				return normalizeAlignH(this.element && this.element.alignH)
 			},
@@ -289,6 +364,14 @@
 				if (found) return found.label
 				return this.element && this.element.imageKey === 'custom' ? '自定义' : ''
 			},
+			qrSideHint() {
+				const el = this.element
+				if (!el || el.type !== 'qrcode') return '-'
+				return qrSideMmFromUnit(el.unit, el.data, el.level)
+			},
+			ellipsisLinesValue() {
+				return normalizeEllipsisLines(this.element && this.element.ellipsisLines)
+			},
 		},
 		methods: {
 			emitPatch(patch) {
@@ -301,25 +384,57 @@
 			onY(val) {
 				this.emitPatch({ y: Number(val) })
 			},
+			onZIndex(val) {
+				this.emitPatch({ zIndex: normalizeZIndex(val) })
+			},
 			onContent(e) {
 				const val = e && e.detail ? e.detail.value : ''
 				this.emitPatch({ content: val })
 			},
 			onMag(val) {
-				const mag = Math.max(1, Math.min(4, Number(val) || 1))
-				this.emitPatch({ mag: mag })
+				this.emitPatch({ mag: normalizeTextMag(val) })
 			},
 			onToggleBold() {
 				this.emitPatch({ bold: !this.element.bold })
 			},
 			onToggleWrap() {
-				this.emitPatch({ wrap: !this.element.wrap })
+				const wrap = !this.element.wrap
+				const patch = { wrap: wrap }
+				if (wrap && this.element.ellipsis) {
+					patch.ellipsisLines = normalizeEllipsisLines(this.element.ellipsisLines)
+					this.ensureHeightForEllipsisLines(patch)
+				}
+				this.emitPatch(patch)
 			},
 			onToggleEllipsis() {
-				this.emitPatch({ ellipsis: !this.element.ellipsis })
+				const ellipsis = !this.element.ellipsis
+				const patch = { ellipsis: ellipsis }
+				if (ellipsis && this.element.wrap) {
+					patch.ellipsisLines = normalizeEllipsisLines(this.element.ellipsisLines)
+					this.ensureHeightForEllipsisLines(patch)
+				}
+				this.emitPatch(patch)
+			},
+			onEllipsisLines(val) {
+				const lines = normalizeEllipsisLines(val)
+				const patch = { ellipsisLines: lines }
+				this.ensureHeightForEllipsisLines(patch, lines)
+				this.emitPatch(patch)
+			},
+			ensureHeightForEllipsisLines(patch, lines) {
+				const el = this.element
+				if (!el || el.type !== 'text') return
+				const n = lines != null ? lines : normalizeEllipsisLines(patch.ellipsisLines)
+				const charMm = textCharHeightMm(el)
+				const needH = Math.round(n * charMm * 10) / 10
+				const curH = Number(el.heightMm) || 0
+				if (curH < needH) patch.heightMm = needH
 			},
 			onRotate(val) {
 				this.emitPatch({ rotate: Number(val) || 0 })
+			},
+			onCodeOrient(val) {
+				this.emitPatch({ rotate: normalizeCodeOrient(val) })
 			},
 			onAlignH(val) {
 				this.emitPatch({ alignH: normalizeAlignH(val) })
@@ -332,6 +447,10 @@
 			},
 			alignVChipClass(val) {
 				return this.currentAlignV === val ? 'rotateChip rotateChip--on' : 'rotateChip'
+			},
+			codeOrientChipClass(val) {
+				const cur = normalizeCodeOrient(this.element && this.element.rotate)
+				return cur === Number(val) ? 'rotateChip rotateChip--on' : 'rotateChip'
 			},
 			onData(e) {
 				const val = e && e.detail ? e.detail.value : ''
@@ -353,6 +472,10 @@
 			},
 			onWidthMm(val) {
 				this.emitPatch({ widthMm: Number(val) })
+			},
+			onBarcodeWidthMm(val) {
+				const n = Math.max(BARCODE_RUN_MIN_MM, Number(val) || BARCODE_RUN_MIN_MM)
+				this.emitPatch({ widthMm: Math.round(n * 10) / 10 })
 			},
 			onModuleWidth(val) {
 				this.emitPatch({ moduleWidth: Number(val) })
@@ -396,21 +519,13 @@
 			},
 			onPickStatic(item) {
 				if (!item || !item.path) return
-				this.emitPatch({
-					imageKey: item.key,
-					imagePath: item.path,
-					name: item.label || '图片',
-				})
+				this.emitPatch(this.buildImagePatch(item.key, item.path, item.label || '图片'))
 			},
 			async onChooseAlbum() {
 				try {
 					const path = await choosePrintImage()
 					if (!path) return
-					this.emitPatch({
-						imageKey: 'custom',
-						imagePath: path,
-						name: '自定义图片',
-					})
+					this.emitPatch(this.buildImagePatch('custom', path, '自定义图片'))
 				} catch (err) {
 					const msg = (err && err.errMsg) || (err && err.message) || ''
 					if (msg && /cancel|取消/i.test(msg)) return
@@ -422,7 +537,28 @@
 					imageKey: '',
 					imagePath: '',
 					name: '图片',
+					egBitmap: null,
+					fromEgImport: false,
 				})
+			},
+			/** 换图时清掉导入 EG 缓存，避免打印仍用旧 logo */
+			buildImagePatch(imageKey, imagePath, name) {
+				const el = this.element || {}
+				const patch = {
+					imageKey: imageKey,
+					imagePath: imagePath,
+					name: name || '图片',
+					egBitmap: null,
+					fromEgImport: false,
+				}
+				// 导入 EG 常为很小点阵尺寸，换图后抬到可打印默认区
+				const w = Number(el.widthMm) || 0
+				const h = Number(el.heightMm) || 0
+				if (el.fromEgImport || w < 5 || h < 5) {
+					patch.widthMm = Math.max(10, w)
+					patch.heightMm = Math.max(10, h)
+				}
+				return patch
 			},
 		},
 	}
@@ -506,6 +642,29 @@
 			background: $pr-theme-soft;
 			color: $pr-theme-text;
 		}
+	}
+
+	.orientHint {
+		margin-top: 4rpx;
+		font-size: 22rpx;
+		color: $pr-text-muted;
+		line-height: 1.4;
+	}
+
+	.zHint {
+		margin: -4rpx 0 12rpx;
+		padding: 0 4rpx;
+		font-size: 22rpx;
+		color: $pr-text-muted;
+		line-height: 1.4;
+	}
+
+	.magHint {
+		margin: -4rpx 0 12rpx;
+		padding: 0 4rpx;
+		font-size: 22rpx;
+		color: $pr-text-muted;
+		line-height: 1.4;
 	}
 
 	.tip {

@@ -47,6 +47,22 @@ export function cpclToOps(cpcl, brand = 'common') {
 			continue
 		}
 
+		m = raw.match(/^;TEXT-AREA\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/i)
+		if (m) {
+			const w = Number(m[3]) || 0
+			const h = Number(m[4]) || 0
+			push({
+				type: 'textArea',
+				x: Number(m[1]) || 0,
+				y: Number(m[2]) || 0,
+				w: w,
+				h: h,
+				widthMm: Math.round((w / 8) * 10) / 10,
+				heightMm: Math.round((h / 8) * 10) / 10,
+			})
+			continue
+		}
+
 		m = raw.match(/^SETMAG\s+(\S+)\s+(\S+)/i)
 		if (m) {
 			push({ type: 'setMag', w: Number(m[1]) || 1, h: Number(m[2]) || 1 })
@@ -129,6 +145,7 @@ export function cpclToOps(cpcl, brand = 'common') {
 				}
 				return 57
 			})()
+			const quiet = 0
 			push({
 				type: 'qr',
 				orient: isV ? 'v' : 'h',
@@ -136,7 +153,7 @@ export function cpclToOps(cpcl, brand = 'common') {
 				y: Number(m[3]) || 0,
 				level: level,
 				unit: unit,
-				size: modules * unit,
+				size: (modules + quiet * 2) * unit,
 				data: data,
 			})
 			continue
@@ -161,14 +178,21 @@ export function cpclToOps(cpcl, brand = 'common') {
 			continue
 		}
 
-		m = raw.match(/^EG\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/i)
+		m = raw.match(/^EG\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*(.*)$/i)
 		if (m) {
+			const byteW = Number(m[1]) || 8
+			const height = Number(m[2]) || 58
+			const hex = String(m[5] || '')
+				.replace(/\s+/g, '')
+				.trim()
 			push({
 				type: 'logo',
 				x: Number(m[3]) || 0,
 				y: Number(m[4]) || 0,
-				w: (Number(m[1]) || 8) * 8,
-				h: Number(m[2]) || 58,
+				w: byteW * 8,
+				h: height,
+				byteWidth: byteW,
+				hex: hex,
 				align: currentAlign,
 			})
 			continue
@@ -178,10 +202,10 @@ export function cpclToOps(cpcl, brand = 'common') {
 		if (m) {
 			const cmd = m[1].toUpperCase()
 			let rotate = 0
-			if (cmd === 'TEXT90') rotate = 90
+			if (cmd === 'TEXT90' || cmd === 'VTEXT' || cmd === 'VT') rotate = 90
 			else if (cmd === 'TEXT180') rotate = 180
 			else if (cmd === 'TEXT270') rotate = 270
-			const vertical = cmd === 'VTEXT' || cmd === 'VT' || rotate === 90 || rotate === 270
+			const vertical = rotate === 90 || rotate === 270
 			push({
 				type: 'text',
 				font: m[2],

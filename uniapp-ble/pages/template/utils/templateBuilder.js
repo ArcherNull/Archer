@@ -2,7 +2,10 @@
  * 设计稿 → CPCL（与打印预览同源 ops）
  */
 
-import { createCpclBuilder } from '../../print/template-comm/builder/cpclBuilder.js'
+import {
+	createCpclBuilder,
+	estimateCode128RunDots,
+} from '../../print/template-comm/builder/cpclBuilder.js'
 import {
 	DOTS_PER_MM,
 	mmToDots,
@@ -12,14 +15,15 @@ import {
 } from '../../print/ble/imagePrint.js'
 import {
 	PAPER_LIMITS,
-	estimateTextMaxChars,
 	estimateTextWidthMm,
-	wrapDesignText,
-	truncateDesignText,
+	resolveDesignTextLines,
 	normalizeElementRotate,
+	normalizeCodeOrient,
 	normalizeAlignH,
 	normalizeAlignV,
 	textCharHeightMm,
+	qrSideMmFromUnit,
+	normalizeTextMag,
 } from './elementTypes.js'
 
 function clamp(n, min, max) {
@@ -120,11 +124,20 @@ export async function prepareDesignImages(design, options = {}) {
 			continue
 		}
 		const path = resolveElementImagePath(el)
+		// 无本地图：沿用导入的 EG 位图
 		if (!path) {
+			if (el.egBitmap && el.egBitmap.hex && el.egBitmap.byteWidth && el.egBitmap.height) {
+				list.push(el)
+				done += 1
+				if (typeof options.onProgress === 'function') {
+					options.onProgress(done, imageEls.length)
+				}
+				continue
+			}
 			throw new Error('有图片元素未选择图片，请先在设置中选图')
 		}
-		const widthMm = Number(el.widthMm) || 10
-		const heightMm = Number(el.heightMm) || 10
+		const widthMm = Math.max(2, Number(el.widthMm) || 10)
+		const heightMm = Math.max(2, Number(el.heightMm) || 10)
 		const size = calcPrintSizeByMm(widthMm, heightMm)
 
 		if (typeof options.onCanvasSize === 'function') {
@@ -148,6 +161,7 @@ export async function prepareDesignImages(design, options = {}) {
 		}
 		list.push(
 			Object.assign({}, el, {
+				fromEgImport: false,
 				egBitmap: {
 					hex: bmp.hex,
 					byteWidth: bmp.byteWidth,
@@ -171,10 +185,9 @@ function appendElement(b, el, paperDots) {
 
 	switch (el.type) {
 		case 'text': {
-			const mag = Math.max(1, Math.min(4, Number(el.mag) || 1))
+			const mag = normalizeTextMag(el.mag)
 			const font = el.font != null ? el.font : 0
 			const size = el.size != null ? el.size : 24
-			const content = el.content || ''
 			const rotate = normalizeElementRotate(el.rotate)
 			const alignH = normalizeAlignH(el.alignH)
 			const alignV = normalizeAlignV(el.alignV)
@@ -182,30 +195,29 @@ function appendElement(b, el, paperDots) {
 			const boxY = Number(el.y) || 0
 			const boxW = Number(el.widthMm) || 30
 			const charMm = textCharHeightMm(el)
-			const lineHMm = charMm * 1.15
+			const lineHMm = charMm
 			const boxH = Number(el.heightMm) > 0 ? Number(el.heightMm) : charMm
-			const maxChars = estimateTextMaxChars(boxW, mag)
-			const ellipsis = !!el.ellipsis
-
-			let lines
-			if (el.wrap) {
-				const maxLines = Math.max(1, Math.floor(boxH / lineHMm))
-				lines = wrapDesignText(content, maxChars, maxLines)
-				if (ellipsis) {
-					const full = wrapDesignText(content, maxChars, 40)
-					if (full.length > maxLines && lines.length) {
-						lines[lines.length - 1] = truncateDesignText(
-							lines[lines.length - 1],
-							maxChars
-						)
-					}
-				}
-			} else {
-				let line = String(content).replace(/\r?\n/g, ' ')
-				if (ellipsis) line = truncateDesignText(line, maxChars)
-				lines = [line]
-			}
+			// 与画布同源：按容器宽换行/截取
+			const lines = resolveDesignTextLines(el)
 			const contentH = Math.max(charMm, lines.length * lineHMm)
+
+			const boxXDots = Math.round(boxX * DOTS_PER_MM) || 0
+			const boxYDots = Math.round(boxY * DOTS_PER_MM) || 0
+			const boxWDots = Math.max(1, Math.round(boxW * DOTS_PER_MM))
+			const boxHDots = Math.max(1, Math.round(boxH * DOTS_PER_MM))
+			// 指令中记录文字区域宽高（点 + mm），便于回显/对齐
+			b.textArea(boxXDots, boxYDots, boxWDots, boxHDots, {
+				widthMm: boxW,
+				heightMm: boxH,
+			})
+			const textMeta = {
+				boxX: boxXDots,
+				boxY: boxYDots,
+				boxW: boxWDots,
+				boxH: boxHDots,
+				widthMm: boxW,
+				heightMm: boxH,
+			}
 
 			let startY = boxY
 			if (alignV === 'middle') {
@@ -214,7 +226,8 @@ function appendElement(b, el, paperDots) {
 				startY = boxY + Math.max(0, boxH - contentH)
 			}
 
-			if (mag > 1) b.setMag(mag, mag)
+			// 放大 N → SETMAG N N（含 1）
+			b.setMag(mag, mag)
 			if (el.bold) b.setBold(1)
 
 			const lineHDots = Math.round(lineHMm * DOTS_PER_MM)
@@ -235,11 +248,19 @@ function appendElement(b, el, paperDots) {
 					px = Math.round(boxX * DOTS_PER_MM) + i * lineHDots
 					py = Math.round(startY * DOTS_PER_MM) || 0
 				}
-				b.text(font, size, px, py, line, rotate)
+				// CPCL TEXT90/VTEXT：逆时针 90°，锚点为字串起点（竖直方向底端）
+				if (rotate === 90 && !el.wrap) {
+					py = Math.round((boxY + boxW) * DOTS_PER_MM) || 0
+					px = Math.round(boxX * DOTS_PER_MM) || 0
+				} else if (rotate === 180 && !el.wrap) {
+					px = Math.round((boxX + boxW) * DOTS_PER_MM) || 0
+					py = Math.round(boxY * DOTS_PER_MM) || 0
+				}
+				b.text(font, size, px, py, line, rotate, textMeta)
 			}
 
 			if (el.bold) b.setBold(0)
-			if (mag > 1) b.setMag(1, 1)
+			b.setMag(1, 1)
 			break
 		}
 		case 'image': {
@@ -250,16 +271,36 @@ function appendElement(b, el, paperDots) {
 			break
 		}
 		case 'barcode': {
-			const height = Math.max(16, Math.round((Number(el.heightMm) || 8) * DOTS_PER_MM))
+			const thickDots = Math.max(
+				16,
+				Math.round((Number(el.heightMm) || 8) * DOTS_PER_MM)
+			)
 			const mw = Math.max(1, Math.min(4, Number(el.moduleWidth) || 2))
 			const ratio = Math.max(1, Math.min(3, Number(el.ratio) || 1))
-			b.barcode128(mw, ratio, height, x, y, el.data || '')
+			const data = el.data || ''
+			// CPCL：横向 BARCODE / 纵向 VBARCODE
+			// 纵向：设计稿 (x,y) 为包围盒左上；CPCL (x,y) 为底边锚点，条码沿 -Y 生长
+			// 锚点长度用实测安全系数（仅影响 y，不改条高/模块宽）；横向仍用顶边 y，勿改
+			if (normalizeCodeOrient(el.rotate) === 90) {
+				const runDots = estimateCode128RunDots(data, mw)
+				const yAnchor = y + runDots
+				b.vbarcode128(mw, ratio, thickDots, x, yAnchor, data)
+			} else {
+				b.barcode128(mw, ratio, thickDots, x, y, data)
+			}
 			break
 		}
 		case 'qrcode': {
 			const level = Math.max(0, Math.min(3, Number(el.level) || 2))
 			const unit = Math.max(1, Math.min(16, Number(el.unit) || 4))
-			b.qr(x, y, level, unit, el.data || '')
+			const sideMm = qrSideMmFromUnit(unit, el.data, level)
+			const sizeDots = Math.max(8, Math.round(sideMm * DOTS_PER_MM))
+			// 纵向 QR：与 VBARCODE 相同，(x,y) 为底边锚点
+			if (normalizeCodeOrient(el.rotate) === 90) {
+				b.vqr(x, y + sizeDots, level, unit, el.data || '')
+			} else {
+				b.qr(x, y, level, unit, el.data || '')
+			}
 			break
 		}
 		case 'hline': {

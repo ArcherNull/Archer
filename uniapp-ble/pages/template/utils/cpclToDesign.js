@@ -5,6 +5,10 @@
 import { DOTS_PER_MM } from '../../print/ble/imagePrint.js'
 import { cpclToOps } from '../../print/template-comm/builder/cpclToOps.js'
 import {
+	estimateCode128Width,
+	estimateCode128RunDots,
+} from '../../print/template-comm/builder/cpclBuilder.js'
+import {
 	PAPER_LIMITS,
 	createDefaultPaper,
 	createElementId,
@@ -12,6 +16,7 @@ import {
 	normalizeElementRotate,
 	qrSideMmFromUnit,
 	textCharHeightMm,
+	normalizeTextMag,
 } from './elementTypes.js'
 
 function clamp(n, min, max) {
@@ -23,7 +28,7 @@ function clamp(n, min, max) {
 }
 
 function dotsToMm(dots) {
-	return Math.round((Number(dots) || 0) / (DOTS_PER_MM || 8) * 10) / 10
+	return Math.round(((Number(dots) || 0) / (DOTS_PER_MM || 8)) * 10) / 10
 }
 
 function mapAlign(dir) {
@@ -57,6 +62,7 @@ export function cpclToDesign(cpcl, options) {
 	var pageWDots = 0
 	var pageHDots = 0
 	var hasContent = false
+	var pendingTextArea = null
 
 	for (var i = 0; i < ops.length; i++) {
 		var op = ops[i]
@@ -72,7 +78,7 @@ export function cpclToDesign(cpcl, options) {
 			continue
 		}
 		if (op.type === 'setMag') {
-			mag = Math.max(1, Math.min(4, Number(op.w) || Number(op.h) || 1))
+			mag = normalizeTextMag(Math.max(Number(op.w) || 1, Number(op.h) || 1))
 			continue
 		}
 		if (op.type === 'setBold') {
@@ -83,21 +89,84 @@ export function cpclToDesign(cpcl, options) {
 			paper.useGapSense = true
 			continue
 		}
-		if (op.type === 'align' || op.type === 'form' || op.type === 'print' || op.type === 'prefeed' || op.type === 'raw') {
+		if (op.type === 'textArea') {
+			pendingTextArea = op
+			continue
+		}
+		if (
+			op.type === 'align' ||
+			op.type === 'form' ||
+			op.type === 'print' ||
+			op.type === 'prefeed' ||
+			op.type === 'raw'
+		) {
 			continue
 		}
 
 		if (op.type === 'text') {
 			hasContent = true
-			var size = Number(op.size) > 0 ? Number(op.size) : 24
+			// 保留 size=0（配军大字 TEXT 3 0）；勿强制改成 24
+			var size =
+				op.size != null && op.size !== '' && !isNaN(Number(op.size))
+					? Number(op.size)
+					: 24
+			if (size < 0) size = 24
 			var rotate = normalizeElementRotate(op.rotate)
+			// VTEXT/VT 可能只带 vertical；与 TEXT90 同为逆时针 90°
+			if ((!rotate || rotate === 0) && op.vertical) rotate = 90
 			var content = op.content != null ? String(op.content) : ''
+			var area = pendingTextArea
+			var hasExplicitBox =
+				(op.boxW != null && Number(op.boxW) > 0) ||
+				(area && Number(area.w) > 0)
+			var boxWDots =
+				(op.boxW != null && Number(op.boxW) > 0
+					? Number(op.boxW)
+					: area && Number(area.w) > 0
+						? Number(area.w)
+						: 0) || 0
+			var boxHDots =
+				(op.boxH != null && Number(op.boxH) > 0
+					? Number(op.boxH)
+					: area && Number(area.h) > 0
+						? Number(area.h)
+						: 0) || 0
+			var boxXDots =
+				op.boxX != null
+					? Number(op.boxX)
+					: area
+						? Number(area.x) || 0
+						: Number(op.x) || 0
+			var boxYDots =
+				op.boxY != null
+					? Number(op.boxY)
+					: area
+						? Number(area.y) || 0
+						: Number(op.y) || 0
+			var areaKey =
+				boxWDots > 0
+					? [boxXDots, boxYDots, boxWDots, boxHDots, rotate, mag, bold].join('|')
+					: ''
+
+			// 同一文字区域多行 TEXT：合并为一个元素
+			var prev = elements.length ? elements[elements.length - 1] : null
+			if (
+				prev &&
+				prev.type === 'text' &&
+				areaKey &&
+				prev._areaKey === areaKey
+			) {
+				prev.content = (prev.content || '') + '\n' + content
+				prev.wrap = true
+				continue
+			}
+
 			var elText = {
 				id: createElementId('text'),
 				type: 'text',
 				name: '文字',
-				x: dotsToMm(op.x),
-				y: dotsToMm(op.y),
+				x: dotsToMm(boxXDots),
+				y: dotsToMm(boxYDots),
 				content: content,
 				font: op.font != null ? op.font : 0,
 				size: size,
@@ -105,21 +174,59 @@ export function cpclToDesign(cpcl, options) {
 				bold: bold,
 				wrap: false,
 				ellipsis: true,
+				ellipsisLines: 2,
 				rotate: rotate,
 				alignH: mapAlign(op.align),
 				alignV: 'top',
 				widthMm: 30,
 				heightMm: 3,
+				_areaKey: areaKey,
 			}
 			var charMm = textCharHeightMm(elText)
-			elText.heightMm = Math.max(charMm, Math.round(charMm * 10) / 10)
-			elText.widthMm = Math.max(
-				charMm,
-				estimateTextWidthMm(content || '文字', charMm)
-			)
+			if (boxWDots > 0) {
+				elText.widthMm =
+					op.widthMm != null && Number(op.widthMm) > 0
+						? Number(op.widthMm)
+						: area && Number(area.widthMm) > 0
+							? Number(area.widthMm)
+							: Math.max(charMm, dotsToMm(boxWDots))
+			} else {
+				elText.widthMm = Math.max(charMm, estimateTextWidthMm(content || '文字', charMm))
+			}
+			if (boxHDots > 0) {
+				elText.heightMm =
+					op.heightMm != null && Number(op.heightMm) > 0
+						? Number(op.heightMm)
+						: area && Number(area.heightMm) > 0
+							? Number(area.heightMm)
+							: Math.max(charMm, dotsToMm(boxHDots))
+			} else {
+				elText.heightMm = Math.max(charMm, Math.round(charMm * 10) / 10)
+			}
+			// 无 TEXT-AREA 时：按 CPCL 旋转锚点还原包围盒左上
+			// TEXT90/VTEXT 逆时针 90°，字串向 -Y 延伸 → 顶边 = y锚点 - 串长
+			// TEXT180 逆时针 180°，向 -X 延伸 → 左边 = x锚点 - 串长
+			if (!hasExplicitBox) {
+				var runMm = Number(elText.widthMm) || 0
+				var anchorX = Number(op.x) || 0
+				var anchorY = Number(op.y) || 0
+				if (rotate === 90) {
+					elText.x = dotsToMm(anchorX)
+					elText.y = Math.max(0, dotsToMm(anchorY) - runMm)
+				} else if (rotate === 180) {
+					elText.x = Math.max(0, dotsToMm(anchorX) - runMm)
+					elText.y = dotsToMm(anchorY)
+				} else if (rotate === 270) {
+					elText.x = dotsToMm(anchorX)
+					elText.y = dotsToMm(anchorY)
+				}
+			}
 			elements.push(elText)
 			continue
 		}
+
+		// 非文字指令打断文字区域合并
+		pendingTextArea = null
 
 		if (op.type === 'line') {
 			hasContent = true
@@ -179,17 +286,29 @@ export function cpclToDesign(cpcl, options) {
 
 		if (op.type === 'barcode') {
 			hasContent = true
+			var mw = Math.max(1, Math.min(4, Number(op.moduleWidth) || 2))
+			var ratio = Math.max(1, Math.min(3, Number(op.ratio) || 1))
+			var data = op.data != null ? String(op.data) : ''
+			var thickDots = Math.max(16, Number(op.height) || 64)
+			var isVertical = op.orient === 'v'
+			var theoryDots = estimateCode128Width(data, mw)
+			// 纵向：与导出相同的安全长度还原顶边；widthMm 仍用理论长度，占位不放大
+			var runDots = isVertical ? estimateCode128RunDots(data, mw) : theoryDots
+			var bx = Number(op.x) || 0
+			var by = Number(op.y) || 0
+			var topY = isVertical ? Math.max(0, by - runDots) : by
 			elements.push({
 				id: createElementId('barcode'),
 				type: 'barcode',
 				name: '条形码',
-				x: dotsToMm(op.x),
-				y: dotsToMm(op.y),
-				data: op.data != null ? String(op.data) : '',
-				moduleWidth: Math.max(1, Math.min(4, Number(op.moduleWidth) || 2)),
-				ratio: Math.max(1, Math.min(3, Number(op.ratio) || 1)),
-				widthMm: 40,
-				heightMm: Math.max(3, dotsToMm(op.height || 64)),
+				x: dotsToMm(bx),
+				y: dotsToMm(topY),
+				data: data,
+				moduleWidth: mw,
+				ratio: ratio,
+				rotate: isVertical ? 90 : 0,
+				widthMm: Math.max(8, dotsToMm(theoryDots)),
+				heightMm: Math.max(3, dotsToMm(thickDots)),
 			})
 			continue
 		}
@@ -212,6 +331,7 @@ export function cpclToDesign(cpcl, options) {
 				data: qrData,
 				level: qrLevel,
 				unit: unit,
+				rotate: op.orient === 'v' ? 90 : 0,
 				widthMm: side,
 				heightMm: side,
 			})
@@ -220,7 +340,9 @@ export function cpclToDesign(cpcl, options) {
 
 		if (op.type === 'logo') {
 			hasContent = true
-			elements.push({
+			var logoW = Math.max(2, dotsToMm(op.w || 80))
+			var logoH = Math.max(2, dotsToMm(op.h || 80))
+			var logoEl = {
 				id: createElementId('image'),
 				type: 'image',
 				name: '图片',
@@ -228,29 +350,38 @@ export function cpclToDesign(cpcl, options) {
 				y: dotsToMm(op.y),
 				imageKey: '',
 				imagePath: '',
-				widthMm: Math.max(2, dotsToMm(op.w || 80)),
-				heightMm: Math.max(2, dotsToMm(op.h || 80)),
-			})
+				widthMm: logoW,
+				heightMm: logoH,
+			}
+			// 保留指令中的 EG 位图，便于未换图时可直接打印；换图时需清掉
+			if (op.hex && op.byteWidth && op.h) {
+				logoEl.egBitmap = {
+					hex: String(op.hex).replace(/\s+/g, ''),
+					byteWidth: Number(op.byteWidth) || Math.ceil((Number(op.w) || 8) / 8),
+					height: Number(op.h) || 0,
+					width: Number(op.w) || 0,
+				}
+				logoEl.fromEgImport = true
+			}
+			elements.push(logoEl)
 		}
 	}
 
 	if (pageWDots > 0) {
-		paper.widthMm = clamp(
-			dotsToMm(pageWDots),
-			PAPER_LIMITS.widthMin,
-			PAPER_LIMITS.widthMax
-		)
+		paper.widthMm = clamp(dotsToMm(pageWDots), PAPER_LIMITS.widthMin, PAPER_LIMITS.widthMax)
 	}
 	if (pageHDots > 0) {
-		paper.heightMm = clamp(
-			dotsToMm(pageHDots),
-			PAPER_LIMITS.heightMin,
-			PAPER_LIMITS.heightMax
-		)
+		paper.heightMm = clamp(dotsToMm(pageHDots), PAPER_LIMITS.heightMin, PAPER_LIMITS.heightMax)
 	}
 
 	if (!hasContent && !pageWDots && !pageHDots) {
 		throw new Error('指令中未识别到可回显的模板内容')
+	}
+
+	for (var ei = 0; ei < elements.length; ei++) {
+		if (elements[ei] && elements[ei]._areaKey != null) {
+			delete elements[ei]._areaKey
+		}
 	}
 
 	return {
