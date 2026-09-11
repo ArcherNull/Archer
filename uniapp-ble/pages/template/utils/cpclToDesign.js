@@ -39,6 +39,26 @@ function mapAlign(dir) {
 }
 
 /**
+ * CPCL LEFT/CENTER/RIGHT → 设计稿左缘 x（dot）
+ * LEFT：x 为左缘；CENTER：纸心+x 为中心（或 start 时为左缘相对纸心）；RIGHT：x≤0 以纸右为右缘，否则 x 为右缘
+ */
+function resolveCpclAlignedLeftDots(align, xDots, contentWDots, pageWDots, opts) {
+	var a = String(align || 'LEFT').toUpperCase()
+	var x = Number(xDots) || 0
+	var w = Math.max(0, Number(contentWDots) || 0)
+	var pageW = Number(pageWDots) || 576
+	var anchor = (opts && opts.anchor) || 'center'
+	if (a === 'CENTER') {
+		return Math.round(anchor === 'start' ? pageW / 2 + x : pageW / 2 + x - w / 2)
+	}
+	if (a === 'RIGHT') {
+		var rightEdge = x <= 0 ? pageW : x
+		return Math.round(rightEdge - w)
+	}
+	return Math.round(x)
+}
+
+/**
  * @param {string} cpcl
  * @param {{ brand?: string }} [options]
  * @returns {{ paper: object, elements: array, ops: array }}
@@ -78,7 +98,11 @@ export function cpclToDesign(cpcl, options) {
 			continue
 		}
 		if (op.type === 'setMag') {
-			mag = normalizeTextMag(Math.max(Number(op.w) || 1, Number(op.h) || 1))
+			var mw = Number(op.w)
+			var mh = Number(op.h)
+			if (isNaN(mw)) mw = 1
+			if (isNaN(mh)) mh = 1
+			mag = normalizeTextMag(Math.max(mw, mh))
 			continue
 		}
 		if (op.type === 'setBold') {
@@ -173,7 +197,7 @@ export function cpclToDesign(cpcl, options) {
 				mag: mag,
 				bold: bold,
 				wrap: false,
-				ellipsis: true,
+				ellipsis: false,
 				ellipsisLines: 2,
 				rotate: rotate,
 				alignH: mapAlign(op.align),
@@ -203,13 +227,16 @@ export function cpclToDesign(cpcl, options) {
 			} else {
 				elText.heightMm = Math.max(charMm, Math.round(charMm * 10) / 10)
 			}
-			// 无 TEXT-AREA 时：按 CPCL 旋转锚点还原包围盒左上
+			// 无 TEXT-AREA 时：按 CPCL 对齐 + 旋转锚点还原包围盒左上
+			// LEFT/CENTER/RIGHT 需换算为绝对左缘，否则 RIGHT/CENTER 的 x=0 会全部贴到左边
 			// TEXT90/VTEXT 逆时针 90°，字串向 -Y 延伸 → 顶边 = y锚点 - 串长
 			// TEXT180 逆时针 180°，向 -X 延伸 → 左边 = x锚点 - 串长
 			if (!hasExplicitBox) {
 				var runMm = Number(elText.widthMm) || 0
+				var runDots = Math.max(1, Math.round(runMm * (DOTS_PER_MM || 8)))
 				var anchorX = Number(op.x) || 0
 				var anchorY = Number(op.y) || 0
+				var alignRaw = String(op.align || 'LEFT').toUpperCase()
 				if (rotate === 90) {
 					elText.x = dotsToMm(anchorX)
 					elText.y = Math.max(0, dotsToMm(anchorY) - runMm)
@@ -218,6 +245,15 @@ export function cpclToDesign(cpcl, options) {
 					elText.y = dotsToMm(anchorY)
 				} else if (rotate === 270) {
 					elText.x = dotsToMm(anchorX)
+					elText.y = dotsToMm(anchorY)
+				} else {
+					var leftDots = resolveCpclAlignedLeftDots(
+						alignRaw,
+						anchorX,
+						runDots,
+						pageWDots
+					)
+					elText.x = Math.max(0, dotsToMm(leftDots))
 					elText.y = dotsToMm(anchorY)
 				}
 			}
@@ -340,13 +376,22 @@ export function cpclToDesign(cpcl, options) {
 
 		if (op.type === 'logo') {
 			hasContent = true
-			var logoW = Math.max(2, dotsToMm(op.w || 80))
+			var logoWDots = Number(op.w) || 80
 			var logoH = Math.max(2, dotsToMm(op.h || 80))
+			var logoW = Math.max(2, dotsToMm(logoWDots))
+			var logoAlign = String(op.align || 'LEFT').toUpperCase()
+			var logoLeftDots = resolveCpclAlignedLeftDots(
+				logoAlign,
+				Number(op.x) || 0,
+				logoWDots,
+				pageWDots,
+				{ anchor: 'start' }
+			)
 			var logoEl = {
 				id: createElementId('image'),
 				type: 'image',
 				name: '图片',
-				x: dotsToMm(op.x),
+				x: Math.max(0, dotsToMm(logoLeftDots)),
 				y: dotsToMm(op.y),
 				imageKey: '',
 				imagePath: '',

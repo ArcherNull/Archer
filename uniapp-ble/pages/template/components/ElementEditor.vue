@@ -41,9 +41,11 @@
 			</view>
 			<view class="row">
 				<text class="row-label">放大</text>
-				<NumberBox :value="element.mag" :min="1" :max="6" @input="onMag" />
+				<NumberBox :value="currentMag" :min="0" :max="6" @input="onMag" />
 			</view>
-			<view class="magHint">放大 N → SETMAG N N；画布 100% 时 1=10px / 2=24px / 3=36px / 4=48px</view>
+			<view class="magHint"
+				>默认 1；放大 0→8px / 1→10px / 2→24px / 3→36px / 4→48px（SETMAG N N）</view
+			>
 			<view class="field">
 				<text class="field-label">旋转</text>
 				<view class="rotateRow">
@@ -331,6 +333,9 @@
 			}
 		},
 		computed: {
+			currentMag() {
+				return normalizeTextMag(this.element && this.element.mag)
+			},
 			currentZIndex() {
 				return normalizeZIndex(this.element && this.element.zIndex)
 			},

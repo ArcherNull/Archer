@@ -65,7 +65,13 @@ export function cpclToOps(cpcl, brand = 'common') {
 
 		m = raw.match(/^SETMAG\s+(\S+)\s+(\S+)/i)
 		if (m) {
-			push({ type: 'setMag', w: Number(m[1]) || 1, h: Number(m[2]) || 1 })
+			const mw = Number(m[1])
+			const mh = Number(m[2])
+			push({
+				type: 'setMag',
+				w: isNaN(mw) ? 1 : mw,
+				h: isNaN(mh) ? 1 : mh,
+			})
 			continue
 		}
 

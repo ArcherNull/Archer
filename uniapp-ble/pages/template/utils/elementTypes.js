@@ -34,26 +34,29 @@ export function resolveTextBaseDots(font, size) {
 	return TEXT_BASE_DOTS || 24
 }
 
-/** 文字放大（SETMAG）：1~6，默认 1 */
-export var TEXT_MAG_MIN = 1
+/** 文字放大（SETMAG）：0~6，默认 1 */
+export var TEXT_MAG_MIN = 0
 export var TEXT_MAG_MAX = 6
 export var TEXT_MAG_DEFAULT = 1
 /** 画布 zoom=100% 时 pxPerMm（与 CanvasBoard 一致） */
 export var TEXT_PREVIEW_PX_PER_MM = 4
 
 export function normalizeTextMag(mag) {
+	if (mag == null || mag === '') return TEXT_MAG_DEFAULT
 	var n = Math.round(Number(mag))
-	if (isNaN(n) || n < TEXT_MAG_MIN) return TEXT_MAG_DEFAULT
+	if (isNaN(n)) return TEXT_MAG_DEFAULT
+	if (n < TEXT_MAG_MIN) return TEXT_MAG_MIN
 	if (n > TEXT_MAG_MAX) return TEXT_MAG_MAX
 	return n
 }
 
 /**
  * 画布 100% 缩放时的展示字号(px)
- * 1→10，2→24，3→36，4→48，5→60，6→72（对应 SETMAG n n）
+ * 0→8，1→10，2→24，3→36，4→48，5→60，6→72（对应 SETMAG n n）
  */
 export function textMagToPreviewPx(mag) {
 	var m = normalizeTextMag(mag)
+	if (m === 0) return 8
 	if (m === 1) return 10
 	return 12 * m
 }

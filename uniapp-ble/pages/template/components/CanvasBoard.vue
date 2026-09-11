@@ -143,6 +143,7 @@
 		normalizeZIndex,
 		Z_INDEX_MAX,
 		BARCODE_RUN_MIN_MM,
+		normalizeTextMag,
 	} from '../utils/elementTypes.js'
 	import { STATIC_PRINT_IMAGES } from '../../print/ble/imagePrint.js'
 
@@ -318,7 +319,7 @@
 					const s = that.pxPerMm
 					const selected = !that.readonly && that.selectedId === item.id
 					const type = item.type || ''
-					const mag = Math.max(1, Number(item.mag) || 1)
+					const mag = normalizeTextMag(item.mag)
 					const wrap = !!item.wrap
 					const ellipsis = !!item.ellipsis
 					const rotate =
@@ -332,10 +333,10 @@
 					let textHostStyle = 'width:100%;height:100%;'
 					let content = item.content || '文字'
 					if (type === 'text') {
-					const fontPx = textPreviewFontPx(item, that.zoom)
-					const linePx = fontPx
-					const charMm = textCharHeightMm(item)
-					const lines = resolveDesignTextLines(item)
+						const fontPx = textPreviewFontPx(item, that.zoom)
+						const linePx = fontPx
+						const charMm = textCharHeightMm(item)
+						const lines = resolveDesignTextLines(item)
 						content = lines.join('\n')
 						const justify =
 							alignH === 'center'

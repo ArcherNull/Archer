@@ -265,7 +265,13 @@ export function createCpclBuilder(options = {}) {
 			const ww = esc(w)
 			const hh = h == null ? ww : esc(h)
 			pushLine(`SETMAG ${ww} ${hh}`)
-			pushOp({ type: 'setMag', w: Number(ww) || 1, h: Number(hh) || 1 })
+			const nw = Number(ww)
+			const nh = Number(hh)
+			pushOp({
+				type: 'setMag',
+				w: isNaN(nw) ? 1 : nw,
+				h: isNaN(nh) ? 1 : nh,
+			})
 			return api
 		},
 
