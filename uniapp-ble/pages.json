@@ -15,7 +15,11 @@
 		{
 			"path": "pages/template/index",
 			"style": {
-				"navigationBarTitleText": "模板设计"
+				"navigationBarTitleText": "模板设计",
+				"disableScroll": true,
+				"app-plus": {
+					"bounce": "none"
+				}
 			}
 		},
 		{

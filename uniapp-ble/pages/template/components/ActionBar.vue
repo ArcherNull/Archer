@@ -39,7 +39,7 @@
 		position: sticky;
 		bottom: 0;
 		z-index: 20;
-		padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+		padding: 16rpx 24rpx;
 		background: rgba(250, 246, 240, 0.96);
 		border-top: 1rpx solid $pr-border-color;
 		box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.04);

@@ -105,16 +105,16 @@
 	@import '../../print/comm/common.scss';
 
 	.dock {
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		position: relative;
+		flex-shrink: 0;
+		width: 100%;
 		z-index: 50;
 		background: rgba(255, 252, 247, 0.98);
 		border-top: 1rpx solid $pr-border-color;
 		box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
-		padding: 12rpx 16rpx calc(12rpx + env(safe-area-inset-bottom));
+		padding: 12rpx 16rpx;
 		box-sizing: border-box;
+		margin: 0;
 	}
 
 	.dock-row {

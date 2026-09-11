@@ -3,10 +3,12 @@
 		<!-- 画布区（除底部外占满） -->
 		<view class="canvasArea">
 			<CanvasBoard
+				class="canvasBoard"
 				:paper="paper"
 				:elements="elements"
 				:selected-id="selectedId"
 				:zoom="canvasZoom"
+				:viewport-height="canvasViewportH"
 				@select="onSelectElement"
 				@remove="onRemoveElement"
 				@change="onElementChange"
@@ -34,6 +36,18 @@
 				<view class="floatOps-zoom" @click="onZoomReset">{{ zoomPercent }}</view>
 				<view class="floatOps-btn" @click="onZoomIn">
 					<image class="floatOps-img" :src="icons.zoomIn" mode="aspectFit" />
+				</view>
+				<view
+					:class="['floatOps-btn', canUndo ? '' : 'floatOps-btn--disabled']"
+					@click="onUndo"
+				>
+					<image class="floatOps-img" :src="icons.undo" mode="aspectFit" />
+				</view>
+				<view
+					:class="['floatOps-btn', canRedo ? '' : 'floatOps-btn--disabled']"
+					@click="onRedo"
+				>
+					<image class="floatOps-img" :src="icons.redo" mode="aspectFit" />
 				</view>
 				<view class="floatOps-btn" @click="onClearCanvas">
 					<image class="floatOps-img" :src="icons.delete" mode="aspectFit" />
@@ -171,7 +185,22 @@
 	const ZOOM_MIN = 0.5
 	const ZOOM_MAX = 2
 	const ZOOM_STEP = 0.25
+	const HISTORY_MAX = 40
 	const TEMPLATE_IMAGE_CANVAS_ID = 'templateImageCanvas'
+
+	function cloneDesignState(paper, elements) {
+		try {
+			return {
+				paper: JSON.parse(JSON.stringify(paper || {})),
+				elements: JSON.parse(JSON.stringify(elements || [])),
+			}
+		} catch (e) {
+			return {
+				paper: Object.assign({}, paper || {}),
+				elements: (elements || []).slice(),
+			}
+		}
+	}
 
 	export default {
 		name: 'TemplateDesignPage',
@@ -229,9 +258,27 @@
 				floatOpsDrag: null,
 				floatOpsCollapsed: false,
 				icons: TEMPLATE_ICONS,
+				/** 画布可视高度（px），由 .canvasArea 实测，避免与底栏之间留白 */
+				canvasViewportH: 0,
+
+				historyStack: [],
+				historyIndex: -1,
+				_applyingHistory: false,
+				_historyTimer: null,
 			}
 		},
+		watch: {
+			floatOpsCollapsed() {
+				this.$nextTick(() => this.measureCanvasArea())
+			},
+		},
 		computed: {
+			canUndo() {
+				return this.historyIndex > 0
+			},
+			canRedo() {
+				return this.historyIndex >= 0 && this.historyIndex < this.historyStack.length - 1
+			},
 			selectedElement() {
 				const id = this.selectedId
 				if (!id) return null
@@ -268,9 +315,21 @@
 				)
 			},
 		},
+		created() {
+			this.resetHistory()
+		},
+		onReady() {
+			this.measureCanvasArea()
+			setTimeout(() => this.measureCanvasArea(), 80)
+			setTimeout(() => this.measureCanvasArea(), 320)
+		},
 		onShow() {
 			uni.setKeepScreenOn({ keepScreenOn: true })
 			this.initBlueTooth()
+			this.$nextTick(() => {
+				this.measureCanvasArea()
+				setTimeout(() => this.measureCanvasArea(), 100)
+			})
 		},
 		onHide() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
@@ -281,12 +340,106 @@
 			this.teardownBlueTooth()
 		},
 		methods: {
+			measureCanvasArea() {
+				const that = this
+				uni
+					.createSelectorQuery()
+					.in(this)
+					.select('.canvasArea')
+					.boundingClientRect(function (rect) {
+						if (!rect || !(rect.height > 0)) return
+						const h = Math.floor(rect.height)
+						if (h !== that.canvasViewportH) that.canvasViewportH = h
+					})
+					.exec()
+			},
+			cloneCurrentDesign() {
+				return cloneDesignState(this.paper, this.elements)
+			},
+			resetHistory() {
+				if (this._historyTimer) {
+					clearTimeout(this._historyTimer)
+					this._historyTimer = null
+				}
+				this.historyStack = [this.cloneCurrentDesign()]
+				this.historyIndex = 0
+			},
+			recordHistory(immediate) {
+				if (this._applyingHistory) return
+				const that = this
+				const run = function () {
+					that._historyTimer = null
+					const snap = that.cloneCurrentDesign()
+					const tip = that.historyStack[that.historyIndex]
+					if (tip && JSON.stringify(tip) === JSON.stringify(snap)) return
+					const next = that.historyStack.slice(0, that.historyIndex + 1)
+					next.push(snap)
+					while (next.length > HISTORY_MAX) next.shift()
+					that.historyStack = next
+					that.historyIndex = next.length - 1
+				}
+				if (immediate) {
+					if (this._historyTimer) {
+						clearTimeout(this._historyTimer)
+						this._historyTimer = null
+					}
+					run()
+					return
+				}
+				if (this._historyTimer) clearTimeout(this._historyTimer)
+				this._historyTimer = setTimeout(run, 360)
+			},
+			applyHistorySnapshot(snap) {
+				if (!snap) return
+				this._applyingHistory = true
+				this.paper = Object.assign(createDefaultPaper(), snap.paper || {})
+				this.elements = (snap.elements || []).slice()
+				const still =
+					this.selectedId &&
+					this.elements.some(function (item) {
+						return item.id === this.selectedId
+					}, this)
+				if (!still) {
+					this.selectedId = ''
+					this.editorPopupVisible = false
+				}
+				const that = this
+				this.$nextTick(function () {
+					that._applyingHistory = false
+				})
+			},
+			onUndo() {
+				if (!this.canUndo) {
+					showMsg('没有上一步')
+					return
+				}
+				if (this._historyTimer) {
+					clearTimeout(this._historyTimer)
+					this._historyTimer = null
+					this.recordHistory(true)
+				}
+				this.historyIndex -= 1
+				this.applyHistorySnapshot(this.historyStack[this.historyIndex])
+			},
+			onRedo() {
+				if (!this.canRedo) {
+					showMsg('没有下一步')
+					return
+				}
+				if (this._historyTimer) {
+					clearTimeout(this._historyTimer)
+					this._historyTimer = null
+				}
+				this.historyIndex += 1
+				this.applyHistorySnapshot(this.historyStack[this.historyIndex])
+			},
 			onPaperChange(next) {
 				this.paper = Object.assign({}, next)
+				this.recordHistory(true)
 			},
 			onAddElement(type) {
-				const margin = Number(this.paper.marginLeft) || 0.5
-				const top = Number(this.paper.marginTop) || 0.5
+				const margin = Number(this.paper.marginLeft) || 0
+				const top = Number(this.paper.marginTop) || 0
 				const offset = this.elements.length * 3
 				const el = createDefaultElement(type, {
 					x: margin,
@@ -294,6 +447,7 @@
 				})
 				this.elements = this.elements.concat([el])
 				this.selectedId = el.id
+				this.recordHistory(true)
 			},
 			onSelectElement(id) {
 				this.selectedId = id || ''
@@ -306,12 +460,14 @@
 					this.selectedId = ''
 					this.editorPopupVisible = false
 				}
+				this.recordHistory(true)
 			},
 			onElementChange(next) {
 				if (!next || !next.id) return
 				this.elements = this.elements.map(function (item) {
 					return item.id === next.id ? next : item
 				})
+				this.recordHistory(false)
 			},
 			onOpenElementSettings(id) {
 				this.selectedId = id || this.selectedId
@@ -366,7 +522,7 @@
 				let top = this.floatOpsDrag.originTop + dy
 				try {
 					const sys = getWindowInfoSafe()
-					const maxL = Math.max(0, (sys.windowWidth || 375) - 200)
+					const maxL = Math.max(0, (sys.windowWidth || 375) - 320)
 					const maxT = Math.max(0, (sys.windowHeight || 667) - 80)
 					left = Math.max(8, Math.min(maxL, left))
 					top = Math.max(8, Math.min(maxT, top))
@@ -408,7 +564,7 @@
 				try {
 					const res = await showModal({
 						title: '清空画布',
-						content: '确认清空画布上的全部元素？此操作不可恢复。',
+						content: '确认清空画布上的全部元素？可通过上一步撤销。',
 						confirmText: '清空',
 						confirmColor: '#dd524d',
 					})
@@ -416,6 +572,7 @@
 						this.elements = []
 						this.selectedId = ''
 						this.editorPopupVisible = false
+						this.recordHistory(true)
 						showMsg('已清空', 'success')
 					}
 				} catch (e) {}
@@ -442,6 +599,7 @@
 					this.selectedId = ''
 					this.editorPopupVisible = false
 					this.importPopupVisible = false
+					this.recordHistory(true)
 					showMsg(
 						'已回显 ' + ((design.elements && design.elements.length) || 0) + ' 个元素',
 						'success'
@@ -899,33 +1057,52 @@
 	}
 </script>
 
+<style lang="scss">
+	/* 非 scoped：确保 page 高度生效，并禁止整页上下滑动/回弹 */
+	page {
+		height: 100%;
+		overflow: hidden;
+		background: #e8e0d4;
+		overscroll-behavior: none;
+		overscroll-behavior-y: none;
+	}
+</style>
+
 <style lang="scss" scoped>
 	@import '../print/comm/common.scss';
 
 	.page {
-		height: 100vh;
+		height: 100%;
 		display: flex;
 		flex-direction: column;
 		background: #e8e0d4;
 		box-sizing: border-box;
 		overflow: hidden;
+		overscroll-behavior: none;
+		overscroll-behavior-y: none;
 	}
 
 	.canvasArea {
 		flex: 1;
+		height: 0;
 		min-height: 0;
 		position: relative;
-		display: flex;
-		flex-direction: column;
-		/* 为底部 dock 留空：约两行工具 + safe area */
-		padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+		overflow: hidden;
+		background: #e8e0d4;
 		box-sizing: border-box;
+	}
+
+	/* 让自定义组件根节点撑满画布区 */
+	.canvasBoard {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 
 	.floatOps {
 		position: absolute;
 		right: 20rpx;
-		bottom: calc(220rpx + env(safe-area-inset-bottom) + 16rpx);
+		bottom: 16rpx;
 		top: auto;
 		z-index: 30;
 		display: flex;
@@ -953,6 +1130,10 @@
 			&--drag,
 			&--fold {
 				background: #efe8dc;
+			}
+
+			&--disabled {
+				opacity: 0.35;
 			}
 		}
 

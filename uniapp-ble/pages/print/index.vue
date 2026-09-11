@@ -2100,7 +2100,7 @@
 	@import './comm/common.scss';
 
 	.print {
-		padding-bottom: calc(520rpx + env(safe-area-inset-bottom));
+		padding-bottom: 520rpx;
 		background: $pr-page-bg;
 		min-height: 100vh;
 	}

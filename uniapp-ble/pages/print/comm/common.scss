@@ -262,7 +262,7 @@ $pr-success: #3bb54a;
 	left: 0;
 	bottom: 0;
 	width: 100%;
-	padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+	padding: 16rpx 24rpx;
 	background: rgba(255, 255, 255, 0.96);
 	border-top: 1rpx solid $pr-border-color;
 	box-shadow: 0 -8rpx 28rpx rgba(249, 174, 61, 0.12);
@@ -271,7 +271,7 @@ $pr-success: #3bb54a;
 
 .footerBtn {
 	width: 100vw;
-	padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom));
+	padding: 16rpx 20rpx;
 }
 
 .printBtn {

@@ -266,6 +266,8 @@ export var PAPER_PRESETS = [
 export var TEMPLATE_ICONS = {
 	zoomIn: '/static/icon/放大.png',
 	zoomOut: '/static/icon/缩小.png',
+	undo: '/static/icon/上一步.png',
+	redo: '/static/icon/下一步.png',
 	delete: '/static/icon/删除.png',
 	list: '/static/icon/清单.png',
 	move: '/static/icon/移动.png',

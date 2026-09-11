@@ -1118,7 +1118,7 @@
 	.printPage {
 		min-height: 100vh;
 		background: $pr-page-bg;
-		padding-bottom: calc(280rpx + env(safe-area-inset-bottom));
+		padding-bottom: 280rpx;
 		box-sizing: border-box;
 
 		&-body {

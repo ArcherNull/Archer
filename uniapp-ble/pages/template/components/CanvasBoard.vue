@@ -848,17 +848,23 @@
 	@import '../../print/comm/common.scss';
 
 	.canvasRoot {
-		flex: 1;
-		min-height: 0;
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
 		width: 100%;
 		height: 100%;
+		min-height: 0;
 		background: #e8e0d4;
-		position: relative;
+		box-sizing: border-box;
+		overflow: hidden;
 	}
 
 	.canvasScroll {
 		width: 100%;
 		height: 100%;
+		box-sizing: border-box;
 	}
 
 	.canvasInner {
