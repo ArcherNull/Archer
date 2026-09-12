@@ -1,12 +1,47 @@
 import { BleBlueTooth } from './bleBlueTooth.js'
+// #ifdef APP-PLUS
+import { ClassicBlueTooth } from './classicBlueTooth.js'
+// #endif
+
+/**
+ * 是否使用经典蓝牙（Android App）
+ * 微信小程序等非 App 端始终走 BLE
+ */
+export function shouldUseClassicBluetooth() {
+	// #ifdef APP-PLUS
+	try {
+		const info = uni.getSystemInfoSync() || {}
+		const platform = String(info.platform || info.osName || '').toLowerCase()
+		return platform === 'android'
+	} catch (e) {
+		return false
+	}
+	// #endif
+	// #ifndef APP-PLUS
+	return false
+	// #endif
+}
+
+/**
+ * 按平台创建适配器：微信小程序 BLE，Android App 经典蓝牙 SPP
+ * @returns {BleBlueTooth}
+ */
+export function createAdapterByPlatform() {
+	// #ifdef APP-PLUS
+	if (shouldUseClassicBluetooth()) {
+		return new ClassicBlueTooth()
+	}
+	// #endif
+	return new BleBlueTooth()
+}
 
 /**
  * 蓝牙打印模块入口（全局唯一适配器实例）
- * 连接与打印任务均由 BleBlueTooth 实现
+ * 微信小程序：BleBlueTooth；Android App：ClassicBlueTooth
  */
 export class BluetoothPrintModule {
 	constructor() {
-		this.ble = new BleBlueTooth()
+		this.ble = createAdapterByPlatform()
 	}
 
 	/** 页面统一访问的适配器实例 */
@@ -29,7 +64,7 @@ export function getBluetoothPrintModule() {
 }
 
 /**
- * 获取全局唯一 BLE 适配器实例（页面统一入口）
+ * 获取全局唯一蓝牙适配器实例（页面统一入口）
  * @returns {BleBlueTooth}
  */
 export function getBluetoothAdapter() {
@@ -41,10 +76,13 @@ export function getBluetoothAdapter() {
  * @returns {BleBlueTooth}
  */
 export function createBluetoothAdapter() {
-	return new BleBlueTooth()
+	return createAdapterByPlatform()
 }
 
 export { BleBlueTooth }
+// #ifdef APP-PLUS
+export { ClassicBlueTooth }
+// #endif
 
 export {
 	DEFAULT_PAGE_WIDTH_DOTS,

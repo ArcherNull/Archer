@@ -265,9 +265,15 @@
 			mtuReadonly() {
 				return this.platformName === 'iOS'
 			},
+			isClassicBluetooth() {
+				return String(this.platformName || '').includes('经典蓝牙')
+			},
 			mtuTipText() {
 				if (this.platformName === 'iOS') {
 					return 'iOS 不可设置 MTU，由系统默认分配'
+				}
+				if (this.isClassicBluetooth) {
+					return '经典蓝牙无 ATT MTU；此处表示单包字节数，建议 256–512，过大可能丢包'
 				}
 				if (this.platformName === '鸿蒙') {
 					return 'MTU 20–512，默认 20；步进 10–100；鸿蒙单包建议 20 字节，过大易乱码'

@@ -137,6 +137,8 @@ export class BleBlueTooth {
     _printElapsedTimer = null
 
     constructor() {
+        /** @type {'ble'|'classic'} 蓝牙模式：小程序 BLE / Android 经典蓝牙 */
+        this._btMode = 'ble'
         this.init()
     }
 
@@ -145,6 +147,11 @@ export class BleBlueTooth {
         this.initPrintConfig()
         this.getHistoryPrintDevices()
         this.initEvents()
+    }
+
+    /** 当前蓝牙模式：ble | classic */
+    getBluetoothMode() {
+        return this._btMode || 'ble'
     }
 
     // 平台展示名
@@ -392,13 +399,17 @@ export class BleBlueTooth {
             // 汉印图片：HPRT cutCpclImage → string2HexArrayBuffer
             const buffer = string2HexArrayBuffer(String(printDataStr).trim())
             totalBytes = buffer.byteLength || 0
-            chunkSize = this._isHarmonyOS ? this.getWriteChunkSize(totalBytes) : 20
+            chunkSize = (this._isHarmonyOS || this._btMode === 'classic')
+                ? this.getWriteChunkSize(totalBytes)
+                : 20
             packetCount = totalBytes > 0 ? Math.ceil(totalBytes / chunkSize) : 0
         } else {
             // 汉印明文 CPCL：HPRT util.hexStringToBuff（实为 GBK.encode）
             const buffer = hexStringToBuff(printDataStr)
             totalBytes = buffer.byteLength || 0
-            chunkSize = this._isHarmonyOS ? this.getWriteChunkSize(totalBytes) : 20
+            chunkSize = (this._isHarmonyOS || this._btMode === 'classic')
+                ? this.getWriteChunkSize(totalBytes)
+                : 20
             packetCount = totalBytes > 0 ? Math.ceil(totalBytes / chunkSize) : 0
         }
         return {
@@ -2194,7 +2205,9 @@ export class BleBlueTooth {
         const buffer = useHex
             ? string2HexArrayBuffer(String(printDataStr || '').trim())
             : hexStringToBuff(printDataStr)
-        const chunkSize = that._isHarmonyOS ? that.getWriteChunkSize(buffer.byteLength) : 20
+        const chunkSize = (that._isHarmonyOS || that._btMode === 'classic')
+            ? that.getWriteChunkSize(buffer.byteLength)
+            : 20
         const length = buffer.byteLength
         const count = Math.ceil(length / chunkSize)
         const finalWriteType = that.resolveWriteType(writeType)

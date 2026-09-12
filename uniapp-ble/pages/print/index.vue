@@ -40,6 +40,7 @@
 					'sharePrinterRow',
 					'checkRow',
 					sharePrinter ? 'checkRow--active' : 'checkRow--unactive',
+					sharePrinterLocked ? 'sharePrinterRow--locked' : '',
 				]"
 				@click="toggleSharePrinter"
 			>
@@ -47,10 +48,11 @@
 					:class="[
 						'checkRow-box',
 						sharePrinter ? 'checkRow-box--active' : 'checkRow-box--unactive',
+						sharePrinterLocked ? 'checkRow-box--locked' : '',
 					]"
 				></view>
 				<text class="sharePrinterRow-text">共用打印机</text>
-				<text class="sharePrinterRow-tip">标签/运单/回单共用一台</text>
+				<text class="sharePrinterRow-tip">{{ sharePrinterTip }}</text>
 			</view>
 
 			<view class="cPBox">
@@ -450,8 +452,10 @@
 				selectedPrinterType: '',
 				cusBModuleInstance: null,
 				printReceiptChecked: true,
-				/** 共用打印机：标签/运单/回单共用一台，默认勾选 */
+				/** 共用打印机：标签/运单/回单共用一台，默认勾选；安卓 App 强制勾选且不可取消 */
 				sharePrinter: true,
+				/** 安卓编译/运行环境：共用打印机锁定 */
+				sharePrinterLocked: false,
 				/** 是否打印该模板：默认不勾选 */
 				selectedPrintLabel: false,
 				selectedPrintWaybill: false,
@@ -504,6 +508,12 @@
 				if (this.selectedPrinterType === 'waybill') return '选择运单打印机'
 				if (this.selectedPrinterType === 'receipt') return '选择回单打印机'
 				return '选择打印机'
+			},
+			sharePrinterTip() {
+				if (this.sharePrinterLocked) {
+					return '安卓端固定共用一台，不可取消'
+				}
+				return '标签/运单/回单共用一台'
 			},
 			connectedList() {
 				return (this.deviceList || []).filter(function (item) {
@@ -649,10 +659,30 @@
 					this.platformName = this.resolvePlatformName(systemInfo)
 					this.osVersion = resolveOsVersion(systemInfo)
 					this.deviceName = this.resolveDeviceName(systemInfo)
+					this.applyAndroidSharePrinterLock(systemInfo)
 				} catch (e) {
 					this.platformName = '其它'
 					this.osVersion = ''
 					this.deviceName = '未知设备'
+					this.applyAndroidSharePrinterLock()
+				}
+			},
+			/** 安卓 App：共用打印机强制勾选且不可取消 */
+			applyAndroidSharePrinterLock(systemInfo) {
+				let locked = false
+				// #ifdef APP-PLUS
+				try {
+					const info = systemInfo || getSystemInfoCompat() || {}
+					const osName = String(info.osName || '').toLowerCase()
+					const platform = String(info.platform || '').toLowerCase()
+					locked = osName === 'android' || platform === 'android'
+				} catch (e) {
+					locked = false
+				}
+				// #endif
+				this.sharePrinterLocked = locked
+				if (locked) {
+					this.sharePrinter = true
 				}
 			},
 			loadUserInfo(options) {
@@ -1169,6 +1199,12 @@
 				this.selectedBTPrinter({}, this.sharePrinter ? 'shared' : 'label')
 			},
 			async toggleSharePrinter() {
+				if (this.sharePrinterLocked) {
+					this.sharePrinter = true
+					showMsg('安卓端必须勾选共用打印机，不可取消')
+					this.bumpBtVersion()
+					return
+				}
 				const next = !this.sharePrinter
 				this.sharePrinter = next
 				if (!this.cusBModuleInstance) {
@@ -2276,6 +2312,10 @@
 		gap: 8rpx;
 		padding: 8rpx 0 12rpx;
 		flex-wrap: wrap;
+
+		&--locked {
+			opacity: 0.92;
+		}
 
 		&-text {
 			font-size: 28rpx;
