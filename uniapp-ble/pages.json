@@ -12,16 +12,16 @@
 				"navigationBarTitleText": "蓝牙调试"
 			}
 		},
-		// {
-		// 	"path": "pages/template/index",
-		// 	"style": {
-		// 		"navigationBarTitleText": "模板设计",
-		// 		"disableScroll": true,
-		// 		"app-plus": {
-		// 			"bounce": "none"
-		// 		}
-		// 	}
-		// },
+		{
+			"path": "pages/template/index",
+			"style": {
+				"navigationBarTitleText": "模板设计",
+				"disableScroll": true,
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
 		{
 			"path": "pages/print/debugPage/index",
 			"style": {
@@ -49,13 +49,13 @@
 				"iconPath": "static/tabbar/bluetooth.png",
 				"selectedIconPath": "static/tabbar/bluetooth-active.png",
 				"text": "蓝牙调试"
+			},
+			{
+				"pagePath": "pages/template/index",
+				"iconPath": "static/tabbar/template.png",
+				"selectedIconPath": "static/tabbar/template-active.png",
+				"text": "模板设计"
 			}
-			// {
-			// 	"pagePath": "pages/template/index",
-			// 	"iconPath": "static/tabbar/template.png",
-			// 	"selectedIconPath": "static/tabbar/template-active.png",
-			// 	"text": "模板设计"
-			// }
 		]
 	},
 	"globalStyle": {
