@@ -49,6 +49,15 @@
 					@click.stop="onBlankTap"
 				>
 					<view class="marginBox" :style="marginStyle"></view>
+					<view class="paperMid paperMid--v" :style="paperMidVStyle"></view>
+					<view class="paperMid paperMid--h" :style="paperMidHStyle"></view>
+
+					<view
+						v-for="(g, gi) in snapGuides"
+						:key="'snap-' + g.axis + '-' + g.pos + '-' + gi"
+						:class="g.axis === 'v' ? 'snapGuide snapGuide--v' : 'snapGuide snapGuide--h'"
+						:style="g.style"
+					></view>
 
 					<view
 						v-for="item in viewElements"
@@ -145,6 +154,12 @@
 		BARCODE_RUN_MIN_MM,
 		normalizeTextMag,
 	} from '../utils/elementTypes.js'
+	import {
+		buildSnapTargets,
+		snapMoveRect,
+		snapResizeRect,
+		snapThresholdMm,
+	} from '../utils/snapAlign.js'
 	import { STATIC_PRINT_IMAGES } from '../../print/ble/imagePrint.js'
 
 	const RULER = 28
@@ -198,6 +213,8 @@
 				drag: null,
 				/** 拖拽中本地预览，避免每帧回写父级 elements */
 				dragLive: null,
+				/** 智能参考线（拖拽吸附时显示） */
+				snapGuides: [],
 				icons: TEMPLATE_ICONS,
 			}
 		},
@@ -302,6 +319,26 @@
 					(Number(this.paper.marginBottom) || 0) * s +
 					'px;left:' +
 					(Number(this.paper.marginLeft) || 0) * s +
+					'px;'
+				)
+			},
+			/** 纸张纵向中线（常驻虚线） */
+			paperMidVStyle() {
+				return (
+					'left:' +
+					this.paperW / 2 +
+					'px;top:0;height:' +
+					this.paperH +
+					'px;'
+				)
+			},
+			/** 纸张横向中线（常驻虚线） */
+			paperMidHStyle() {
+				return (
+					'top:' +
+					this.paperH / 2 +
+					'px;left:0;width:' +
+					this.paperW +
 					'px;'
 				)
 			},
@@ -463,6 +500,10 @@
 				}
 				return item.style
 			},
+			/** 纸张设置「智能参考线吸附」，默认开启 */
+			isSnapAlignEnabled() {
+				return !(this.paper && this.paper.snapAlign === false)
+			},
 			/**
 			 * @param {boolean} [selected]
 			 */
@@ -533,6 +574,20 @@
 					let ny = drag.originY + dy
 					nx = Math.max(0, Math.min(maxX, Math.round(nx * 10) / 10))
 					ny = Math.max(0, Math.min(maxY, Math.round(ny * 10) / 10))
+					if (this.isSnapAlignEnabled()) {
+						const snapped = this.applySnapMove(
+							nx,
+							ny,
+							drag.originW,
+							drag.originH,
+							drag.id
+						)
+						nx = Math.max(0, Math.min(maxX, snapped.x))
+						ny = Math.max(0, Math.min(maxY, snapped.y))
+						this.snapGuides = snapped.guides
+					} else {
+						this.snapGuides = []
+					}
 					drag.liveX = nx
 					drag.liveY = ny
 					drag.liveW = drag.originW
@@ -549,8 +604,22 @@
 						),
 					}
 				} else if (drag.mode === 'resize') {
-					const nw = Math.max(2, Math.round((drag.originW + dx) * 10) / 10)
-					const nh = Math.max(1, Math.round((drag.originH + dy) * 10) / 10)
+					let nw = Math.max(2, Math.round((drag.originW + dx) * 10) / 10)
+					let nh = Math.max(1, Math.round((drag.originH + dy) * 10) / 10)
+					if (this.isSnapAlignEnabled()) {
+						const snapped = this.applySnapResize(
+							drag.originX,
+							drag.originY,
+							nw,
+							nh,
+							drag.id
+						)
+						nw = snapped.w
+						nh = snapped.h
+						this.snapGuides = snapped.guides
+					} else {
+						this.snapGuides = []
+					}
 					drag.liveX = drag.originX
 					drag.liveY = drag.originY
 					drag.liveW = nw
@@ -566,6 +635,61 @@
 							true
 						),
 					}
+				}
+			},
+			buildSnapTargetCache(excludeId) {
+				const that = this
+				const p = this.paper || {}
+				return buildSnapTargets({
+					paperW: Number(p.widthMm) || 80,
+					paperH: Number(p.heightMm) || 100,
+					marginLeft: Number(p.marginLeft) || 0,
+					marginRight: Number(p.marginRight) || 0,
+					marginTop: Number(p.marginTop) || 0,
+					marginBottom: Number(p.marginBottom) || 0,
+					elements: this.elements || [],
+					excludeId: excludeId,
+					sizeOf: function (el) {
+						return that.elSize(el)
+					},
+				})
+			},
+			guidesToView(guides) {
+				const s = this.pxPerMm
+				const paperW = this.paperW
+				const paperH = this.paperH
+				return (guides || []).map(function (g) {
+					const posPx = (Number(g.pos) || 0) * s
+					if (g.axis === 'v') {
+						return {
+							axis: 'v',
+							pos: g.pos,
+							style: 'left:' + posPx + 'px;top:0;width:1px;height:' + paperH + 'px;',
+						}
+					}
+					return {
+						axis: 'h',
+						pos: g.pos,
+						style: 'top:' + posPx + 'px;left:0;height:1px;width:' + paperW + 'px;',
+					}
+				})
+			},
+			applySnapMove(x, y, w, h, excludeId) {
+				const thr = snapThresholdMm(this.pxPerMm)
+				const result = snapMoveRect(x, y, w, h, this.buildSnapTargetCache(excludeId), thr)
+				return {
+					x: result.x,
+					y: result.y,
+					guides: this.guidesToView(result.guides),
+				}
+			},
+			applySnapResize(x, y, w, h, excludeId) {
+				const thr = snapThresholdMm(this.pxPerMm)
+				const result = snapResizeRect(x, y, w, h, this.buildSnapTargetCache(excludeId), thr)
+				return {
+					w: result.w,
+					h: result.h,
+					guides: this.guidesToView(result.guides),
 				}
 			},
 			buildTicks(maxMm, axis) {
@@ -711,6 +835,7 @@
 				const size = this.elSize(item)
 				this.cancelDragRaf()
 				this.dragLive = null
+				this.snapGuides = []
 				this.drag = {
 					id: item.id,
 					mode: mode === 'select' ? 'pending' : mode,
@@ -832,6 +957,7 @@
 				this.unbindDrag()
 				this.drag = null
 				this.dragLive = null
+				this.snapGuides = []
 				if (moved) {
 					this._suppressSelectClear = true
 					const that = this
@@ -980,6 +1106,43 @@
 		pointer-events: none;
 		box-sizing: border-box;
 		z-index: 0;
+	}
+
+	/* 纸张常驻中线（与拖拽吸附参考线无关） */
+	.paperMid {
+		position: absolute;
+		pointer-events: none;
+		z-index: 1;
+		box-sizing: border-box;
+
+		&--v {
+			width: 0;
+			border-left: 1px dashed rgba(100, 116, 139, 0.55);
+			transform: translateX(-0.5px);
+		}
+
+		&--h {
+			height: 0;
+			border-top: 1px dashed rgba(100, 116, 139, 0.55);
+			transform: translateY(-0.5px);
+		}
+	}
+
+	.snapGuide {
+		position: absolute;
+		pointer-events: none;
+		z-index: 9999;
+		background: #e11d48;
+
+		&--v {
+			width: 1px;
+			transform: translateX(-0.5px);
+		}
+
+		&--h {
+			height: 1px;
+			transform: translateY(-0.5px);
+		}
 	}
 
 	.el {

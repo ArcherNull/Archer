@@ -89,6 +89,25 @@
 				<text class="gapText-tip">默认开启（GAP-SENSE / SETFF）</text>
 			</view>
 		</view>
+
+		<view
+			:class="[
+				'checkRow',
+				snapAlignOn ? 'checkRow--active' : 'checkRow--unactive',
+			]"
+			@click="toggleSnapAlign"
+		>
+			<view
+				:class="[
+					'checkRow-box',
+					snapAlignOn ? 'checkRow-box--active' : 'checkRow-box--unactive',
+				]"
+			></view>
+			<view class="gapText">
+				<text class="gapText-title">智能参考线吸附</text>
+				<text class="gapText-tip">拖拽时对齐纸张与其他元素（默认开启）</text>
+			</view>
+		</view>
 	</view>
 </template>
 
@@ -114,6 +133,10 @@
 		computed: {
 			local() {
 				return this.paper || {}
+			},
+			/** 未设置时默认开启 */
+			snapAlignOn() {
+				return this.local.snapAlign !== false
 			},
 		},
 		methods: {
@@ -153,6 +176,9 @@
 			},
 			toggleGap() {
 				this.emitPatch({ useGapSense: !this.local.useGapSense })
+			},
+			toggleSnapAlign() {
+				this.emitPatch({ snapAlign: !this.snapAlignOn })
 			},
 		},
 	}

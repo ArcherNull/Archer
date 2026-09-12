@@ -417,6 +417,8 @@ export function createDefaultPaper() {
 		marginBottom: PAPER_LIMITS.defaultMargin,
 		marginLeft: PAPER_LIMITS.defaultMargin,
 		useGapSense: true,
+		/** 拖拽智能参考线 + 吸附，默认开启 */
+		snapAlign: true,
 	}
 }
 
