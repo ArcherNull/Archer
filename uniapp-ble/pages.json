@@ -7,12 +7,6 @@
 			}
 		},
 		{
-			"path": "pages/bluetooth/index",
-			"style": {
-				"navigationBarTitleText": "蓝牙调试"
-			}
-		},
-		{
 			"path": "pages/template/index",
 			"style": {
 				"navigationBarTitleText": "模板设计",
