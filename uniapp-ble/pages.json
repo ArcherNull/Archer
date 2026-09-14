@@ -30,6 +30,15 @@
 				"navigationBarTextStyle": "white",
 				"backgroundColor": "#faf6f0"
 			}
+		},
+		{
+			"path": "pages/wifi/index",
+			"style": {
+				"navigationBarTitleText": "WiFi调试",
+				"navigationBarBackgroundColor": "#f9ae3d",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#faf6f0"
+			}
 		}
 	],
 	"tabBar": {
@@ -45,10 +54,10 @@
 				"text": "打印"
 			},
 			{
-				"pagePath": "pages/bluetooth/index",
-				"iconPath": "static/tabbar/bluetooth.png",
-				"selectedIconPath": "static/tabbar/bluetooth-active.png",
-				"text": "蓝牙调试"
+				"pagePath": "pages/wifi/index",
+				"iconPath": "static/tabbar/wifi.png",
+				"selectedIconPath": "static/tabbar/wifi-active.png",
+				"text": "WiFi调试"
 			},
 			{
 				"pagePath": "pages/template/index",

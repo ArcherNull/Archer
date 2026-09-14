@@ -101,9 +101,12 @@
         "usingComponents" : true,
         "permission" : {
             "scope.userLocation" : {
-                "desc" : "用于搜索附近的蓝牙打印机"
+                "desc" : "用于搜索附近的蓝牙打印机与 WiFi 列表"
             }
-        }
+        },
+        "requiredPrivateInfos" : [
+            "getLocation"
+        ]
     },
     "mp-alipay" : {
         "usingComponents" : true
