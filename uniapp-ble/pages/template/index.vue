@@ -325,7 +325,7 @@
 		},
 		onShow() {
 			uni.setKeepScreenOn({ keepScreenOn: true })
-			this.initBlueTooth()
+			this.initBlueTooth({ fromLifecycle: true })
 			this.$nextTick(() => {
 				this.measureCanvasArea()
 				setTimeout(() => this.measureCanvasArea(), 100)
@@ -333,6 +333,10 @@
 		},
 		onHide() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
+			const bt = this.cusBModuleInstance
+			if (bt && bt.isAndroidPermissionRequesting && bt.isAndroidPermissionRequesting()) {
+				return
+			}
 			this.teardownBlueTooth()
 		},
 		onUnload() {
@@ -818,8 +822,9 @@
 						that.pendingClosePromise = null
 					})
 			},
-			async initBlueTooth() {
+			async initBlueTooth(options) {
 				const that = this
+				const fromLifecycle = !!(options && options.fromLifecycle)
 				if (this.pendingClosePromise) {
 					try {
 						await this.pendingClosePromise
@@ -844,6 +849,20 @@
 				}
 				if (needSetup) {
 					const instance = this.cusBModuleInstance
+					if (!fromLifecycle && instance.clearAndroidPermissionDefer) {
+						instance.clearAndroidPermissionDefer()
+					}
+					if (
+						fromLifecycle &&
+						(
+							(instance.isAndroidPermissionRequesting && instance.isAndroidPermissionRequesting()) ||
+							(instance.shouldSkipAutoBluetoothSetup && instance.shouldSkipAutoBluetoothSetup()) ||
+							instance._bluetoothModuleState === 'starting'
+						)
+					) {
+						this.bumpBtVersion()
+						return instance
+					}
 					await instance.setupBlueTooth()
 					if (instance.refreshHistoryDevicesFromTasks) {
 						instance.refreshHistoryDevicesFromTasks()

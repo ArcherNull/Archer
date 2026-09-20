@@ -71,6 +71,14 @@ export class BleBlueTooth {
 
     // 是否校验蓝牙授权（微信小程序需开启；H5 可关闭）
     _isAuthSettingBluetooth = true
+    // Android 运行时权限申请中（系统弹窗会触发页面 onHide，此期间不能拆掉蓝牙）
+    _androidPermRequesting = false
+    // 进行中的 Android 权限申请，避免并发再次弹窗
+    _androidPermPromise = null
+    // 用户刚拒绝后，onShow 不再自动拉起授权，直到手动重试
+    _deferAndroidPermissionPrompt = false
+    // 进行中的蓝牙启动，避免授权过程中再次进入 setup
+    _setupBlueToothPromise = null
     // 蓝牙模块状态， 未启动 notStarted ;  已启动 started ; 正在启动  starting
     _bluetoothModuleState = BLUETOOTH_MODULE_STATE.NOT_STARTED
     // 蓝牙模块搜索蓝牙设备状态， 未搜索 notSearched ;  已搜索 searched ; 正在搜索  searching
@@ -566,6 +574,21 @@ export class BleBlueTooth {
 
     // 启动蓝牙
     async setupBlueTooth({ silent = false } = {}) {
+        if (this._setupBlueToothPromise) {
+            return this._setupBlueToothPromise
+        }
+        const task = this._setupBlueToothTask({ silent })
+        this._setupBlueToothPromise = task
+        try {
+            return await task
+        } finally {
+            if (this._setupBlueToothPromise === task) {
+                this._setupBlueToothPromise = null
+            }
+        }
+    }
+
+    async _setupBlueToothTask({ silent = false } = {}) {
         const that = this
         try {
             if (that._bluetoothModuleState === 'starting') {
@@ -1180,6 +1203,190 @@ export class BleBlueTooth {
         })
     }
 
+    /** 系统授权框展示中。页面 onHide 期间不要 teardown，否则会立刻再次申请 */
+    isAndroidPermissionRequesting() {
+        return !!this._androidPermRequesting
+    }
+
+    /** 用户已拒绝且未手动重试时，onShow 不要自动再弹授权 */
+    shouldSkipAutoBluetoothSetup() {
+        return !!this._deferAndroidPermissionPrompt
+    }
+
+    clearAndroidPermissionDefer() {
+        this._deferAndroidPermissionPrompt = false
+    }
+
+    _androidSdkInt() {
+        // #ifdef APP-PLUS
+        try {
+            const VERSION = plus.android.importClass('android.os.Build$VERSION')
+            const sdk = Number(VERSION && VERSION.SDK_INT)
+            if (sdk > 0) return sdk
+        } catch (e) {}
+        // #endif
+        try {
+            const info = uni.getSystemInfoSync() || {}
+            const major = parseInt(String(info.osVersion || ''), 10)
+            if (major >= 12) return 31
+            if (major > 0) return 23
+        } catch (e) {}
+        return 23
+    }
+
+    _isAndroidAppRuntime() {
+        // #ifndef APP-PLUS
+        return false
+        // #endif
+        // #ifdef APP-PLUS
+        try {
+            if (typeof plus === 'undefined' || !plus.android) return false
+            const info = uni.getSystemInfoSync() || {}
+            const platform = String(info.platform || info.osName || '').toLowerCase()
+            return platform === 'android'
+        } catch (e) {
+            return false
+        }
+        // #endif
+    }
+
+    _androidRuntimePermissions() {
+        if (this._androidSdkInt() >= 31) {
+            return [
+                'android.permission.BLUETOOTH_SCAN',
+                'android.permission.BLUETOOTH_CONNECT',
+            ]
+        }
+        return ['android.permission.ACCESS_FINE_LOCATION']
+    }
+
+    _isAndroidPermissionGranted(permission) {
+        // #ifdef APP-PLUS
+        try {
+            const main = plus.android.runtimeMainActivity()
+            const result = plus.android.invoke(main, 'checkSelfPermission', permission)
+            return Number(result) === 0
+        } catch (e) {
+            return false
+        }
+        // #endif
+        // #ifndef APP-PLUS
+        return true
+        // #endif
+    }
+
+    _openAndroidAppSettings() {
+        // #ifdef APP-PLUS
+        try {
+            const Intent = plus.android.importClass('android.content.Intent')
+            const Settings = plus.android.importClass('android.provider.Settings')
+            const Uri = plus.android.importClass('android.net.Uri')
+            const main = plus.android.runtimeMainActivity()
+            const intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.setData(Uri.fromParts('package', main.getPackageName(), null))
+            main.startActivity(intent)
+        } catch (e) {
+            this.log('openAndroidAppSettings fail', e)
+        }
+        // #endif
+    }
+
+    /**
+     * Android 运行时权限：已授权直接通过；按 API 只申请当前系统需要的项。
+     * 不申请 BLUETOOTH / BLUETOOTH_ADMIN（安装期权限，动态申请会反复弹窗）。
+     */
+    requestAppAndroidBluetoothPermissions() {
+        const that = this
+        // #ifndef APP-PLUS
+        return Promise.resolve(true)
+        // #endif
+        // #ifdef APP-PLUS
+        if (!that._isAndroidAppRuntime()) {
+            return Promise.resolve(true)
+        }
+        if (that._androidPermPromise) {
+            return that._androidPermPromise
+        }
+        const task = that._requestAppAndroidBluetoothPermissionsInner()
+        that._androidPermPromise = task
+        return task.then(
+            (value) => {
+                if (that._androidPermPromise === task) that._androidPermPromise = null
+                return value
+            },
+            (err) => {
+                if (that._androidPermPromise === task) that._androidPermPromise = null
+                throw err
+            }
+        )
+        // #endif
+    }
+
+    _requestAppAndroidBluetoothPermissionsInner() {
+        const that = this
+        return new Promise((resolve, reject) => {
+            // #ifndef APP-PLUS
+            resolve(true)
+            // #endif
+            // #ifdef APP-PLUS
+            try {
+                if (that._androidSdkInt() < 23) {
+                    that._deferAndroidPermissionPrompt = false
+                    resolve(true)
+                    return
+                }
+                const required = that._androidRuntimePermissions()
+                const missing = required.filter((permission) => !that._isAndroidPermissionGranted(permission))
+                if (!missing.length) {
+                    that._deferAndroidPermissionPrompt = false
+                    resolve(true)
+                    return
+                }
+                that._androidPermRequesting = true
+                plus.android.requestPermissions(
+                    missing,
+                    (result) => {
+                        that._androidPermRequesting = false
+                        const stillMissing = missing.filter((permission) => !that._isAndroidPermissionGranted(permission))
+                        if (!stillMissing.length) {
+                            that._deferAndroidPermissionPrompt = false
+                            resolve(true)
+                            return
+                        }
+                        const deniedAlways = ((result && result.deniedAlways) || []).filter(
+                            (permission) => stillMissing.indexOf(permission) !== -1
+                        )
+                        that._deferAndroidPermissionPrompt = true
+                        if (deniedAlways.length) {
+                            showModal({
+                                title: '需要蓝牙权限',
+                                content: '蓝牙权限已被关闭，请到系统设置中允许后再试',
+                            }).then((modalRes) => {
+                                if (modalRes && modalRes.confirm) {
+                                    that._deferAndroidPermissionPrompt = false
+                                    that._openAndroidAppSettings()
+                                }
+                                reject(new Error('蓝牙授权失败，请在设置中开启权限后重试'))
+                            }).catch(() => reject(new Error('蓝牙授权失败')))
+                            return
+                        }
+                        reject(new Error('蓝牙授权失败'))
+                    },
+                    () => {
+                        that._androidPermRequesting = false
+                        that._deferAndroidPermissionPrompt = true
+                        reject(new Error('蓝牙授权失败'))
+                    }
+                )
+            } catch (e) {
+                that._androidPermRequesting = false
+                that._deferAndroidPermissionPrompt = true
+                reject(e instanceof Error ? e : new Error('蓝牙授权失败'))
+            }
+            // #endif
+        })
+    }
+
     // 蓝牙是否授权
     checkAndRequestPermissions() {
         const that = this
@@ -1258,28 +1465,7 @@ export class BleBlueTooth {
             // #endif
 
             // #ifdef APP-PLUS
-            const permissions = [
-                'android.permission.BLUETOOTH',
-                'android.permission.BLUETOOTH_ADMIN',
-                'android.permission.BLUETOOTH_SCAN',
-                'android.permission.BLUETOOTH_CONNECT',
-                'android.permission.ACCESS_FINE_LOCATION',
-            ]
-            if (typeof uni.requestAndroidPermissions === 'function') {
-                uni.requestAndroidPermissions({
-                    permissions,
-                    success(res) {
-                        if (res.all === true) {
-                            resolve(true)
-                        } else {
-                            reject(new Error('蓝牙授权失败'))
-                        }
-                    },
-                    fail: () => reject(new Error('蓝牙授权失败'))
-                })
-            } else {
-                resolve(true)
-            }
+            that.requestAppAndroidBluetoothPermissions().then(resolve).catch(reject)
             // #endif
 
             // #ifdef H5

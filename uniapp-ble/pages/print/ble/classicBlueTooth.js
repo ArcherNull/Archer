@@ -98,48 +98,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 	}
 
 	checkAndRequestPermissions() {
-		const that = this
-		return new Promise((resolve, reject) => {
-			// #ifdef APP-PLUS
-			try {
-				that.ensureNativeReady()
-			} catch (e) {
-				reject(e)
-				return
-			}
-			const permissions = [
-				'android.permission.ACCESS_FINE_LOCATION',
-				'android.permission.ACCESS_COARSE_LOCATION',
-				'android.permission.BLUETOOTH_SCAN',
-				'android.permission.BLUETOOTH_CONNECT',
-			]
-			plus.android.requestPermissions(
-				permissions,
-				(result) => {
-					const denied = (result && result.deniedAlways) || []
-					const deniedPresent = (result && result.deniedPresent) || []
-					if ((denied && denied.length) || (deniedPresent && deniedPresent.length)) {
-						showModal({
-							title: '需要蓝牙权限',
-							content: '请在系统设置中允许蓝牙与定位权限，用于搜索并连接经典蓝牙打印机',
-						}).then((modalRes) => {
-							if (modalRes && modalRes.confirm) {
-								reject(new Error('蓝牙授权失败，请在设置中开启权限后重试'))
-							} else {
-								reject(new Error('蓝牙授权失败'))
-							}
-						}).catch(() => reject(new Error('蓝牙授权失败')))
-						return
-					}
-					resolve(true)
-				},
-				() => reject(new Error('蓝牙授权失败'))
-			)
-			// #endif
-			// #ifndef APP-PLUS
-			resolve(true)
-			// #endif
-		})
+		return this.requestAppAndroidBluetoothPermissions()
 	}
 
 	/** 请求系统打开蓝牙（经典蓝牙） */
