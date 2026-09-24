@@ -14,47 +14,47 @@
 				@change="onElementChange"
 				@settings="onOpenElementSettings"
 			/>
+		</view>
 
-			<!-- 右下角（底部操作栏上方）：拖拽 / 缩放 / 清空 / 折叠 -->
+		<!-- 浮动工具栏：fixed 相对视口，可拖满画布区（含纸张两侧空白） -->
+		<view
+			v-if="!floatOpsCollapsed"
+			class="floatOps"
+			:style="floatOpsStyle"
+		>
 			<view
-				v-if="!floatOpsCollapsed"
-				class="floatOps"
-				:style="floatOpsStyle"
+				class="floatOps-btn floatOps-btn--drag"
+				@touchstart.stop.prevent="onFloatOpsDragStart"
 				@touchmove.stop.prevent="onFloatOpsTouchMove"
-				@touchend="onFloatOpsTouchEnd"
-				@touchcancel="onFloatOpsTouchEnd"
+				@touchend.stop="onFloatOpsTouchEnd"
+				@touchcancel.stop="onFloatOpsTouchEnd"
 			>
-				<view
-					class="floatOps-btn floatOps-btn--drag"
-					@touchstart.stop="onFloatOpsDragStart"
-				>
-					<image class="floatOps-img" :src="icons.move" mode="aspectFit" />
-				</view>
-				<view class="floatOps-btn" @click="onZoomOut">
-					<image class="floatOps-img" :src="icons.zoomOut" mode="aspectFit" />
-				</view>
-				<view class="floatOps-zoom" @click="onZoomReset">{{ zoomPercent }}</view>
-				<view class="floatOps-btn" @click="onZoomIn">
-					<image class="floatOps-img" :src="icons.zoomIn" mode="aspectFit" />
-				</view>
-				<view
-					:class="['floatOps-btn', canUndo ? '' : 'floatOps-btn--disabled']"
-					@click="onUndo"
-				>
-					<image class="floatOps-img" :src="icons.undo" mode="aspectFit" />
-				</view>
-				<view
-					:class="['floatOps-btn', canRedo ? '' : 'floatOps-btn--disabled']"
-					@click="onRedo"
-				>
-					<image class="floatOps-img" :src="icons.redo" mode="aspectFit" />
-				</view>
-				<view class="floatOps-btn" @click="onClearCanvas">
-					<image class="floatOps-img" :src="icons.delete" mode="aspectFit" />
-				</view>
-				<view class="floatOps-btn floatOps-btn--fold" @click="onCollapseFloatOps">
-					<image class="floatOps-img" :src="icons.fold" mode="aspectFit" />
-				</view>
+				<image class="floatOps-img" :src="icons.move" mode="aspectFit" />
+			</view>
+			<view class="floatOps-btn" @click="onZoomOut">
+				<image class="floatOps-img" :src="icons.zoomOut" mode="aspectFit" />
+			</view>
+			<view class="floatOps-zoom" @click="onZoomReset">{{ zoomPercent }}</view>
+			<view class="floatOps-btn" @click="onZoomIn">
+				<image class="floatOps-img" :src="icons.zoomIn" mode="aspectFit" />
+			</view>
+			<view
+				:class="['floatOps-btn', canUndo ? '' : 'floatOps-btn--disabled']"
+				@click="onUndo"
+			>
+				<image class="floatOps-img" :src="icons.undo" mode="aspectFit" />
+			</view>
+			<view
+				:class="['floatOps-btn', canRedo ? '' : 'floatOps-btn--disabled']"
+				@click="onRedo"
+			>
+				<image class="floatOps-img" :src="icons.redo" mode="aspectFit" />
+			</view>
+			<view class="floatOps-btn" @click="onClearCanvas">
+				<image class="floatOps-img" :src="icons.delete" mode="aspectFit" />
+			</view>
+			<view class="floatOps-btn floatOps-btn--fold" @click="onCollapseFloatOps">
+				<image class="floatOps-img" :src="icons.fold" mode="aspectFit" />
 			</view>
 		</view>
 
@@ -255,8 +255,12 @@
 
 				floatOpsLeft: null,
 				floatOpsTop: null,
+				floatOpsW: 0,
+				floatOpsH: 0,
 				floatOpsDrag: null,
 				floatOpsCollapsed: false,
+				/** 画布区视口矩形，浮动工具拖拽边界用 */
+				canvasAreaRect: null,
 				icons: TEMPLATE_ICONS,
 				/** 画布可视高度（px），由 .canvasArea 实测，避免与底栏之间留白 */
 				canvasViewportH: 0,
@@ -352,10 +356,94 @@
 					.select('.canvasArea')
 					.boundingClientRect(function (rect) {
 						if (!rect || !(rect.height > 0)) return
+						that.canvasAreaRect = {
+							left: rect.left,
+							top: rect.top,
+							width: rect.width,
+							height: rect.height,
+							right: rect.right,
+							bottom: rect.bottom,
+						}
 						const h = Math.floor(rect.height)
 						if (h !== that.canvasViewportH) that.canvasViewportH = h
+						that.measureFloatOpsSize()
 					})
 					.exec()
+			},
+			measureFloatOpsSize() {
+				if (this.floatOpsCollapsed) return
+				const that = this
+				this.$nextTick(function () {
+					uni
+						.createSelectorQuery()
+						.in(that)
+						.select('.floatOps')
+						.boundingClientRect(function (rect) {
+							if (rect) {
+								if (rect.width > 0) that.floatOpsW = rect.width
+								if (rect.height > 0) that.floatOpsH = rect.height
+							}
+							// 初定位：贴画布区右下（画布已在底栏上方），勿沿用错误的 fixed bottom
+							if (that.floatOpsLeft == null || that.floatOpsTop == null) {
+								that.applyDefaultFloatOpsPos()
+							}
+						})
+						.exec()
+				})
+			},
+			applyDefaultFloatOpsPos() {
+				const area = this.canvasAreaRect
+				if (!area || !(area.width > 0)) return
+				const pad = 8
+				const barW = this.floatOpsW > 0 ? this.floatOpsW : 320
+				const barH = this.floatOpsH > 0 ? this.floatOpsH : 56
+				const next = this.clampFloatOpsPos(
+					area.left + area.width - barW - pad,
+					area.top + area.height - barH - pad
+				)
+				this.floatOpsLeft = next.left
+				this.floatOpsTop = next.top
+			},
+			clampFloatOpsPos(left, top) {
+				const pad = 8
+				const area = this.canvasAreaRect
+				const barW = this.floatOpsW > 0 ? this.floatOpsW : 320
+				const barH = this.floatOpsH > 0 ? this.floatOpsH : 56
+				let minL = pad
+				let minT = pad
+				let maxL
+				let maxT
+				if (area && area.width > 0) {
+					minL = area.left + pad
+					minT = area.top + pad
+					maxL = area.left + area.width - barW - pad
+					maxT = area.top + area.height - barH - pad
+				} else {
+					try {
+						const sys = getWindowInfoSafe()
+						maxL = (sys.windowWidth || 375) - barW - pad
+						maxT = (sys.windowHeight || 667) - barH - pad
+					} catch (err) {
+						maxL = 375 - barW
+						maxT = 667 - barH
+					}
+				}
+				if (maxL < minL) maxL = minL
+				if (maxT < minT) maxT = minT
+				return {
+					left: Math.max(minL, Math.min(maxL, left)),
+					top: Math.max(minT, Math.min(maxT, top)),
+				}
+			},
+			beginFloatOpsDrag(touch, originLeft, originTop) {
+				this.floatOpsLeft = originLeft
+				this.floatOpsTop = originTop
+				this.floatOpsDrag = {
+					startX: touch.x,
+					startY: touch.y,
+					originLeft: originLeft,
+					originTop: originTop,
+				}
 			},
 			cloneCurrentDesign() {
 				return cloneDesignState(this.paper, this.elements)
@@ -491,30 +579,22 @@
 					(e.changedTouches && e.changedTouches[0]) ||
 					null
 				if (!t) return null
-				return {
-					x: t.clientX != null ? t.clientX : t.pageX,
-					y: t.clientY != null ? t.clientY : t.pageY,
-				}
+				const x =
+					t.clientX != null ? t.clientX : t.pageX != null ? t.pageX : t.x
+				const y =
+					t.clientY != null ? t.clientY : t.pageY != null ? t.pageY : t.y
+				if (x == null || y == null) return null
+				return { x: x, y: y }
 			},
 			onFloatOpsDragStart(e) {
 				const touch = this.getTouchPoint(e)
 				if (!touch) return
-				const that = this
-				const query = uni.createSelectorQuery().in(this)
-				query
-					.select('.floatOps')
-					.boundingClientRect(function (rect) {
-						if (!rect) return
-						that.floatOpsLeft = rect.left
-						that.floatOpsTop = rect.top
-						that.floatOpsDrag = {
-							startX: touch.x,
-							startY: touch.y,
-							originLeft: rect.left,
-							originTop: rect.top,
-						}
-					})
-					.exec()
+				// 同步开拖：已有定位直接用；否则贴画布右下后开拖
+				if (this.floatOpsLeft == null || this.floatOpsTop == null) {
+					this.applyDefaultFloatOpsPos()
+				}
+				if (this.floatOpsLeft == null || this.floatOpsTop == null) return
+				this.beginFloatOpsDrag(touch, this.floatOpsLeft, this.floatOpsTop)
 			},
 			onFloatOpsTouchMove(e) {
 				if (!this.floatOpsDrag) return
@@ -522,17 +602,12 @@
 				if (!touch) return
 				const dx = touch.x - this.floatOpsDrag.startX
 				const dy = touch.y - this.floatOpsDrag.startY
-				let left = this.floatOpsDrag.originLeft + dx
-				let top = this.floatOpsDrag.originTop + dy
-				try {
-					const sys = getWindowInfoSafe()
-					const maxL = Math.max(0, (sys.windowWidth || 375) - 320)
-					const maxT = Math.max(0, (sys.windowHeight || 667) - 80)
-					left = Math.max(8, Math.min(maxL, left))
-					top = Math.max(8, Math.min(maxT, top))
-				} catch (err) {}
-				this.floatOpsLeft = left
-				this.floatOpsTop = top
+				const next = this.clampFloatOpsPos(
+					this.floatOpsDrag.originLeft + dx,
+					this.floatOpsDrag.originTop + dy
+				)
+				this.floatOpsLeft = next.left
+				this.floatOpsTop = next.top
 			},
 			onFloatOpsTouchEnd() {
 				this.floatOpsDrag = null
@@ -543,6 +618,14 @@
 			},
 			onExpandFloatOps() {
 				this.floatOpsCollapsed = false
+				// 展开时若无自定义位置，重新贴到画布右下
+				this.$nextTick(() => {
+					if (this.floatOpsLeft == null || this.floatOpsTop == null) {
+						this.measureCanvasArea()
+					} else {
+						this.measureFloatOpsSize()
+					}
+				})
 			},
 
 			onZoomIn() {
@@ -1119,10 +1202,12 @@
 	}
 
 	.floatOps {
-		position: absolute;
+		position: fixed;
 		right: 20rpx;
-		bottom: 16rpx;
+		/* JS 实测前的兜底：双行底栏上方，避免被挡住 */
+		bottom: calc(240rpx + env(safe-area-inset-bottom));
 		top: auto;
+		left: auto;
 		z-index: 30;
 		display: flex;
 		align-items: center;
@@ -1132,6 +1217,7 @@
 		border: 1rpx solid $pr-border-color;
 		border-radius: 16rpx;
 		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+		touch-action: none;
 
 		&-btn {
 			width: 56rpx;
