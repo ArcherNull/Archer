@@ -348,17 +348,31 @@
 		},
 		onHide() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
-			const bt = this.cusBModuleInstance
-			if (bt && bt.isAndroidPermissionRequesting && bt.isAndroidPermissionRequesting()) {
-				return
-			}
+			if (this.shouldSkipBluetoothTeardown()) return
 			this.teardownBlueTooth()
 		},
 		onUnload() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
+			if (this.shouldSkipBluetoothTeardown()) return
 			this.teardownBlueTooth()
 		},
 		methods: {
+			/** 安卓 App：生命周期不关蓝牙（切后台/系统弹窗/页切换都会触发 onHide） */
+			shouldSkipBluetoothTeardown() {
+				// #ifdef APP-PLUS
+				try {
+					const info = getSystemInfoCompat() || {}
+					const osName = String(info.osName || '').toLowerCase()
+					const platform = String(info.platform || '').toLowerCase()
+					if (osName === 'android' || platform === 'android') return true
+				} catch (e) {}
+				// #endif
+				const bt = this.cusBModuleInstance
+				if (bt && bt.isAndroidPermissionRequesting && bt.isAndroidPermissionRequesting()) {
+					return true
+				}
+				return false
+			},
 			initDeviceInfo() {
 				try {
 					const systemInfo = getSystemInfoCompat()

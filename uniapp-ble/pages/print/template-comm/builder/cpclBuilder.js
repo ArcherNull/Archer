@@ -235,8 +235,20 @@ export function createCpclBuilder(options = {}) {
 			if (brand === 'HM') {
 				if (useGapSense) {
 					// SETFF 5 0：搜索间隙步长 5dot，精细寻缝并避免额外走纸
+					
+					// #ifndef APP-PLUS
 					pushLine('SETFF 5 0')
 					pushOp({ type: 'setff', maxFeed: 5, skip: 0 })
+					// #endif
+
+					// #ifdef APP-PLUS
+					// SETFF max-feed skip：FORM 后最多前进 max-feed 寻缝
+					// max-feed=120dot≈15mm@8dot/mm，适配快递标签页高与缝隙偏差；
+					// 勿用 SETFF 5（仅约 0.6mm），页高稍偏就会寻缝失败表现为「间隙不生效」
+					// skip=0：找到缝后不再额外走纸（与历史可用值一致）
+					pushLine('SETFF 120 0')
+					pushOp({ type: 'setff', maxFeed: 120, skip: 0 })
+					// #endif
 					pushLine('FORM')
 					pushOp({ type: 'form' })
 				}

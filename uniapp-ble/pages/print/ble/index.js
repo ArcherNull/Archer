@@ -1,6 +1,10 @@
 import { BleBlueTooth } from './bleBlueTooth.js'
 // #ifdef APP-PLUS
 import { ClassicBlueTooth } from './classicBlueTooth.js'
+import {
+	HarmonyClassicBlueTooth,
+	isHuaweiHarmonyDevice,
+} from './harmonyClassicBlueTooth.js'
 // #endif
 
 /**
@@ -12,7 +16,8 @@ export function shouldUseClassicBluetooth() {
 	try {
 		const info = uni.getSystemInfoSync() || {}
 		const platform = String(info.platform || info.osName || '').toLowerCase()
-		return platform === 'android'
+		// 鸿蒙兼容层可能上报 harmony / android
+		return platform === 'android' || platform.includes('harmony')
 	} catch (e) {
 		return false
 	}
@@ -23,12 +28,35 @@ export function shouldUseClassicBluetooth() {
 }
 
 /**
- * 按平台创建适配器：微信小程序 BLE，Android App 经典蓝牙 SPP
+ * 是否使用华为/鸿蒙优化版经典蓝牙
+ */
+export function shouldUseHarmonyClassicBluetooth() {
+	// #ifdef APP-PLUS
+	try {
+		const info = uni.getSystemInfoSync() || {}
+		return isHuaweiHarmonyDevice(info)
+	} catch (e) {
+		return false
+	}
+	// #endif
+	// #ifndef APP-PLUS
+	return false
+	// #endif
+}
+
+/**
+ * 按平台创建适配器：
+ * - 微信小程序：BLE
+ * - 华为/鸿蒙 App：HarmonyClassicBlueTooth（经典蓝牙优化）
+ * - 其它 Android App：ClassicBlueTooth
  * @returns {BleBlueTooth}
  */
 export function createAdapterByPlatform() {
 	// #ifdef APP-PLUS
 	if (shouldUseClassicBluetooth()) {
+		if (shouldUseHarmonyClassicBluetooth()) {
+			return new HarmonyClassicBlueTooth()
+		}
 		return new ClassicBlueTooth()
 	}
 	// #endif
@@ -37,7 +65,9 @@ export function createAdapterByPlatform() {
 
 /**
  * 蓝牙打印模块入口（全局唯一适配器实例）
- * 微信小程序：BleBlueTooth；Android App：ClassicBlueTooth
+ * 微信小程序：BleBlueTooth
+ * 华为/鸿蒙 App：HarmonyClassicBlueTooth
+ * 其它 Android App：ClassicBlueTooth
  */
 export class BluetoothPrintModule {
 	constructor() {
@@ -82,6 +112,7 @@ export function createBluetoothAdapter() {
 export { BleBlueTooth }
 // #ifdef APP-PLUS
 export { ClassicBlueTooth }
+export { HarmonyClassicBlueTooth, isHuaweiHarmonyDevice }
 // #endif
 
 export {

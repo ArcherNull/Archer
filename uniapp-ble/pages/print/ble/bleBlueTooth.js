@@ -605,6 +605,8 @@ export class BleBlueTooth {
             // 微信：先隐私协议，再蓝牙授权，最后打开适配器
             await that.ensurePrivacyAuthorize()
             await that.checkAndRequestPermissions()
+            // App 经典蓝牙：小米等机型未开定位时 startDiscovery 会直接失败
+            await that.ensureAndroidLocationForScan()
             await that.openBluetoothAdapter()
             const aRes = await that.getBluetoothAdapterState()
             that._bluetoothModuleState = 'started'
@@ -727,7 +729,8 @@ export class BleBlueTooth {
     // findResultType 找到结果类型 ， refresh 表示重新刷新，continue 表示在原有的基础上查找
     async searchNearByBlueTooth(type = "finded", findResultType = 'refresh') {
         const that = this
-        const searchTime = 6
+        // 经典蓝牙一轮扫描约 12s；只等 6s 就 cancel 会漏掉晚响应的打印机（系统蓝牙能搜到、App 搜不到）
+        const searchTime = that._btMode === 'classic' ? 12 : 6
         try {
             that._continuousDiscovering = false
             if (findResultType === 'refresh') {
@@ -1243,21 +1246,106 @@ export class BleBlueTooth {
             if (typeof plus === 'undefined' || !plus.android) return false
             const info = uni.getSystemInfoSync() || {}
             const platform = String(info.platform || info.osName || '').toLowerCase()
-            return platform === 'android'
+            // 鸿蒙兼容层 / 纯血常上报 harmony，但仍走 Android 权限与经典蓝牙 API
+            // 若误判为非 Android，会跳过授权 → 经典蓝牙搜不到 / 连不上
+            return (
+                platform === 'android' ||
+                platform.includes('harmony') ||
+                platform === 'app'
+            )
         } catch (e) {
-            return false
+            return !!(typeof plus !== 'undefined' && plus.android)
         }
         // #endif
     }
 
+    /**
+     * 经典蓝牙 startDiscovery / BLE 扫描所需运行时权限。
+     * 小米等机型在 Android 12+ 仍强制要求定位权限，且系统定位开关必须打开。
+     */
     _androidRuntimePermissions() {
+        const list = [
+            'android.permission.ACCESS_FINE_LOCATION',
+            'android.permission.ACCESS_COARSE_LOCATION',
+        ]
         if (this._androidSdkInt() >= 31) {
-            return [
+            list.push(
                 'android.permission.BLUETOOTH_SCAN',
-                'android.permission.BLUETOOTH_CONNECT',
-            ]
+                'android.permission.BLUETOOTH_CONNECT'
+            )
         }
-        return ['android.permission.ACCESS_FINE_LOCATION']
+        return list
+    }
+
+    /** 系统定位服务是否已开启（经典蓝牙搜索强依赖，小米机尤甚） */
+    _isAndroidLocationServiceEnabled() {
+        // #ifdef APP-PLUS
+        try {
+            if (!this._isAndroidAppRuntime()) return true
+            const main = plus.android.runtimeMainActivity()
+            const Context = plus.android.importClass('android.content.Context')
+            const LocationManager = plus.android.importClass('android.location.LocationManager')
+            const lm = main.getSystemService(Context.LOCATION_SERVICE)
+            plus.android.importClass(lm)
+            try {
+                if (typeof lm.isLocationEnabled === 'function' && lm.isLocationEnabled()) {
+                    return true
+                }
+            } catch (e) {}
+            return !!(
+                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            )
+        } catch (e) {
+            this.log('check location service fail', e)
+            return true
+        }
+        // #endif
+        // #ifndef APP-PLUS
+        return true
+        // #endif
+    }
+
+    _openAndroidLocationSettings() {
+        // #ifdef APP-PLUS
+        try {
+            const Intent = plus.android.importClass('android.content.Intent')
+            const Settings = plus.android.importClass('android.provider.Settings')
+            const main = plus.android.runtimeMainActivity()
+            main.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        } catch (e) {
+            this.log('openLocationSettings fail', e)
+            this._openAndroidAppSettings()
+        }
+        // #endif
+    }
+
+    /**
+     * 经典蓝牙搜索前：确认定位服务已开。
+     * 未开启时引导去系统设置（小米上未开定位时 startDiscovery 会直接返回 false）。
+     */
+    ensureAndroidLocationForScan() {
+        const that = this
+        // #ifndef APP-PLUS
+        return Promise.resolve(true)
+        // #endif
+        // #ifdef APP-PLUS
+        if (!that._isAndroidAppRuntime()) {
+            return Promise.resolve(true)
+        }
+        if (that._isAndroidLocationServiceEnabled()) {
+            return Promise.resolve(true)
+        }
+        return showModal({
+            title: '需要开启定位',
+            content: '搜索附近蓝牙需要打开手机定位服务（小米/华为等机型强制要求），是否前往开启？',
+        }).then((modalRes) => {
+            if (modalRes && modalRes.confirm) {
+                that._openAndroidLocationSettings()
+            }
+            throw new Error('请先打开手机定位服务后再搜索蓝牙')
+        })
+        // #endif
     }
 
     _isAndroidPermissionGranted(permission) {
@@ -1359,8 +1447,8 @@ export class BleBlueTooth {
                         that._deferAndroidPermissionPrompt = true
                         if (deniedAlways.length) {
                             showModal({
-                                title: '需要蓝牙权限',
-                                content: '蓝牙权限已被关闭，请到系统设置中允许后再试',
+                                title: '需要蓝牙与位置权限',
+                                content: '请到系统设置中允许「蓝牙」和「位置信息」权限后再试（小米请同时打开定位开关）',
                             }).then((modalRes) => {
                                 if (modalRes && modalRes.confirm) {
                                     that._deferAndroidPermissionPrompt = false
@@ -1370,7 +1458,7 @@ export class BleBlueTooth {
                             }).catch(() => reject(new Error('蓝牙授权失败')))
                             return
                         }
-                        reject(new Error('蓝牙授权失败'))
+                        reject(new Error('请允许蓝牙与位置权限后再搜索'))
                     },
                     () => {
                         that._androidPermRequesting = false

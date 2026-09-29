@@ -620,11 +620,15 @@
 			if (bt && bt.isAndroidPermissionRequesting && bt.isAndroidPermissionRequesting()) {
 				return
 			}
+			// #ifndef APP-PLUS
 			this.teardownBlueTooth()
+			// #endif
 		},
 		onUnload() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
+			// #ifndef APP-PLUS
 			this.teardownBlueTooth()
+			// #endif
 		},
 		methods: {
 			resolveDeviceName(systemInfo) {
@@ -1036,7 +1040,7 @@
 				}
 			},
 
-			// ─── 蓝牙（对齐 newPrint：进入启动并连历史，离开关闭） ───
+			// ─── 蓝牙（进入启动；小程序自动连历史，APK 仅加载历史不自动重连） ───
 			teardownBlueTooth() {
 				const bt = this.cusBModuleInstance
 				if (!bt) return
@@ -1126,7 +1130,13 @@
 					if (instance.refreshHistoryDevicesFromTasks) {
 						instance.refreshHistoryDevicesFromTasks()
 					}
+					// #ifndef APP-PLUS
+					// 小程序等：进入页面自动连历史打印机
 					await instance.connectHistoryPrintDevices()
+					// #endif
+					// #ifdef APP-PLUS
+					// 安卓 APK：保留连接历史列表，进入界面不自动重连（需用户手动连接）
+					// #endif
 				}
 				this.bumpBtVersion()
 				return this.cusBModuleInstance

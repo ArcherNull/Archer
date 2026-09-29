@@ -164,7 +164,7 @@
 	import CommandPopup from '../print/components/CommandPopup.vue'
 	import { getBluetoothAdapter } from '../print/ble/index.js'
 	import { resolvePrinterBrandInfo } from '../print/ble/config.js'
-	import { showMsg, showModal, isNotEmptyArr, getWindowInfoSafe } from '../print/comm/utils.js'
+	import { showMsg, showModal, isNotEmptyArr, getWindowInfoSafe, getSystemInfoCompat } from '../print/comm/utils.js'
 
 	import CanvasBoard from './components/CanvasBoard.vue'
 	import BottomDock from './components/BottomDock.vue'
@@ -337,17 +337,35 @@
 		},
 		onHide() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
-			const bt = this.cusBModuleInstance
-			if (bt && bt.isAndroidPermissionRequesting && bt.isAndroidPermissionRequesting()) {
-				return
-			}
+			if (this.shouldSkipBluetoothTeardown()) return
+			// #ifndef APP-PLUS
 			this.teardownBlueTooth()
+			// #endif
 		},
 		onUnload() {
 			uni.setKeepScreenOn({ keepScreenOn: false })
+			if (this.shouldSkipBluetoothTeardown()) return
+			// #ifndef APP-PLUS
 			this.teardownBlueTooth()
+			// #endif
 		},
 		methods: {
+			/** 安卓 App：生命周期不关蓝牙（切后台/系统弹窗/页切换都会触发 onHide） */
+			shouldSkipBluetoothTeardown() {
+				// #ifdef APP-PLUS
+				try {
+					const info = getSystemInfoCompat() || {}
+					const osName = String(info.osName || '').toLowerCase()
+					const platform = String(info.platform || '').toLowerCase()
+					if (osName === 'android' || platform === 'android') return true
+				} catch (e) {}
+				// #endif
+				const bt = this.cusBModuleInstance
+				if (bt && bt.isAndroidPermissionRequesting && bt.isAndroidPermissionRequesting()) {
+					return true
+				}
+				return false
+			},
 			measureCanvasArea() {
 				const that = this
 				uni

@@ -2,7 +2,12 @@
 	<view class="page">
 		<view class="section">
 			<view class="section-title">WiFi 连接</view>
-			<view class="section-desc">填写打印机热点或局域网 SSID / 密码后连接</view>
+			<!-- #ifdef APP-PLUS -->
+			<view class="section-desc">Android App：扫网需定位权限；Android 10+ 连接热点会弹出系统确认框。连上同一局域网后可用下方 TCP 发指令。</view>
+			<!-- #endif -->
+			<!-- #ifndef APP-PLUS -->
+			<view class="section-desc">填写打印机热点或局域网 SSID / 密码后连接（微信小程序 WiFi API）</view>
+			<!-- #endif -->
 
 			<view class="field">
 				<text class="field-label">SSID</text>
@@ -30,6 +35,9 @@
 				<button class="btn btn--primary" :loading="wifiBusy" :disabled="wifiBusy || !ssid" @click="onConnectWifi">连接 WiFi</button>
 			</view>
 			<button class="btn btn--block" :loading="wifiBusy" :disabled="wifiBusy" @click="onGetConnectedWifi">读取当前已连 WiFi</button>
+			<!-- #ifdef APP-PLUS -->
+			<button class="btn btn--block" :disabled="wifiBusy" @click="onOpenSystemWifi">打开系统 WiFi 设置</button>
+			<!-- #endif -->
 
 			<view v-if="connectedWifiText" class="status-box">
 				<text class="status-label">当前连接</text>
@@ -56,7 +64,12 @@
 					</view>
 					<text class="wifi-item-pick">选用</text>
 				</view>
+				<!-- #ifdef APP-PLUS -->
+				<view v-if="!wifiList.length" class="empty">暂无列表：请允许定位权限并打开定位开关后再扫描</view>
+				<!-- #endif -->
+				<!-- #ifndef APP-PLUS -->
 				<view v-if="!wifiList.length" class="empty">暂无列表，请先扫描（Android 需定位权限）</view>
+				<!-- #endif -->
 			</scroll-view>
 		</view>
 
@@ -192,7 +205,14 @@
 			this.bindWifiEvents()
 			this.tool
 				.startWifi()
-				.then(() => this.pushLog('WiFi 模块已启动'))
+				.then(() => {
+					// #ifdef APP-PLUS
+					this.pushLog('WiFi 模块已启动（Android App / WifiManager）')
+					// #endif
+					// #ifndef APP-PLUS
+					this.pushLog('WiFi 模块已启动')
+					// #endif
+				})
 				.catch((err) => this.pushLog('启动 WiFi 失败: ' + this.errText(err)))
 		},
 		onUnload() {
@@ -332,16 +352,177 @@
 					return false
 				}
 				// #endif
+				// #ifdef APP-PLUS
+				return this.ensureAppLocationPermission()
+				// #endif
+				// #ifndef MP-WEIXIN || APP-PLUS
 				return true
+				// #endif
+			},
+			/** Android App：扫网需要定位权限 + 系统定位开关（Android 13+ 另需附近设备） */
+			ensureAppLocationPermission() {
+				// #ifdef APP-PLUS
+				const that = this
+				return new Promise((resolve) => {
+					try {
+						const main = plus.android.runtimeMainActivity()
+						let sdk = 0
+						try {
+							const VERSION = plus.android.importClass('android.os.Build$VERSION')
+							sdk = Number(VERSION && VERSION.SDK_INT) || 0
+						} catch (e) {}
+
+						const permissions = [
+							'android.permission.ACCESS_FINE_LOCATION',
+							'android.permission.ACCESS_COARSE_LOCATION',
+						]
+						// Android 13+：附近 WiFi 设备权限（与定位配合使用更稳）
+						if (sdk >= 33) {
+							permissions.push('android.permission.NEARBY_WIFI_DEVICES')
+						}
+
+						const isGranted = (p) => {
+							try {
+								return Number(plus.android.invoke(main, 'checkSelfPermission', p)) === 0
+							} catch (e) {
+								return false
+							}
+						}
+						const missing = permissions.filter((p) => !isGranted(p))
+
+						const finishCheckLocationService = () => {
+							// 扫网结果为空的最常见原因：定位开关关闭
+							try {
+								const Context = plus.android.importClass('android.content.Context')
+								const LocationManager = plus.android.importClass('android.location.LocationManager')
+								const SettingsSecure = plus.android.importClass('android.provider.Settings$Secure')
+								const lm = main.getSystemService(Context.LOCATION_SERVICE)
+								plus.android.importClass(lm)
+								let enabled = false
+								try {
+									if (typeof lm.isLocationEnabled === 'function') {
+										enabled = !!lm.isLocationEnabled()
+									}
+								} catch (e) {}
+								if (!enabled) {
+									try {
+										enabled = !!(
+											lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+											lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+										)
+									} catch (e) {}
+								}
+								if (!enabled) {
+									try {
+										const mode = Number(
+											SettingsSecure.getInt(main.getContentResolver(), SettingsSecure.LOCATION_MODE)
+										)
+										enabled = mode > 0
+									} catch (e) {}
+								}
+								if (!enabled) {
+									that.pushLog('定位服务未开启：Android 规定未开定位时 getScanResults 恒为空')
+									showMsg('请打开手机定位开关')
+									try {
+										const Intent = plus.android.importClass('android.content.Intent')
+										const Settings = plus.android.importClass('android.provider.Settings')
+										main.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+									} catch (e) {}
+									resolve(false)
+									return
+								}
+							} catch (e) {
+								that.pushLog('定位开关检查异常: ' + that.errText(e))
+							}
+							// 再确认细粒度定位已授权
+							if (!isGranted('android.permission.ACCESS_FINE_LOCATION') && sdk >= 29) {
+								that.pushLog('需要「精确位置」权限才能扫描 WiFi')
+								showMsg('请允许精确位置权限')
+								resolve(false)
+								return
+							}
+							resolve(true)
+						}
+
+						if (!missing.length) {
+							finishCheckLocationService()
+							return
+						}
+						that.pushLog('申请权限: ' + missing.join(', '))
+						plus.android.requestPermissions(
+							missing,
+							(result) => {
+								const stillMissing = missing.filter((p) => !isGranted(p))
+								if (stillMissing.length) {
+									that.pushLog('权限未授予: ' + stillMissing.join(', '))
+									showMsg('请允许定位/附近设备权限')
+									resolve(false)
+									return
+								}
+								void result
+								finishCheckLocationService()
+							},
+							(err) => {
+								that.pushLog('申请权限失败: ' + that.errText(err))
+								resolve(false)
+							}
+						)
+					} catch (e) {
+						that.pushLog('定位权限检查异常: ' + that.errText(e))
+						resolve(true)
+					}
+				})
+				// #endif
+				// #ifndef APP-PLUS
+				return Promise.resolve(true)
+				// #endif
+			},
+			onOpenSystemWifi() {
+				// #ifdef APP-PLUS
+				try {
+					if (this.tool && this.tool.openSystemWifiSettings) {
+						this.tool.openSystemWifiSettings()
+					}
+					this.pushLog('已打开系统 WiFi 设置')
+				} catch (e) {
+					this.pushLog('打开系统 WiFi 设置失败: ' + this.errText(e))
+				}
+				// #endif
 			},
 			async onRefreshWifiList() {
 				if (!this.tool || this.wifiBusy) return
 				this.wifiBusy = true
 				try {
-					await this.ensureLocationAuth()
-					await this.tool.getWifiList()
+					const ok = await this.ensureLocationAuth()
+					if (!ok) {
+						// #ifdef APP-PLUS
+						showMsg('需要定位权限才能扫描')
+						// #endif
+						return
+					}
+					// #ifdef APP-PLUS
+					this.pushLog('开始扫描附近 WiFi…')
+					showMsg('扫描中…')
+					// #endif
+					const res = await this.tool.getWifiList()
+					// App 端 getWifiList 已同步返回列表；小程序多走 onGetWifiList 回调
+					// #ifdef APP-PLUS
+					const list = this.normalizeWifiList((res && res.wifiList) || [])
+					this.wifiList = list
+					this.pushLog('WiFi 列表: ' + list.length + ' 个')
+					if (list.length) {
+						showMsg('找到 ' + list.length + ' 个')
+					} else {
+						showMsg('未扫到 WiFi')
+						this.pushLog(
+							'仍为空时请确认：1)手机定位开关已开 2)已允许精确位置 3)WiFi 开关已开 4)到系统 WiFi 页先搜一次再回 App'
+						)
+					}
+					// #endif
+					// #ifndef APP-PLUS
 					this.pushLog('已请求 WiFi 列表（iOS 可能跳转系统设置）')
 					showMsg('正在获取列表')
+					// #endif
 				} catch (e) {
 					this.pushLog('扫描失败: ' + this.errText(e))
 					showMsg('扫描失败')
@@ -364,6 +545,10 @@
 				this.wifiBusy = true
 				this.saveForm()
 				try {
+					// #ifdef APP-PLUS
+					this.pushLog('正在连接: ' + ssid + '（Android 10+ 请在系统弹窗中确认）')
+					showMsg('请在系统弹窗确认…')
+					// #endif
 					await this.tool.connectWifi(ssid, this.password)
 					this.pushLog('已发起连接: ' + ssid)
 					showMsg('正在连接…')
@@ -510,7 +695,7 @@
 	}
 
 	.field-label {
-		width: 96rpx;
+		width: 120rpx;
 		flex-shrink: 0;
 		font-size: 28rpx;
 		color: #5c5346;

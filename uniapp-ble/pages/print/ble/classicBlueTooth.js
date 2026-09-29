@@ -25,6 +25,14 @@ export const CLASSIC_SPP_SERVICE_ID = CLASSIC_SPP_UUID
 export const CLASSIC_SPP_CHARACTERISTIC_ID = 'RFCOMM'
 /** BluetoothClass.Device.Major.IMAGING（含打印机） */
 const MAJOR_IMAGING = 1536
+/** RFCOMM 连接超时（毫秒） */
+const CLASSIC_CONNECT_TIMEOUT_MS = 15000
+/** 取消搜索后等待协议栈稳定 */
+const CLASSIC_AFTER_CANCEL_DISCOVERY_MS = 500
+/** 配对成功后再连 SPP 的缓冲 */
+const CLASSIC_AFTER_BOND_MS = 400
+/** 持续搜索时，一轮 discovery 结束后重启间隔 */
+const CLASSIC_REDISCOVERY_DELAY_MS = 800
 
 /**
  * 经典蓝牙打印机适配器（Android SPP）
@@ -47,6 +55,10 @@ export class ClassicBlueTooth extends BleBlueTooth {
 		this._discoveredRawMap = new Map()
 		/** 是否已注册适配器状态广播 */
 		this._adapterStateListening = false
+		/** 持续搜索自动重启定时器 */
+		this._rediscoveryTimer = null
+		/** 正在连接中的 deviceId（防连点） */
+		this._connectingDeviceId = ''
 	}
 
 	getBluetoothMode() {
@@ -255,12 +267,14 @@ export class ClassicBlueTooth extends BleBlueTooth {
 	}
 
 	/**
-	 * 经典蓝牙设备过滤：名称前缀 / Imaging 大类 / 已配对打印机
+	 * 经典蓝牙设备过滤：名称前缀 / Imaging 大类 / 打印机关键词 / 已配对打印设备
+	 * 注意：ACTION_FOUND 初期常无名称，需配合 _refreshDeviceNames 后再过滤
 	 */
 	filterPrint(list = [], excludeDeviceIds = []) {
 		const printList = []
 		const exclude = new Set((excludeDeviceIds || []).map((id) => String(id)))
 		const prefixes = CPCL_DEVICE_NAME_PREFIXES.concat(GBK_DEVICE_NAME_PREFIXES)
+		const nameHints = ['PRINTER', 'PRINT', 'HPRT', 'POS', 'SPP', 'LABEL']
 		for (let i = 0; i < list.length; i++) {
 			const item = list[i]
 			if (!item || exclude.has(String(item.deviceId))) continue
@@ -270,9 +284,11 @@ export class ClassicBlueTooth extends BleBlueTooth {
 				const p = String(prefix).trim().toUpperCase()
 				return p && (nameUpper.startsWith(p) || nameUpper.includes(p))
 			})
-			const majorOk = Number(item.majorClass) === MAJOR_IMAGING
-			// 已配对设备：仍需名称前缀或 Imaging 大类，避免耳机等干扰
-			if (matchName || majorOk) {
+			const matchHint = nameHints.some((h) => nameUpper.includes(h))
+			const major = Number(item.majorClass) || 0
+			const majorOk = major === MAJOR_IMAGING
+			// 已配对：名称前缀 / Imaging / 打印关键词，避免耳机音箱等干扰
+			if (matchName || matchHint || majorOk) {
 				printList.push({
 					...item,
 					address: item.address || item.deviceId || '',
@@ -333,19 +349,169 @@ export class ClassicBlueTooth extends BleBlueTooth {
 		return list
 	}
 
+	/**
+	 * Android 13+（API 33）注册系统广播必须带 RECEIVER_EXPORTED，否则收不到 ACTION_FOUND / 配对状态
+	 * @param {Object} receiver
+	 * @param {Object} filter
+	 */
+	_registerSystemReceiver(receiver, filter) {
+		// #ifdef APP-PLUS
+		this.ensureNativeReady()
+		const sdk = this._androidSdkInt()
+		if (sdk >= 33) {
+			const Context = plus.android.importClass('android.content.Context')
+			const flag = Context.RECEIVER_EXPORTED != null ? Context.RECEIVER_EXPORTED : 2
+			this._mainActivity.registerReceiver(receiver, filter, flag)
+			return
+		}
+		this._mainActivity.registerReceiver(receiver, filter)
+		// #endif
+	}
+
+	/** @deprecated 使用 _registerSystemReceiver */
+	_registerDiscoveryReceiver(receiver, filter) {
+		this._registerSystemReceiver(receiver, filter)
+	}
+
+	/**
+	 * 兼容 Android 13+ Intent.getParcelableExtra(String, Class)
+	 * 旧 API 在部分 targetSdk 33+ 机型上会返回 null → 表现为搜不到设备
+	 */
+	_getIntentBluetoothDevice(intent) {
+		// #ifdef APP-PLUS
+		try {
+			plus.android.importClass(intent)
+			const BluetoothDevice = plus.android.importClass('android.bluetooth.BluetoothDevice')
+			const key = BluetoothDevice.EXTRA_DEVICE
+			let device = null
+			const sdk = this._androidSdkInt()
+			if (sdk >= 33) {
+				try {
+					const Clazz = plus.android.importClass('java.lang.Class')
+					const deviceClass = Clazz.forName('android.bluetooth.BluetoothDevice')
+					device = plus.android.invoke(intent, 'getParcelableExtra', key, deviceClass)
+				} catch (e) {
+					this.log('getParcelableExtra(Class) fail, fallback', e)
+				}
+			}
+			if (!device) {
+				device = intent.getParcelableExtra(key)
+			}
+			return device || null
+		} catch (e) {
+			this.log('_getIntentBluetoothDevice fail', e)
+			return null
+		}
+		// #endif
+		// #ifndef APP-PLUS
+		return null
+		// #endif
+	}
+
+	/** 从系统侧刷新设备名（ACTION_FOUND 初期常为空，无 BLUETOOTH_CONNECT 时 getName 也会空） */
+	_resolveRemoteDeviceName(deviceId) {
+		// #ifdef APP-PLUS
+		try {
+			this.ensureNativeReady()
+			const id = String(deviceId || '').toUpperCase()
+			if (!id) return ''
+			const remote = this._btAdapter.getRemoteDevice(id)
+			plus.android.importClass(remote)
+			let name = ''
+			try {
+				name = remote.getName() || ''
+			} catch (e) {}
+			if (!name) {
+				try {
+					name = plus.android.invoke(remote, 'getAlias') || ''
+				} catch (e) {}
+			}
+			return String(name || '').trim()
+		} catch (e) {
+			return ''
+		}
+		// #endif
+		// #ifndef APP-PLUS
+		return ''
+		// #endif
+	}
+
+	_refreshDeviceNames(list = []) {
+		return (list || []).map((item) => {
+			if (!item || !item.deviceId) return item
+			const cur = String(item.name || item.localName || '').trim()
+			const id = String(item.deviceId).toUpperCase()
+			if (cur && cur !== id) return item
+			const name = this._resolveRemoteDeviceName(id)
+			if (!name) return item
+			return this._normalizeDevice({
+				...item,
+				name,
+				bonded: item.bonded,
+				majorClass: item.majorClass,
+			})
+		})
+	}
+
+	_buildDiscoveryFailMessage() {
+		const missing = (this._androidRuntimePermissions() || []).filter(
+			(p) => !this._isAndroidPermissionGranted(p)
+		)
+		if (missing.length) {
+			return '搜索失败：请允许应用的蓝牙与位置权限'
+		}
+		if (!this._isAndroidLocationServiceEnabled()) {
+			return '搜索失败：请先打开手机定位服务（小米/华为等机型强制要求）'
+		}
+		return '搜索附近可用蓝牙设备失败，请确认已开蓝牙、定位，并允许相关权限后重试'
+	}
+
+	_clearRediscoveryTimer() {
+		if (this._rediscoveryTimer) {
+			clearTimeout(this._rediscoveryTimer)
+			this._rediscoveryTimer = null
+		}
+	}
+
+	/** 持续搜索发现设备后通知 UI；鸿蒙可覆写为节流 */
+	_notifyDiscoveryStateChange() {
+		this.emit('stateChange')
+	}
+
+	_scheduleRediscovery() {
+		const that = this
+		that._clearRediscoveryTimer()
+		if (!that._continuousDiscovering) return
+		that._rediscoveryTimer = setTimeout(() => {
+			that._rediscoveryTimer = null
+			if (!that._continuousDiscovering || that._connectingDeviceId) return
+			that.startBluetoothDevicesDiscovery({ preserveFound: true }).catch((err) => {
+				that.log('classic rediscovery fail', err)
+			})
+		}, CLASSIC_REDISCOVERY_DELAY_MS)
+	}
+
 	startBluetoothDevicesDiscovery(options = {}) {
 		const that = this
-		void options
-		return new Promise((resolve, reject) => {
+		const preserveFound = !!(options && options.preserveFound)
+		return new Promise(async (resolve, reject) => {
 			// #ifdef APP-PLUS
 			try {
 				that.ensureNativeReady()
+				await that.checkAndRequestPermissions()
+				await that.ensureAndroidLocationForScan()
 				if (!that._btAdapter.isEnabled()) {
 					reject(new Error('请先打开手机蓝牙'))
 					return
 				}
+				if (that._connectingDeviceId) {
+					reject(new Error('正在连接打印机，请稍后再搜索'))
+					return
+				}
 				that._bluetoothModuleSearchState = 'searching'
-				that._discoveredRawMap = new Map()
+				if (!preserveFound || !that._discoveredRawMap) {
+					that._discoveredRawMap = new Map()
+				}
 				// 先塞入已配对设备，避免仅依赖扫描
 				that._collectBondedDevices().forEach((d) => {
 					that._discoveredRawMap.set(d.deviceId, d)
@@ -353,6 +519,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 
 				if (that._btAdapter.isDiscovering()) {
 					that._btAdapter.cancelDiscovery()
+					await sleep(CLASSIC_AFTER_CANCEL_DISCOVERY_MS / 1000)
 				}
 
 				const BluetoothDevice = plus.android.importClass('android.bluetooth.BluetoothDevice')
@@ -378,10 +545,14 @@ export class ClassicBlueTooth extends BleBlueTooth {
 									that._bluetoothAdapterState.discovering = false
 									that._unregisterDiscoveryReceiver()
 									that.emit('stateChange')
+									// 持续搜索：经典蓝牙一轮约 12s 后结束，需自动再启一轮
+									if (that._continuousDiscovering) {
+										that._scheduleRediscovery()
+									}
 									return
 								}
 								if (action !== BluetoothDevice.ACTION_FOUND) return
-								const device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+								const device = that._getIntentBluetoothDevice(intent)
 								if (!device) return
 								plus.android.importClass(device)
 								const address = String(device.getAddress() || '').toUpperCase()
@@ -392,18 +563,29 @@ export class ClassicBlueTooth extends BleBlueTooth {
 									plus.android.importClass(btClass)
 									majorClass = btClass.getMajorDeviceClass()
 								} catch (e) {}
-								const name = device.getName() || ''
+								let name = ''
+								try {
+									name = device.getName() || ''
+								} catch (e) {}
+								if (!name) {
+									name = that._resolveRemoteDeviceName(address) || ''
+								}
 								const bonded = device.getBondState() === BluetoothDevice.BOND_BONDED
+								const prev = that._discoveredRawMap.get(address)
+								// 保留已有真名，避免后一次空名覆盖
+								if (prev && prev.name && prev.name !== address && !name) {
+									name = prev.name
+								}
 								const normalized = that._normalizeDevice({
 									deviceId: address,
 									name,
 									bonded,
-									majorClass,
+									majorClass: majorClass || (prev && prev.majorClass) || 0,
 								})
 								that._discoveredRawMap.set(address, normalized)
 								if (that._continuousDiscovering) {
 									that._mergeDiscoveredDevices([normalized], 'continue')
-									that.emit('stateChange')
+									that._notifyDiscoveryStateChange()
 								}
 							} catch (e) {
 								that.log('classic discovery onReceive fail', e)
@@ -412,19 +594,19 @@ export class ClassicBlueTooth extends BleBlueTooth {
 					}
 				)
 				that._discoveryReceiver = receiver
-				that._mainActivity.registerReceiver(receiver, filter)
+				that._registerSystemReceiver(receiver, filter)
 				const started = that._btAdapter.startDiscovery()
 				if (!started) {
 					that._bluetoothModuleSearchState = 'notSearched'
 					that._unregisterDiscoveryReceiver()
-					reject(new Error('搜索附近可用蓝牙设备失败'))
+					reject(new Error(that._buildDiscoveryFailMessage()))
 					return
 				}
 				that._bluetoothAdapterState.discovering = true
 				resolve(true)
 			} catch (err) {
 				that._bluetoothModuleSearchState = 'notSearched'
-				reject(err instanceof Error ? err : new Error('搜索附近可用蓝牙设备失败'))
+				reject(err instanceof Error ? err : new Error(that._buildDiscoveryFailMessage()))
 			}
 			// #endif
 			// #ifndef APP-PLUS
@@ -448,6 +630,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 		const that = this
 		return new Promise((resolve) => {
 			uni.hideLoading()
+			that._clearRediscoveryTimer()
 			// #ifdef APP-PLUS
 			try {
 				if (that._btAdapter && that._btAdapter.isDiscovering()) {
@@ -474,7 +657,11 @@ export class ClassicBlueTooth extends BleBlueTooth {
 			if (that._discoveredRawMap) {
 				that._discoveredRawMap.forEach((d, id) => map.set(id, d))
 			}
-			resolve(Array.from(map.values()))
+			const list = that._refreshDeviceNames(Array.from(map.values()))
+			list.forEach((d) => {
+				if (d && d.deviceId) that._discoveredRawMap.set(d.deviceId, d)
+			})
+			resolve(list)
 		})
 	}
 
@@ -491,7 +678,9 @@ export class ClassicBlueTooth extends BleBlueTooth {
 		const that = this
 		return new Promise(async (resolve) => {
 			const start = Date.now()
-			const end = start + 6000
+			// 经典蓝牙一轮扫描约 12s，轮询窗口对齐
+			const waitMs = that._btMode === 'classic' ? 12000 : 6000
+			const end = start + waitMs
 			const tick = async () => {
 				const list = await that.getBluetoothDevices()
 				const stop = typeof callback === 'function'
@@ -571,7 +760,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 								const action = intent.getAction()
 								// 仅自动确认「同意配对」，绝不写入 PIN（HM 等机型写错 PIN 会直接配对失败）
 								if (action === BluetoothDevice.ACTION_PAIRING_REQUEST) {
-									const pairDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+									const pairDevice = that._getIntentBluetoothDevice(intent)
 									const variant = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, -1)
 									that.log('classic pairing request variant', variant)
 									// 0=PIN, 7=16位PIN：交给系统弹窗，不代填
@@ -604,7 +793,8 @@ export class ClassicBlueTooth extends BleBlueTooth {
 						},
 					}
 				)
-				that._mainActivity.registerReceiver(receiver, filter)
+				// Android 13+ 必须 RECEIVER_EXPORTED，否则收不到配对状态 → 一直超时失败
+				that._registerSystemReceiver(receiver, filter)
 
 				const current = remoteDevice.getBondState()
 				if (current === BluetoothDevice.BOND_BONDING) {
@@ -624,10 +814,169 @@ export class ClassicBlueTooth extends BleBlueTooth {
 		})
 	}
 
+	/**
+	 * 在 Java 后台线程执行阻塞任务（socket.connect），避免主线程 ANR / 连接失败
+	 * @param {Function} workFn
+	 * @param {number} timeoutMs
+	 */
+	_runBlockingOnWorker(workFn, timeoutMs = CLASSIC_CONNECT_TIMEOUT_MS) {
+		const that = this
+		return new Promise((resolve, reject) => {
+			// #ifdef APP-PLUS
+			let settled = false
+			const finish = (ok, value) => {
+				if (settled) return
+				settled = true
+				clearTimeout(timer)
+				if (ok) resolve(value)
+				else reject(value instanceof Error ? value : new Error(String(value || '操作失败')))
+			}
+			const timer = setTimeout(() => {
+				finish(false, new Error('连接超时，请确认打印机已开机并靠近手机后重试'))
+			}, timeoutMs)
+
+			try {
+				that.ensureNativeReady()
+				const Thread = plus.android.importClass('java.lang.Thread')
+				const mainActivity = that._mainActivity
+				const worker = plus.android.implements('java.lang.Runnable', {
+					run() {
+						let errMsg = ''
+						let ok = false
+						try {
+							workFn()
+							ok = true
+						} catch (e) {
+							errMsg = (e && (e.message || (e.toString && e.toString()))) || String(e) || '连接失败'
+						}
+						const notify = plus.android.implements('java.lang.Runnable', {
+							run() {
+								if (ok) finish(true, true)
+								else finish(false, new Error(errMsg))
+							},
+						})
+						try {
+							if (mainActivity && mainActivity.runOnUiThread) {
+								mainActivity.runOnUiThread(notify)
+							} else {
+								setTimeout(() => {
+									if (ok) finish(true, true)
+									else finish(false, new Error(errMsg))
+								}, 0)
+							}
+						} catch (e2) {
+							setTimeout(() => {
+								if (ok) finish(true, true)
+								else finish(false, new Error(errMsg || String(e2)))
+							}, 0)
+						}
+					},
+				})
+				const thread = new Thread(worker)
+				thread.start()
+			} catch (err) {
+				finish(false, err instanceof Error ? err : new Error(String(err)))
+			}
+			// #endif
+			// #ifndef APP-PLUS
+			reject(new Error('经典蓝牙仅支持 App 端 Android'))
+			// #endif
+		})
+	}
+
+	async _connectSocketWithTimeout(socket, timeoutMs = CLASSIC_CONNECT_TIMEOUT_MS) {
+		const that = this
+		// #ifdef APP-PLUS
+		plus.android.importClass(socket)
+		const connectPromise = that._runBlockingOnWorker(() => {
+			plus.android.invoke(socket, 'connect')
+		}, timeoutMs)
+
+		const watchdog = setTimeout(() => {
+			try {
+				plus.android.importClass(socket)
+				if (socket && !socket.isConnected()) {
+					plus.android.invoke(socket, 'close')
+				}
+			} catch (e) {
+				that.log('classic connect watchdog close fail', e)
+			}
+		}, timeoutMs)
+
+		try {
+			await connectPromise
+			plus.android.importClass(socket)
+			if (!socket.isConnected()) {
+				throw new Error('连接经典蓝牙设备失败')
+			}
+			return socket
+		} finally {
+			clearTimeout(watchdog)
+		}
+		// #endif
+		// #ifndef APP-PLUS
+		throw new Error('经典蓝牙仅支持 App 端 Android')
+		// #endif
+	}
+
+	/**
+	 * RFCOMM 连接顺序：secure → insecure → 反射 channel 1
+	 * （普通安卓多数机型 secure 更稳；华为机型在 HarmonyClassicBlueTooth 中覆写顺序）
+	 */
+	async _tryCreateAndConnectSocket(remote, sppUuid) {
+		const that = this
+		const attempts = [
+			{
+				name: 'secure',
+				create: () => remote.createRfcommSocketToServiceRecord(sppUuid),
+			},
+			{
+				name: 'insecure',
+				create: () => remote.createInsecureRfcommSocketToServiceRecord(sppUuid),
+			},
+			{
+				name: 'reflect-1',
+				create: () => plus.android.invoke(remote, 'createRfcommSocket', 1),
+			},
+		]
+
+		let lastErr = null
+		for (let i = 0; i < attempts.length; i++) {
+			const item = attempts[i]
+			let socket = null
+			try {
+				socket = item.create()
+				plus.android.importClass(socket)
+				await that._connectSocketWithTimeout(socket, CLASSIC_CONNECT_TIMEOUT_MS)
+				that.log('classic spp connect ok via', item.name)
+				return socket
+			} catch (err) {
+				lastErr = err
+				that.log('classic spp connect fail via', item.name, err)
+				try {
+					if (socket) {
+						plus.android.importClass(socket)
+						socket.close()
+					}
+				} catch (e) {}
+				await sleep(0.2)
+			}
+		}
+		throw (lastErr instanceof Error
+			? lastErr
+			: new Error(formatBluetoothError(lastErr, '连接失败')))
+	}
+
 	async connectBlueToothPrinter(options) {
 		const that = this
 		try {
 			const device = that.validateBluetoothDevices(options)
+			const deviceId = String((device && device.deviceId) || '').toUpperCase()
+			if (that._connectingDeviceId && that._connectingDeviceId === deviceId) {
+				showMsg('正在连接中，请稍候')
+				return null
+			}
+			that._connectingDeviceId = deviceId
 			uni.showLoading({ title: '连接中...' })
 			that.changeConnectState(device, 'connecting')
 			that._negotiatedMtu = convertNumber(that.getPrintConfig().mtu) || 512
@@ -640,6 +989,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 			that.changeConnectState(that._operationDevicesInfo, 'notConnected')
 			showMsg((err && err.message) || '连接蓝牙打印机失败')
 		} finally {
+			that._connectingDeviceId = ''
 			uni.hideLoading()
 		}
 	}
@@ -657,9 +1007,15 @@ export class ClassicBlueTooth extends BleBlueTooth {
 					return
 				}
 				// 搜索未停干净时 connect 极易失败
-				if (that._btAdapter.isDiscovering()) {
-					that._btAdapter.cancelDiscovery()
-					await sleep(0.5)
+				that._clearRediscoveryTimer()
+				try {
+					if (that._btAdapter.isDiscovering()) {
+						that._btAdapter.cancelDiscovery()
+					}
+					await that.stopBluetoothDevicesDiscovery().catch(() => {})
+					await sleep(CLASSIC_AFTER_CANCEL_DISCOVERY_MS / 1000)
+				} catch (e) {
+					that.log('classic cancelDiscovery fail', e)
 				}
 				await that._closeSocketById(deviceId)
 
@@ -669,45 +1025,19 @@ export class ClassicBlueTooth extends BleBlueTooth {
 				plus.android.importClass(remote)
 
 				// 关键原因：多数安卓机必须先配对，再 SPP 连接
+				uni.showLoading({ title: '请确认配对...' })
 				await that._ensureBonded(remote)
-				uni.showLoading({ title: '连接中...' })
-				await sleep(0.3)
-
-				let socket = null
-				const tryConnect = (creator) => {
-					const s = creator()
-					plus.android.importClass(s)
-					s.connect()
-					return s
-				}
+				await sleep(CLASSIC_AFTER_BOND_MS / 1000)
 
 				try {
-					socket = tryConnect(() => remote.createRfcommSocketToServiceRecord(sppUuid))
-				} catch (e1) {
-					that.log('createRfcommSocketToServiceRecord fail, try insecure', e1)
-					try {
-						socket = tryConnect(() => remote.createInsecureRfcommSocketToServiceRecord(sppUuid))
-					} catch (e2) {
-						that.log('insecure fail, try reflection channel 1', e2)
-						try {
-							// 部分国产打印机仅接受反射通道 1
-							socket = plus.android.invoke(remote, 'createRfcommSocket', 1)
-							plus.android.importClass(socket)
-							socket.connect()
-						} catch (e3) {
-							reject(new Error(
-								formatBluetoothError(e3, '连接失败') +
-								'。请确认打印机已开机且已在系统蓝牙中配对成功'
-							))
-							return
-						}
+					if (that._btAdapter.isDiscovering()) {
+						that._btAdapter.cancelDiscovery()
+						await sleep(0.35)
 					}
-				}
+				} catch (e) {}
 
-				if (!socket || !socket.isConnected()) {
-					reject(new Error('连接经典蓝牙设备失败，请先在系统蓝牙设置中完成配对'))
-					return
-				}
+				uni.showLoading({ title: '连接中...' })
+				const socket = await that._tryCreateAndConnectSocket(remote, sppUuid)
 				const outputStream = socket.getOutputStream()
 				plus.android.importClass(outputStream)
 				that._socketMap.set(deviceId, { socket, outputStream })
@@ -847,6 +1177,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 	async stopContinuousDeviceDiscovery() {
 		const that = this
 		that._continuousDiscovering = false
+		that._clearRediscoveryTimer()
 		try {
 			if (that._bluetoothModuleSearchState === 'searching') {
 				await that.stopBluetoothDevicesDiscovery()
@@ -943,6 +1274,7 @@ export class ClassicBlueTooth extends BleBlueTooth {
 	}
 
 	clearDeviceLists() {
+		this._clearRediscoveryTimer()
 		this._closeAllSocketsSilent()
 		this._discoveredRawMap = new Map()
 		super.clearDeviceLists()
