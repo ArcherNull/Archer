@@ -19,7 +19,7 @@
 		<!-- 浮动工具栏：fixed 相对视口，可拖满画布区（含纸张两侧空白） -->
 		<view
 			v-if="!floatOpsCollapsed"
-			class="floatOps"
+			:class="['floatOps', floatOpsDrag ? 'floatOps--dragging' : '']"
 			:style="floatOpsStyle"
 		>
 			<view
@@ -310,17 +310,26 @@
 			},
 			floatOpsStyle() {
 				if (this.floatOpsLeft == null || this.floatOpsTop == null) return ''
+				// translate3d：拖拽时走合成层，避免 left/top 触发布局抖动
 				return (
-					'left:' +
+					'left:0;top:0;right:auto;bottom:auto;' +
+					'transform:translate3d(' +
 					this.floatOpsLeft +
-					'px;top:' +
+					'px,' +
 					this.floatOpsTop +
-					'px;right:auto;bottom:auto;'
+					'px,0);'
 				)
 			},
 		},
 		created() {
+			this._floatOpsRafId = null
+			this._floatOpsRafScheduled = false
+			this._floatOpsPendingTouch = null
 			this.resetHistory()
+		},
+		beforeDestroy() {
+			this.cancelFloatOpsRaf()
+			this._floatOpsPendingTouch = null
 		},
 		onReady() {
 			this.measureCanvasArea()
@@ -336,6 +345,9 @@
 			})
 		},
 		onHide() {
+			this.cancelFloatOpsRaf()
+			this._floatOpsPendingTouch = null
+			this.floatOpsDrag = null
 			uni.setKeepScreenOn({ keepScreenOn: false })
 			if (this.shouldSkipBluetoothTeardown()) return
 			// #ifndef APP-PLUS
@@ -343,6 +355,9 @@
 			// #endif
 		},
 		onUnload() {
+			this.cancelFloatOpsRaf()
+			this._floatOpsPendingTouch = null
+			this.floatOpsDrag = null
 			uni.setKeepScreenOn({ keepScreenOn: false })
 			if (this.shouldSkipBluetoothTeardown()) return
 			// #ifndef APP-PLUS
@@ -422,7 +437,7 @@
 				this.floatOpsLeft = next.left
 				this.floatOpsTop = next.top
 			},
-			clampFloatOpsPos(left, top) {
+			getFloatOpsClampBounds() {
 				const pad = 8
 				const area = this.canvasAreaRect
 				const barW = this.floatOpsW > 0 ? this.floatOpsW : 320
@@ -448,20 +463,82 @@
 				}
 				if (maxL < minL) maxL = minL
 				if (maxT < minT) maxT = minT
+				return { minL: minL, minT: minT, maxL: maxL, maxT: maxT }
+			},
+			clampFloatOpsPos(left, top) {
+				const b = this.getFloatOpsClampBounds()
 				return {
-					left: Math.max(minL, Math.min(maxL, left)),
-					top: Math.max(minT, Math.min(maxT, top)),
+					left: Math.max(b.minL, Math.min(b.maxL, left)),
+					top: Math.max(b.minT, Math.min(b.maxT, top)),
 				}
 			},
+			cancelFloatOpsRaf() {
+				if (this._floatOpsRafId != null) {
+					const cancel =
+						typeof cancelAnimationFrame === 'function'
+							? cancelAnimationFrame
+							: clearTimeout
+					cancel(this._floatOpsRafId)
+					this._floatOpsRafId = null
+				}
+				this._floatOpsRafScheduled = false
+			},
 			beginFloatOpsDrag(touch, originLeft, originTop) {
+				this.cancelFloatOpsRaf()
+				this._floatOpsPendingTouch = touch
 				this.floatOpsLeft = originLeft
 				this.floatOpsTop = originTop
+				const bounds = this.getFloatOpsClampBounds()
 				this.floatOpsDrag = {
 					startX: touch.x,
 					startY: touch.y,
 					originLeft: originLeft,
 					originTop: originTop,
+					minL: bounds.minL,
+					minT: bounds.minT,
+					maxL: bounds.maxL,
+					maxT: bounds.maxT,
 				}
+			},
+			scheduleFloatOpsDragLive() {
+				if (this._floatOpsRafScheduled) return
+				this._floatOpsRafScheduled = true
+				const that = this
+				const raf =
+					typeof requestAnimationFrame === 'function'
+						? requestAnimationFrame
+						: function (fn) {
+								return setTimeout(fn, 16)
+							}
+				this._floatOpsRafId = raf(function () {
+					that._floatOpsRafId = null
+					that._floatOpsRafScheduled = false
+					that.applyFloatOpsDragLive()
+				})
+			},
+			applyFloatOpsDragLive() {
+				const drag = this.floatOpsDrag
+				const touch = this._floatOpsPendingTouch
+				if (!drag || !touch) return
+				const left = Math.max(
+					drag.minL,
+					Math.min(drag.maxL, drag.originLeft + (touch.x - drag.startX))
+				)
+				const top = Math.max(
+					drag.minT,
+					Math.min(drag.maxT, drag.originTop + (touch.y - drag.startY))
+				)
+				// 亚像素抖动不触发更新，减少无效渲染
+				if (
+					this.floatOpsLeft != null &&
+					this.floatOpsTop != null &&
+					Math.abs(this.floatOpsLeft - left) < 0.5 &&
+					Math.abs(this.floatOpsTop - top) < 0.5
+				) {
+					return
+				}
+				this.floatOpsLeft = left
+				this.floatOpsTop = top
 			},
 			cloneCurrentDesign() {
 				return cloneDesignState(this.paper, this.elements)
@@ -618,19 +695,22 @@
 				if (!this.floatOpsDrag) return
 				const touch = this.getTouchPoint(e)
 				if (!touch) return
-				const dx = touch.x - this.floatOpsDrag.startX
-				const dy = touch.y - this.floatOpsDrag.startY
-				const next = this.clampFloatOpsPos(
-					this.floatOpsDrag.originLeft + dx,
-					this.floatOpsDrag.originTop + dy
-				)
-				this.floatOpsLeft = next.left
-				this.floatOpsTop = next.top
+				// 非响应式缓存最新点，交给 rAF 合帧更新，避免 touchmove 风暴
+				this._floatOpsPendingTouch = touch
+				this.scheduleFloatOpsDragLive()
 			},
 			onFloatOpsTouchEnd() {
+				if (this.floatOpsDrag) {
+					// 松手前再刷一帧，保证落点跟手
+					this.applyFloatOpsDragLive()
+				}
+				this.cancelFloatOpsRaf()
+				this._floatOpsPendingTouch = null
 				this.floatOpsDrag = null
 			},
 			onCollapseFloatOps() {
+				this.cancelFloatOpsRaf()
+				this._floatOpsPendingTouch = null
 				this.floatOpsDrag = null
 				this.floatOpsCollapsed = true
 			},
@@ -1236,6 +1316,13 @@
 		border-radius: 16rpx;
 		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 		touch-action: none;
+		/* 避免默认过渡与拖拽抢帧 */
+		transition: none;
+
+		&--dragging {
+			will-change: transform;
+			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+		}
 
 		&-btn {
 			width: 56rpx;
